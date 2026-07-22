@@ -6,16 +6,15 @@ Atualizado em: 2026-07-22
 
 O workspace atual e um esqueleto Vite + React + TypeScript para o app Speak UP Study. Ele contem rotas e telas placeholder suficientes para demonstrar um fluxo inicial, mas ainda nao contem motor de pratica, banco de conteudo, flashcards, jogos, progresso persistente, autenticacao real, analytics, PWA, testes ou integracoes externas.
 
-Fase atual: Fase 0 - baseline executavel. Nao foram implementadas funcionalidades. Foram alterados apenas documentos de planejamento/status.
+Fase atual: Fase 2 - taxonomia real do MVP e referencias aprovadas no working tree. A Fase 1 foi reavaliada e permanece pequena; a taxonomia ativa agora contem somente os topicos e categorias confirmados para o MVP.
 
 ## Git
 
 - Repositorio Git: inicializado localmente com `git init` em 2026-07-22.
 - Branch atual: `master`.
-- Commits existentes: nenhum; `git log --oneline -n 5` retorna que a branch atual ainda nao tem commits.
+- Baseline local: `06af0e4 chore: establish initial project baseline`.
 - Remotos configurados: nenhum; `git remote -v` nao retornou entradas.
-- Arquivos staged: nenhum; `git diff --cached` sem saida.
-- Arquivos nao rastreados visiveis pelo Git: 34.
+- Arquivos staged: nenhum esperado ao fim da fase; verificar com `git diff --cached`.
 - Arquivos ignorados relevantes: `node_modules/` e `dist/`.
 - Divergencia com remoto: nao aplicavel porque nao ha remoto configurado.
 - Mudancas do usuario a preservar: todos os arquivos existentes devem ser tratados como trabalho do usuario/projeto e preservados.
@@ -68,14 +67,69 @@ Versoes efetivamente instaladas apos `npm ci`:
 - O fluxo atual inicia em uma tela de login com botao "Entrar com Google", o que conflita com a diretriz guest-first/local-first do `CLAUDE.md`.
 - A UI atual usa fundo navy com blobs/glassmorphism herdado do SpeakIt, diferente da direcao visual aprovada de fundo branco com logo integrado.
 
+## Fase 1 - arquitetura base reavaliada
+
+Arquivos criados:
+
+- `docs/ARCHITECTURE.md`
+- `src/shared/types/domain.ts`
+- `src/content/model/content.ts`
+- `src/services/sessions/practiceSession.ts`
+- `src/services/progress/progress.ts`
+
+Decisoes tomadas:
+
+- IDs de dominio sao aliases explicitos sobre strings para manter serializacao simples.
+- Timestamps usam strings ISO nos contratos.
+- `ProfileId` representa o perfil local/visitante sem exigir usuario remoto.
+- Foram mantidos apenas modelos de conteudo, contratos de sessao e contratos de progresso.
+- `ContentCatalog` e `storageBoundary` foram removidos por serem abstracoes prematuras para o estado atual.
+- Auth, sync, analytics, audio, feature flags, billing, ads e notificacoes continuam documentados como fases futuras, sem codigo nesta fase.
+
+Comportamento:
+
+- Nenhuma rota, pagina, componente visual ou estilo existente foi alterado nesta fase.
+- Componentes React continuam sem acesso direto a IndexedDB, `localStorage`, backend, auth ou analytics.
+
+## Fase 2 - taxonomia real do MVP
+
+Arquivos criados:
+
+- `src/content/taxonomy.ts`
+
+Arquivos modificados:
+
+- `src/shared/types/domain.ts`
+- `src/content/model/content.ts`
+- `docs/ARCHITECTURE.md`
+- `STATUS.md`
+- `docs/IMPLEMENTATION_MAP.md`
+- `docs/OPEN_DECISIONS.md`
+
+Decisoes tomadas:
+
+- O catalogo gramatical ativo do MVP contem exatamente 8 topicos.
+- Todos os 8 topicos possuem `entryLevel: "beginner"`.
+- As dificuldades ativas por topico sao somente `easy` e `medium`.
+- `challenge` nao faz parte do catalogo ativo do MVP.
+- As metas registradas por topico sao `easy: 50` e `medium: 80`, totalizando 130 questoes unicas futuras por topico.
+- O catalogo de vocabulario ativo contem exatamente 9 categorias: Corpo, Roupas, Moveis, Animais, Profissoes, Lugares, Action Verbs, Routine Verbs e Irregular Verbs.
+- `Action Verbs` e `Routine Verbs` foram tratados como vocabulario, nao como gramatica.
+- `Irregular Verbs` foi modelado com 50 entradas simples contendo apenas ID, base form, Simple Past, Past Participle e traducao em portugues.
+- Foram modelados os modos futuros de pratica de Irregular Verbs: base -> passado, base -> participio, passado -> base, participio -> base, verbo -> traducao, traducao -> verbo e misto.
+- A taxonomia nao contem banco real de perguntas, frases de exemplo, traducoes de frases, imagens, audio ou explicacoes longas.
+
 ## Referencias e legado
 
-- `reference/home-approved.html`: nao encontrado; bloqueio visual para implementar UI fiel a referencia aprovada.
-- HTML adicional: apenas `index.html`.
+- `reference/home-approved.html`: disponivel e validado como referencia visual aprovada. Arquivo standalone/offline, com logo embutido, fundo branco, navy `#17234b`, vinho `#8d1d30`, chamada "Bora praticar", jogos rapidos e navegacao inferior.
+- `reference/speakup-english-challenge.html`: disponivel e validado como legado funcional. Contem 10 topicos, 3 dificuldades legadas, 20 questoes por topico/dificuldade, 600 questoes no total, sessoes de 10/20/30, 6 categorias de vocabulario com 10 itens cada e 7 jogos.
+- Mecanicas legadas fora do novo MVP: Multitec, leads, ranking, roleta, CSV, premios e gate de 75%.
+- HTML adicional: `index.html` e o shell Vite.
 - Logo oficial / imagens claras da marca: nao encontrados. Existem `public/favicon.svg`, `public/icons.svg`, `src/assets/vite.svg` e `src/assets/hero.png`, mas nao ha evidencia de logo oficial Speak UP integrado.
 - ZIPs: nao encontrados.
-- Bancos de questoes / JSONs de conteudo: nenhum encontrado alem de `package.json`, `package-lock.json` e `.oxlintrc.json`.
-- Codigo legado real de jogos: nao encontrado; ha apenas TODOs mencionando migracao futura.
+- Bancos de questoes / JSONs de conteudo: nenhum encontrado alem de `package.json`, `package-lock.json` e `.oxlintrc.json`; o banco legado esta embutido no HTML funcional.
+- Codigo legado real de jogos: encontrado em HTML standalone, ainda nao migrado para React.
+- Conteudo legado encontrado nesta fase: disponivel no HTML funcional. A migracao deve ser gradual e documentada; os 600 exercicios de gramatica e os jogos nao foram copiados para `src/` nesta fase.
 
 ## Baseline Git proposto
 
@@ -87,8 +141,16 @@ Devem entrar no primeiro baseline:
 - `README.md`
 - `STATUS.md`
 - `docs/CURRENT_STATE_AUDIT.md`
+- `docs/ARCHITECTURE.md`
 - `docs/IMPLEMENTATION_MAP.md`
 - `docs/OPEN_DECISIONS.md`
+- `reference/home-approved.html`
+- `reference/speakup-english-challenge.html`
+- `src/content/model/content.ts`
+- `src/content/taxonomy.ts`
+- `src/services/progress/progress.ts`
+- `src/services/sessions/practiceSession.ts`
+- `src/shared/types/domain.ts`
 - `index.html`
 - `package.json`
 - `package-lock.json`
@@ -133,11 +195,11 @@ Precisam de decisao do usuario:
 Ausentes, mas recomendados antes ou logo apos o primeiro commit:
 
 - `.env.example`
-- `reference/home-approved.html`
-- logo/assets oficiais Speak UP
+- assets oficiais Speak UP separados, caso o logo embutido no HTML aprovado precise virar arquivo versionado proprio
 - licenca, se aplicavel
 - documentacao de setup mais completa
-- fonte legado/banco antigo, quando disponivel
+- plano de migracao gradual do conteudo legado
+- revisao pedagogica dos conteudos antes de disponibilizar para alunos
 
 ## Arquivos de planejamento criados
 
@@ -148,7 +210,7 @@ Ausentes, mas recomendados antes ou logo apos o primeiro commit:
 
 ## Proxima fase recomendada
 
-Recomendo iniciar pela Fase 1 - arquitetura base e boundaries locais, sem UI nova. O HTML visual aprovado e o legado dos jogos/conteudo nao estao disponiveis, entao a criacao da home/design system deve aguardar as referencias ou ser feita apenas quando a referencia visual estiver presente.
+Recomendo consolidar o checkpoint atual em um commit local e seguir com a normalizacao inicial do conteudo legado: inventariar o HTML funcional, extrair somente vocabulario claro, mover Irregular Verbs para arquivo de dados simples e manter os 600 exercicios de gramatica fora de `src/` ate haver estrategia de migracao e revisao pedagogica.
 
 ## .gitignore
 
@@ -162,17 +224,17 @@ Lacunas recomendadas antes do primeiro commit:
 - `Thumbs.db`: evita arquivo gerado pelo Windows Explorer.
 - `coverage/`: evita artefatos de cobertura quando testes forem adicionados.
 
-O `.gitignore` nao foi alterado nesta etapa.
+O `.gitignore` foi corrigido antes do baseline local para cobrir essas entradas.
 
 ## Confirmacao de seguranca
 
-- Codigo da aplicacao alterado: nao.
+- Codigo da aplicacao alterado: sim, apenas contratos e tipos arquiteturais da Fase 1.
 - Configuracoes alteradas: nao.
 - Dependencias instaladas/modificadas: `npm ci` criou `node_modules` de forma reprodutivel; `package.json` e lockfile nao foram alterados.
 - Lockfile alterado: nao.
 - Git inicializado: sim, apenas localmente.
 - Arquivos staged: nao.
-- Commit criado: nao.
+- Commit criado nesta fase: nao.
 - Push realizado: nao.
 - Remoto adicionado: nao.
 - Deploy realizado: nao.

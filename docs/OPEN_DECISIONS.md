@@ -2,7 +2,7 @@
 
 Atualizado em: 2026-07-22
 
-## Resolvidas nesta Fase 0
+## Resolvidas
 
 1. Instalacao de dependencias
 
@@ -24,15 +24,43 @@ Atualizado em: 2026-07-22
 
    Nome publico ainda indefinido. `speakup-study` deve ser usado apenas como identificador tecnico provisorio, sem espalhar nome comercial em schemas, tipos, servicos ou IDs.
 
+6. Baseline local
+
+   Criado commit local `06af0e4 chore: establish initial project baseline`. Nao ha remoto configurado e nenhum push foi realizado.
+
+7. Arquitetura minima da Fase 1
+
+   Decidido: manter somente modelos de conteudo, contratos de sessoes e contratos de progresso. `ContentCatalog` e boundary generico de storage foram removidos por serem abstracoes prematuras. Nao criar codigo prematuro de auth, sync, analytics, audio, feature flags, billing, ads ou notificacoes.
+
+8. Taxonomia centralizada
+
+   Decidido: centralizar somente o catalogo ativo do MVP em `src/content/taxonomy.ts`: 8 topicos gramaticais beginner com dificuldades `easy` e `medium`, metas de 50/80 questoes, e 9 categorias de vocabulario.
+
+9. Irregular Verbs no MVP
+
+   Decidido: `Irregular Verbs` pertence ao vocabulario e tera exatamente 50 entradas no MVP. Cada entrada contem apenas ID, base form, Simple Past, Past Participle e traducao em portugues. Sem frases de exemplo, imagens, audio ou explicacoes longas nesta fase.
+
+10. Modos de pratica de Irregular Verbs
+
+   Decidido: modelar os modos `base_to_past`, `base_to_participle`, `past_to_base`, `participle_to_base`, `verb_to_translation`, `translation_to_verb` e `mixed`, sem implementar interface ou jogo nesta fase.
+
+11. Referencia visual aprovada
+
+   `reference/home-approved.html` existe no workspace e foi validado como HTML standalone/offline com logo embutido, fundo branco, navy `#17234b`, vinho `#8d1d30`, chamada "Bora praticar", jogos rapidos e navegacao inferior.
+
+12. Legado funcional
+
+   `reference/speakup-english-challenge.html` existe no workspace e foi validado como fonte funcional legada: 10 topicos, 3 dificuldades, 20 questoes por topico/dificuldade, 600 questoes totais, sessoes 10/20/30, 6 categorias de vocabulario com 10 itens cada e 7 jogos. Multitec, leads, ranking, roleta, CSV, premios e gate 75% nao pertencem ao novo MVP.
+
 ## Necessarias antes de comecar implementacao visual/home
 
 1. Primeiro baseline Git
 
-   O repositorio local existe, mas ainda nao ha commits. Precisam de autorizacao separada: corrigir `.gitignore`, executar `git add` e criar o primeiro commit local.
+   Baseline local ja existe. Proximos commits continuam exigindo autorizacao separada para `git add` e `git commit`.
 
 2. Referencia visual aprovada
 
-   Esperada em `reference/home-approved.html`, mas o arquivo nao existe no workspace atual. Definir onde esta esse HTML ou anexar a versao aprovada.
+   Resolvida. A reconstrucao React da home ainda depende de design system e implementacao, mas a referencia visual nao esta mais ausente.
 
 3. Logo e assets oficiais
 
@@ -42,7 +70,19 @@ Atualizado em: 2026-07-22
 
 1. Legado dos jogos e banco antigo
 
-   O workspace atual nao contem HTML legado completo, `topics_bank.json`, banco de questoes ou implementacao real dos jogos. A migracao fiel esta bloqueada ate essa fonte ser fornecida.
+   Resolvido como fonte inicial: o HTML legado funcional esta disponivel em `reference/speakup-english-challenge.html`. Ainda falta decidir a estrategia de migracao gradual e revisao.
+
+2. HTML legado ou banco antigo
+
+   Resolvido para inventario inicial. Ainda falta separar conteudo pedagogico de mecanicas descartadas e definir se Action Verbs/Routine Verbs possuem listas vocabulares explicitas ou exigem curadoria nova.
+
+3. Revisao pedagogica dos 50 Irregular Verbs
+
+   A lista foi criada em formato simples e revisavel, mas ainda deve ser revisada antes de virar conteudo final para alunos.
+
+4. Revisao pedagogica do legado
+
+   As 600 questoes gramaticais, os 60 itens de vocabulario e os bancos de jogos devem ser inventariados antes de qualquer migracao para `src/`.
 
 ## Podem esperar
 
@@ -91,9 +131,7 @@ Atualizado em: 2026-07-22
 ## Recomendacoes pendentes de aprovacao
 
 - Usar abordagem hibrida: preservar base Vite/React, refatorar arquitetura progressivamente e reconstruir parcialmente fluxos/visual que conflitam com `CLAUDE.md`.
-- Antes do primeiro commit, complementar `.gitignore` com `.env`, `.env.*`, `!.env.example`, `Thumbs.db` e `coverage/`.
-- Autorizar explicitamente quais assets derivados do Vite/prototipo entram no baseline inicial.
-- Proxima fase recomendada: arquitetura base e boundaries locais, sem UI nova, porque o HTML visual aprovado e o legado ainda nao estao disponiveis.
+- Proxima fase recomendada: criar inventario do legado e normalizar apenas dados claros de vocabulario/Irregular Verbs, sem migrar os 600 exercicios gramaticais.
 - Antes de construir home, criar design system alinhado a referencia para evitar home provisoria que precise ser refeita.
 - Corrigir o conflito guest-first antes de implementar login real.
 - Centralizar taxonomia e conteudo antes de migrar jogos.

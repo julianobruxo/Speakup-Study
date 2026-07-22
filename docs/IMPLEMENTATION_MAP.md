@@ -68,33 +68,38 @@ Resultado em 2026-07-22:
 - Nao ha scripts de teste ou typecheck dedicado.
 - `package.json` e lockfile nao foram alterados.
 
-## Fase 1 - Arquitetura base e boundaries locais
+## Fase 1 - Arquitetura base proporcional
 
-Objetivo: criar a organizacao inicial de dominio sem alterar grande parte da UI.
+Objetivo: criar a organizacao inicial de dominio sem alterar UI.
+
+Status em 2026-07-22: reavaliada, simplificada e concluida no working tree, pendente de validacao final e sem commit autorizado nesta fase.
 
 Por que vem depois: depende de baseline verificavel; deve vir antes de conteudo, sessoes e jogos para evitar duplicacao.
 
 Areas afetadas:
 
-- `src/app`
-- `src/routes`
 - `src/shared`
-- `src/features`
 - `src/content`
 - `src/services`
-- `src/storage`
+- `docs/ARCHITECTURE.md`
 
-Novos modulos previstos:
+Modulos criados:
 
-- `content/catalog`
-- `practice/session`
-- `progress`
-- `storage/local`
-- `auth`
-- `analytics`
-- `audio`
-- `settings`
-- `featureFlags`
+- `src/shared/types/domain.ts`
+- `src/content/model/content.ts`
+- `src/services/sessions/practiceSession.ts`
+- `src/services/progress/progress.ts`
+
+Modulos explicitamente nao criados nesta fase:
+
+- auth
+- sync
+- analytics
+- audio
+- feature flags
+- billing
+- ads
+- notificacoes
 
 Persistencia futura aprovada:
 
@@ -107,7 +112,7 @@ Funcionalidades:
 
 - Tipos e contratos internos.
 - IDs estaveis.
-- Adaptadores mock/local.
+- Modelos de conteudo, planejamento de sessao e progresso.
 - Separacao entre UI, dominio, dados e infraestrutura.
 
 Fora do escopo:
@@ -119,7 +124,7 @@ Fora do escopo:
 
 Riscos:
 
-- Criar abstracoes grandes demais antes de uso real.
+- Criar abstracoes grandes demais antes de uso real; `ContentCatalog` e boundary generico de storage foram removidos nesta reavaliacao.
 - Quebrar rotas placeholders sem necessidade.
 
 Testes:
@@ -133,10 +138,12 @@ Criterios:
 - Estrutura documentada e pequena.
 - App continua renderizando.
 - Nenhuma dependencia externa obrigatoria para desenvolvimento local.
+- Nenhuma rota ou UI alterada.
+- `npm run lint` e `npm run build` passam.
 
 Decisoes:
 
-- Nome final dos namespaces.
+- Namespaces iniciais mantidos: `shared/types`, `content/model`, `content/taxonomy`, `services/sessions`, `services/progress`.
 - Framework de testes ainda precisa de aprovacao antes de instalacao.
 
 ## Fase 2 - Design system inicial e identidade visual
@@ -173,8 +180,8 @@ Fora do escopo:
 
 Riscos:
 
-- `reference/home-approved.html` nao existe no workspace atual.
-- Falta de logo oficial ou assets finais.
+- A referencia visual aprovada existe em `reference/home-approved.html`, mas ainda precisa ser reconstruida em React sem copiar mecanicas indevidas.
+- Falta de logo oficial separado ou assets finais reutilizaveis.
 - Excesso de efeitos herdados.
 
 Testes:
@@ -192,8 +199,8 @@ Criterios:
 
 Dependencias:
 
-- HTML aprovado esperado em `reference/home-approved.html`.
-- Logo oficial/asset aprovado.
+- HTML aprovado disponivel em `reference/home-approved.html`.
+- Logo oficial/asset aprovado ou autorizacao para extrair/recriar assets a partir da referencia.
 
 Decisoes:
 
@@ -237,7 +244,7 @@ Fora do escopo:
 Riscos:
 
 - Perder placeholders uteis se refatorar agressivamente.
-- Desalinhamento com HTML visual aprovado se `reference/home-approved.html` continuar ausente.
+- Desalinhamento com a referencia aprovada se a reconstrucao React nao respeitar `reference/home-approved.html`.
 
 Testes:
 
@@ -255,41 +262,50 @@ Decisoes:
 
 - Nome publico do app ainda nao decidido; continuar usando `speakup-study` apenas como identificador tecnico provisorio.
 
-## Fase 4 - Taxonomia centralizada
+## Fase 4 - Taxonomia real do MVP
 
-Objetivo: modelar topicos de gramatica, filtros curriculares, dificuldades, categorias de vocabulario e fontes curriculares.
+Objetivo: modelar somente os topicos e categorias ativos do MVP.
 
-Por que vem antes do conteudo: evita duplicar bancos por livro/unidade.
+Status em 2026-07-22: criada no working tree em `src/content/taxonomy.ts`, sem UI, sem banco real de questoes e sem commit autorizado nesta fase.
+
+Por que vem depois da arquitetura: os IDs e modelos base existem; a taxonomia foi criada sem acoplar dados a componentes. Deve vir antes de conteudo para evitar duplicar bancos por livro/unidade.
 
 Areas afetadas:
 
-- `src/content/taxonomy`
-- paginas de selecao
+- `src/content/taxonomy.ts`
+- `src/content/model/content.ts`
 - tipos compartilhados
 
 Novos modulos:
 
-- `grammarTopics`
-- `vocabularyGroups`
-- `curriculumSources`
-- `difficulty`
+- `src/content/taxonomy.ts`
 
 Funcionalidades:
 
-- 20 topicos planejados com IDs.
-- Labels curriculares separados de dificuldade.
-- Categorias de vocabulario cumulativas.
-- Mapeamento temporario para topicos legados.
+- 8 topicos gramaticais ativos com IDs estaveis.
+- Todos os topicos gramaticais ativos com nivel de entrada `beginner`.
+- Dificuldades ativas `easy` e `medium`.
+- Metas futuras por topico: 50 questoes `easy` e 80 questoes `medium`.
+- 9 categorias de vocabulario ativas.
+- `Action Verbs` e `Routine Verbs` como vocabulario, nao gramatica.
+- `Irregular Verbs` com 50 entradas simples.
+- Modos futuros de pratica de Irregular Verbs modelados como strings.
+- Helpers simples de busca por ID.
 
 Fora do escopo:
 
 - 230 questoes por topico.
+- 1.040 questoes do MVP.
 - Flashcards completos.
+- Bancos de Corpo, Roupas, Moveis, Animais, Profissoes, Lugares, Action Verbs e Routine Verbs.
+- Frases de exemplo, audio ou imagens.
+- Integracao com paginas de selecao.
 
 Riscos:
 
 - Misturar livro/unidade com UI publica.
 - Migrar `Action Verbs` e `Routine Verbs` incorretamente.
+- Migrar ou recriar conteudo legado ausente por memoria.
 
 Testes:
 
@@ -300,12 +316,14 @@ Criterios:
 
 - UI nao exibe catalogo por livro.
 - Cada topico/categoria tem ID estavel.
-- Dificuldade e nivel curricular estao separados.
+- Dificuldade e nivel curricular estao separados no modelo.
+- Catalogo ativo contem somente itens confirmados para o MVP.
 
 Decisoes:
 
-- Labels finais em portugues/ingles para topicos.
-- Ordem e filtros de exibicao.
+- O HTML legado funcional esta disponivel em `reference/speakup-english-challenge.html`.
+- A migracao dos bancos existentes deve ser gradual, inventariada e revisada.
+- Revisao pedagogica final da lista de 50 Irregular Verbs.
 
 ## Fase 5 - Conteudo versionado e validacao
 
@@ -423,7 +441,6 @@ Por que vem antes de recomendacoes e jogos completos: todos os modos devem reuti
 
 Areas afetadas:
 
-- `src/storage`
 - `src/services/progress`
 - telas de progresso/continuar
 
@@ -556,7 +573,7 @@ Fora do escopo:
 
 Riscos:
 
-- Migracao fiel dos jogos e do conteudo antigo esta bloqueada enquanto o legado nao estiver disponivel no workspace.
+- O legado funcional esta disponivel, mas sua migracao fiel ainda depende de separar conteudo pedagogico de mecanicas promocionais.
 - Migrar regras antigas acopladas a promocao.
 - Duplicar progresso por jogo.
 
@@ -576,7 +593,7 @@ Decisoes:
 
 - Ordem de migracao dos jogos.
 - Nome final de cada modo.
-- Fonte de legado/banco antigo a ser fornecida antes de migracao fiel.
+- Quais partes do legado funcional devem ser preservadas, adaptadas ou descartadas no MVP.
 
 ## Fase 10 - Recomendacoes, progressao e engajamento
 
@@ -1017,10 +1034,8 @@ src/
     settings/
     account/
   services/
-    content/
     sessions/
     progress/
-    storage/
     auth/
     sync/
     analytics/
@@ -1035,7 +1050,8 @@ src/
 
 Conteudo:
 
-- `ContentCatalog`: lista topicos, categorias, questoes e vocabulario por IDs estaveis.
+- Taxonomia centralizada: lista topicos, grupos e categorias por IDs estaveis.
+- Repositorios simples de conteudo devem ser criados somente quando houver banco real de questoes/vocabulario.
 - `ContentValidator`: valida schema, duplicidades e qualidade estrutural.
 
 Sessoes:
@@ -1052,9 +1068,8 @@ Progresso:
 
 Armazenamento:
 
-- `StorageAdapter`: porta generica local/remota.
-- `IndexedDbProgressStore`: adapter local-first para progresso, sessoes, historico e revisoes.
-- `LocalStoragePreferencesStore`: adapter restrito a preferencias pequenas.
+- `IndexedDbProgressStore`: repositorio local-first para progresso, sessoes, historico e revisoes, quando a persistencia for implementada.
+- `LocalStoragePreferencesStore`: armazenamento restrito a preferencias pequenas, quando necessario.
 
 Autenticacao:
 
