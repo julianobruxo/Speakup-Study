@@ -118,11 +118,11 @@ Resumo:
 - 20 `facil` avaliadas.
 - 20 `medio` avaliadas.
 - 20 `dificil` avaliadas.
-- 51 questoes reaproveitadas sem alteracao textual relevante.
+- 51 questoes reaproveitadas sem alteracao textual relevante na criacao inicial do banco piloto.
 - 0 questoes corrigidas com pequena alteracao.
 - 9 questoes descartadas.
 - 12 questoes de `dificil` reclassificadas como `medium`.
-- 79 questoes novas criadas manualmente.
+- 79 questoes novas criadas manualmente na criacao inicial do banco piloto.
 
 Classificacao:
 
@@ -146,6 +146,14 @@ Banco final:
 - 130 questoes unicas.
 - Nenhuma questao `challenge`.
 - Nenhum outro topico gramatical migrado.
+
+Auditoria posterior em 2026-07-23:
+
+- 4 questoes foram substituidas apos o commit do banco piloto.
+- 1 problema obrigatorio foi corrigido por ambiguidade de coletivo em `present_tobe_medium_040`.
+- 3 melhorias foram corrigidas para reduzir repeticao simples e incluir respostas curtas.
+- A contagem final continua 130 questoes: 50 `easy` e 80 `medium`.
+- Considerando a substituicao posterior, o banco final fica com 50 questoes legadas reaproveitadas e 80 questoes novas/substituidas.
 
 ## Vocabulario WORDS
 

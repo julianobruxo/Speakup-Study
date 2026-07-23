@@ -64,6 +64,22 @@ Atualizado em: 2026-07-22
 
    Criadas 10 entradas simples de Action Verbs e 10 entradas simples de Routine Verbs, sem frases, imagens, audio ou explicacoes. Expressoes mais avancadas do legado, como `wind down`, `catch up on`, `grab a bite` e `run errands`, continuam fora do MVP inicial.
 
+16. Commit do banco piloto Present TO BE
+
+   Criado commit local autorizado `5811a13 feat: add present to be pilot content`. Nao ha remoto configurado, push ou deploy.
+
+17. Auditoria independente do Present TO BE
+
+   Auditoria registrada em `docs/PRESENT_TOBE_AUDIT.md`. Foram corrigidos 1 problema obrigatorio e 3 melhorias recomendadas no working tree, sem segundo commit.
+
+18. Rebalanceamento editorial do Present TO BE
+
+   Distribuicao principal aprovada aplicada no working tree: 65 afirmativas, 22 negativas, 30 perguntas e 13 respostas curtas. Nenhum outro topico foi migrado.
+
+19. Ambiente PowerShell para Node/npm
+
+   Node existente encontrado em `C:\Program Files\nodejs`; PATH do usuario atualizado para incluir esse diretorio sem remover entradas existentes.
+
 ## Necessarias antes de comecar implementacao visual/home
 
 1. Primeiro baseline Git
@@ -152,6 +168,7 @@ Atualizado em: 2026-07-22
 
 - Usar abordagem hibrida: preservar base Vite/React, refatorar arquitetura progressivamente e reconstruir parcialmente fluxos/visual que conflitam com `CLAUDE.md`.
 - Proxima fase recomendada: revisar o banco piloto `present_tobe` e aprovar uma validacao simples reutilizavel antes de migrar outro topico.
+- Handoff atual criado em `docs/CURRENT_HANDOFF.md`; usar esse arquivo para iniciar a proxima sessao com menos dependencia do historico da conversa.
 - Antes de construir home, criar design system alinhado a referencia para evitar home provisoria que precise ser refeita.
 - Corrigir o conflito guest-first antes de implementar login real.
 - Centralizar taxonomia e conteudo antes de migrar jogos.

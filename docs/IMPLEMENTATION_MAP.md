@@ -329,7 +329,7 @@ Decisoes:
 
 Objetivo: normalizar dados claros do legado e preparar validadores antes de volume.
 
-Status em 2026-07-22: banco piloto `present_tobe` em andamento no working tree, sem stage e sem novo commit. A normalizacao anterior foi commitada em `b70f520 feat: normalize legacy vocabulary content`.
+Status em 2026-07-23: banco piloto `present_tobe` commitado em `5811a13 feat: add present to be pilot content`; auditoria independente em andamento no working tree, sem stage e sem segundo commit.
 
 Por que agora: motores precisam de dados confiaveis, nao arrays em componente.
 
@@ -386,6 +386,16 @@ Criterios:
 - Conteudo normalizado passa validacao estrutural.
 - Formato permite revisao humana.
 - Banco piloto passa revisao pedagogica manual.
+
+Resultado da auditoria em 2026-07-23:
+
+- 130 questoes auditadas.
+- 1 problema obrigatorio corrigido.
+- 3 melhorias recomendadas corrigidas.
+- 4 questoes substituidas.
+- Rebalanceamento editorial posterior deixou o banco com 65 afirmativas, 22 negativas, 30 perguntas e 13 respostas curtas.
+- Nenhum outro topico migrado.
+- Validador mantido simples, sem framework novo.
 
 Decisoes:
 

@@ -6,7 +6,7 @@ Atualizado em: 2026-07-22
 
 O workspace atual e um esqueleto Vite + React + TypeScript para o app Speak UP Study. Ele contem rotas e telas placeholder suficientes para demonstrar um fluxo inicial, mas ainda nao contem motor de pratica, banco de conteudo, flashcards, jogos, progresso persistente, autenticacao real, analytics, PWA, testes ou integracoes externas.
 
-Fase atual: banco piloto de conteudo `present_tobe` no working tree, sem stage e sem novo commit. A normalizacao anterior foi consolidada no commit local `b70f520 feat: normalize legacy vocabulary content`.
+Fase atual: rebalanceamento editorial do banco piloto `present_tobe` e correcao do ambiente PowerShell/Node no working tree, sem stage e sem segundo commit. O banco piloto foi consolidado no commit local `5811a13 feat: add present to be pilot content`.
 
 ## Git
 
@@ -15,6 +15,7 @@ Fase atual: banco piloto de conteudo `present_tobe` no working tree, sem stage e
 - Baseline local: `06af0e4 chore: establish initial project baseline`.
 - Checkpoint de referencias e arquitetura: `99ad453 feat: establish MVP content foundation and references`.
 - Checkpoint de normalizacao de vocabulario legado: `b70f520 feat: normalize legacy vocabulary content`.
+- Checkpoint do banco piloto Present TO BE: `5811a13 feat: add present to be pilot content`.
 - Remotos configurados: nenhum; `git remote -v` nao retornou entradas.
 - Arquivos staged: nenhum esperado ao fim da fase; verificar com `git diff --cached`.
 - Arquivos ignorados relevantes: `node_modules/` e `dist/`.
@@ -159,6 +160,7 @@ Fora do escopo mantido:
 Arquivos criados:
 
 - `src/content/data/presentTobeQuestions.ts`
+- `scripts/validateContent.mjs`
 
 Arquivos modificados:
 
@@ -202,6 +204,79 @@ Fora do escopo mantido:
 - Nenhum jogo foi migrado.
 - Nenhum motor de sessao, randomizacao, progresso, storage, login, audio, flashcards ou PWA foi implementado.
 - Os outros sete topicos gramaticais do MVP ainda nao foram migrados.
+
+## Auditoria independente - Present TO BE
+
+Arquivos criados no working tree apos o commit do banco piloto:
+
+- `docs/CURRENT_HANDOFF.md`
+- `docs/PRESENT_TOBE_AUDIT.md`
+
+Arquivos modificados no working tree apos o commit do banco piloto:
+
+- `src/content/data/presentTobeQuestions.ts`
+- `STATUS.md`
+- `docs/IMPLEMENTATION_MAP.md`
+- `docs/OPEN_DECISIONS.md`
+- `docs/LEGACY_CONTENT_INVENTORY.md`
+
+Resultado da auditoria:
+
+- 130 questoes auditadas.
+- 1 problema obrigatorio encontrado e corrigido.
+- 3 melhorias recomendadas corrigidas.
+- 4 questoes alteradas/substituidas.
+- 126 questoes mantidas.
+- Nenhuma duplicata estrutural ou pergunta duplicada pela normalizacao atual.
+- Nenhuma ambiguidade bloqueante restante identificada.
+- Validador revisado; nenhuma ampliacao necessaria nesta auditoria.
+
+Distribuicao aproximada apos correcoes:
+
+- Afirmativa: 92.
+- Negativa: 13.
+- Pergunta: 23.
+- Resposta curta: 4.
+- Contracao: 10.
+- Ordem de palavras: 46.
+- Concordancia com pronome: 18.
+- Concordancia com substantivo singular: 56.
+- Concordancia com substantivo plural: 58.
+- Sujeito composto: 11.
+
+Rebalanceamento editorial posterior:
+
+- Distribuicao anterior exclusiva: 97 afirmativas, 10 negativas, 19 perguntas e 4 respostas curtas.
+- Distribuicao final aprovada: 65 afirmativas, 22 negativas, 30 perguntas e 13 respostas curtas.
+- Easy final: 30 afirmativas, 8 negativas, 9 perguntas e 3 respostas curtas.
+- Medium final: 35 afirmativas, 14 negativas, 21 perguntas e 10 respostas curtas.
+- 33 questoes foram reescritas nesta revisao.
+- Nenhum outro topico foi migrado.
+
+Ambiente do terminal:
+
+- Node existente localizado em `C:\Program Files\nodejs`.
+- Versao do Node: v22.22.0.
+- Versao do npm: 10.9.4.
+- Causa provavel do erro anterior: PATH do usuario nao continha `C:\Program Files\nodejs`, embora o PATH de maquina contivesse.
+- PATH do usuario atualizado adicionando `C:\Program Files\nodejs` sem apagar entradas existentes.
+- `node -v` e `npm -v` foram validados em novo PowerShell.
+- `npm run dev -- --host 127.0.0.1 --port 5173` foi validado.
+- Smoke test HTTP retornou 200 e HTML para `/`, `/bem-vindo`, `/tutorial`, `/hub`, `/estudar`, `/praticar` e `/vocabulario`.
+- Servidor Vite mantido ativo em `http://127.0.0.1:5173/`; listener observado no PID `28360`.
+
+Validacoes finais da auditoria:
+
+- `node scripts/validateContent.mjs`.
+- `npm run lint`.
+- `npm run build`.
+
+Fora do escopo mantido:
+
+- Nenhuma UI, rota, componente ou estilo foi alterado.
+- Nenhum motor de sessao, randomizacao, progresso, storage, login, audio, flashcards ou PWA foi implementado.
+- Nenhum outro topico foi migrado.
+- Nenhum segundo commit foi criado.
 
 ## Referencias e legado
 
@@ -294,7 +369,7 @@ Ausentes, mas recomendados antes ou logo apos o primeiro commit:
 
 ## Proxima fase recomendada
 
-Recomendo revisar o banco piloto `present_tobe` e, se aprovado, criar uma validacao reutilizavel simples para bancos de conteudo antes de migrar outro topico gramatical.
+Recomendo aprovar ou ajustar a auditoria do banco piloto `present_tobe`. Se aprovado, a proxima fase segura e migrar `past_tobe` usando o handoff atual.
 
 ## .gitignore
 
