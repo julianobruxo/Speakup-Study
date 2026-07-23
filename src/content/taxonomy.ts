@@ -50,8 +50,8 @@ export const ACTIVE_VOCABULARY_CATEGORIES: VocabularyCategory[] = [
   category("animals", "mvp_vocabulary", "Animais", "available"),
   category("jobs", "mvp_vocabulary", "Profissoes", "available"),
   category("places", "mvp_vocabulary", "Lugares", "available"),
-  category("action_verbs", "mvp_verbs", "Action Verbs"),
-  category("routine_verbs", "mvp_verbs", "Routine Verbs"),
+  category("action_verbs", "mvp_verbs", "Action Verbs", "available"),
+  category("routine_verbs", "mvp_verbs", "Routine Verbs", "available"),
   category("irregular_verbs", "mvp_verbs", "Irregular Verbs", "available"),
 ];
 

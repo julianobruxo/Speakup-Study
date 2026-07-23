@@ -18,6 +18,7 @@ src/
   content/
     data/
       irregularVerbs.ts
+      presentTobeQuestions.ts
       vocabulary.ts
     model/
       content.ts
@@ -60,8 +61,9 @@ It also exposes small lookup helpers by ID. There are no repositories, adapters,
 
 Defines simple data files for content that has already been normalized:
 
-- `vocabulary.ts`: 60 explicit legacy vocabulary pairs across 6 categories;
-- `irregularVerbs.ts`: 50 Irregular Verb entries and approved practice mode strings.
+- `vocabulary.ts`: 80 vocabulary pairs across 8 populated categories;
+- `irregularVerbs.ts`: 50 Irregular Verb entries and approved practice mode strings;
+- `presentTobeQuestions.ts`: 130 pilot grammar questions for `present_tobe`.
 
 `src/services/sessions`
 
@@ -140,7 +142,34 @@ Each entry contains only:
 
 No example sentence, example translation, explanation, image, or grammar rule is included.
 
-The current list has exactly 50 entries.
+The current Irregular Verbs list has exactly 50 entries.
+
+## Present TO BE Pilot Bank
+
+The first grammar bank is `present_tobe`.
+
+Current counts:
+
+- 50 `easy` questions;
+- 80 `medium` questions;
+- 130 total unique questions;
+- no `challenge` questions.
+
+The question shape is intentionally minimal:
+
+```ts
+{
+  id: "present_tobe_easy_001",
+  topicId: "present_tobe",
+  difficulty: "easy",
+  question: "My sister ___ at school.",
+  options: ["is", "are", "am"],
+  correctAnswer: "is",
+  feedback: "My sister equivale a she, por isso usamos is.",
+}
+```
+
+No UI, session engine, randomization, progress, storage, analytics, audio, images, or games consume this bank yet.
 
 Approved future practice modes:
 
@@ -204,10 +233,10 @@ Current state:
 
 - visual and functional references are no longer missing blockers;
 - official separated logo/assets are still pending if the embedded reference logo must become reusable project assets;
-- grammar questions were inventoried but not migrated;
+- grammar questions were inventoried; only `present_tobe` has a pilot bank;
 - games were not migrated;
-- Action Verbs and Routine Verbs remain taxonomy categories without entries because the legacy source does not provide explicit English-to-Portuguese pairs for them;
-- 60 explicit vocabulary pairs and 50 Irregular Verbs are normalized in data files.
+- Action Verbs and Routine Verbs now have 10 simple seed entries each;
+- 80 vocabulary pairs, 50 Irregular Verbs, and 130 Present TO BE questions are normalized in data files.
 
 ## Not Implemented
 
@@ -215,8 +244,8 @@ This phase does not implement:
 
 - new UI;
 - home screen;
-- grammar question banks;
-- vocabulary banks for Action Verbs/Routine Verbs;
+- grammar question banks for the other seven MVP topics;
+- complete Action Verbs/Routine Verbs banks beyond the 10-item seeds;
 - flashcards;
 - games;
 - session engine;

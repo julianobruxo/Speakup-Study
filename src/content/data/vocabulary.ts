@@ -70,6 +70,43 @@ export const MVP_VOCABULARY_ENTRIES: VocabularyEntry[] = [
   vocabularyEntry("places_church", "places", "Church", "Igreja"),
   vocabularyEntry("places_airport", "places", "Airport", "Aeroporto"),
   vocabularyEntry("places_pharmacy", "places", "Pharmacy", "Farmácia"),
+
+  vocabularyEntry("action_walk", "action_verbs", "walk", "andar"),
+  vocabularyEntry("action_jump", "action_verbs", "jump", "pular"),
+  vocabularyEntry("action_swim", "action_verbs", "swim", "nadar"),
+  vocabularyEntry("action_catch", "action_verbs", "catch", "pegar"),
+  vocabularyEntry("action_throw", "action_verbs", "throw", "arremessar"),
+  vocabularyEntry("action_kick", "action_verbs", "kick", "chutar"),
+  vocabularyEntry("action_push", "action_verbs", "push", "empurrar"),
+  vocabularyEntry("action_pull", "action_verbs", "pull", "puxar"),
+  vocabularyEntry("action_open", "action_verbs", "open", "abrir"),
+  vocabularyEntry("action_close", "action_verbs", "close", "fechar"),
+
+  vocabularyEntry("routine_wake_up", "routine_verbs", "wake up", "acordar"),
+  vocabularyEntry("routine_get_up", "routine_verbs", "get up", "levantar"),
+  vocabularyEntry(
+    "routine_take_a_shower",
+    "routine_verbs",
+    "take a shower",
+    "tomar banho",
+  ),
+  vocabularyEntry(
+    "routine_brush_your_teeth",
+    "routine_verbs",
+    "brush your teeth",
+    "escovar os dentes",
+  ),
+  vocabularyEntry(
+    "routine_have_breakfast",
+    "routine_verbs",
+    "have breakfast",
+    "tomar café da manhã",
+  ),
+  vocabularyEntry("routine_go_to_school", "routine_verbs", "go to school", "ir para a escola"),
+  vocabularyEntry("routine_have_lunch", "routine_verbs", "have lunch", "almoçar"),
+  vocabularyEntry("routine_do_homework", "routine_verbs", "do homework", "fazer o dever"),
+  vocabularyEntry("routine_watch_tv", "routine_verbs", "watch TV", "assistir TV"),
+  vocabularyEntry("routine_go_to_bed", "routine_verbs", "go to bed", "ir para a cama"),
 ];
 
 export function getVocabularyEntriesByCategory(

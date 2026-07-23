@@ -6,13 +6,15 @@ Atualizado em: 2026-07-22
 
 O workspace atual e um esqueleto Vite + React + TypeScript para o app Speak UP Study. Ele contem rotas e telas placeholder suficientes para demonstrar um fluxo inicial, mas ainda nao contem motor de pratica, banco de conteudo, flashcards, jogos, progresso persistente, autenticacao real, analytics, PWA, testes ou integracoes externas.
 
-Fase atual: Normalizacao inicial do conteudo legado no working tree, sem stage e sem novo commit. O checkpoint anterior foi consolidado no commit local `99ad453 feat: establish MVP content foundation and references`.
+Fase atual: banco piloto de conteudo `present_tobe` no working tree, sem stage e sem novo commit. A normalizacao anterior foi consolidada no commit local `b70f520 feat: normalize legacy vocabulary content`.
 
 ## Git
 
 - Repositorio Git: inicializado localmente com `git init` em 2026-07-22.
 - Branch atual: `master`.
 - Baseline local: `06af0e4 chore: establish initial project baseline`.
+- Checkpoint de referencias e arquitetura: `99ad453 feat: establish MVP content foundation and references`.
+- Checkpoint de normalizacao de vocabulario legado: `b70f520 feat: normalize legacy vocabulary content`.
 - Remotos configurados: nenhum; `git remote -v` nao retornou entradas.
 - Arquivos staged: nenhum esperado ao fim da fase; verificar com `git diff --cached`.
 - Arquivos ignorados relevantes: `node_modules/` e `dist/`.
@@ -152,6 +154,55 @@ Fora do escopo mantido:
 - Nenhum motor de sessao, randomizacao ou feedback foi implementado.
 - Nenhuma UI foi alterada.
 
+## Banco piloto - Present TO BE
+
+Arquivos criados:
+
+- `src/content/data/presentTobeQuestions.ts`
+
+Arquivos modificados:
+
+- `src/content/data/vocabulary.ts`
+- `src/content/model/content.ts`
+- `src/content/taxonomy.ts`
+- `docs/ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_MAP.md`
+- `docs/OPEN_DECISIONS.md`
+- `docs/LEGACY_CONTENT_INVENTORY.md`
+- `STATUS.md`
+
+Conteudo criado:
+
+- 10 Action Verbs em `action_verbs`.
+- 10 Routine Verbs em `routine_verbs`.
+- 130 questoes unicas para `present_tobe`.
+- 50 questoes `easy`.
+- 80 questoes `medium`.
+- Nenhuma dificuldade `challenge`.
+
+Inventario do legado `present_tobe`:
+
+- 60 questoes legadas avaliadas integralmente.
+- 51 questoes reaproveitadas sem alteracao textual relevante.
+- 0 questoes corrigidas com pequena alteracao.
+- 9 questoes descartadas por outro alvo gramatical, ambiguidade de variante, complexidade excessiva ou escopo inadequado.
+- 79 questoes novas criadas manualmente.
+- 12 questoes legadas `dificil` foram reclassificadas como `medium`.
+
+Validacoes executadas nesta fase:
+
+- Validacao estrutural local sem dependencias novas.
+- Revisao pedagogica manual integral das 130 questoes.
+- `npm run lint`.
+- `npm run build`.
+
+Fora do escopo mantido:
+
+- Nenhuma UI foi alterada.
+- Nenhum jogo foi migrado.
+- Nenhum motor de sessao, randomizacao, progresso, storage, login, audio, flashcards ou PWA foi implementado.
+- Os outros sete topicos gramaticais do MVP ainda nao foram migrados.
+
 ## Referencias e legado
 
 - `reference/home-approved.html`: disponivel e validado como referencia visual aprovada. Arquivo standalone/offline, com logo embutido, fundo branco, navy `#17234b`, vinho `#8d1d30`, chamada "Bora praticar", jogos rapidos e navegacao inferior.
@@ -243,7 +294,7 @@ Ausentes, mas recomendados antes ou logo apos o primeiro commit:
 
 ## Proxima fase recomendada
 
-Recomendo revisar o inventario e decidir como tratar `Action Verbs` e `Routine Verbs` antes de criar qualquer banco novo. Depois disso, a proxima fase segura e criar validadores de conteudo pequenos para garantir IDs unicos, contagens por categoria e campos obrigatorios.
+Recomendo revisar o banco piloto `present_tobe` e, se aprovado, criar uma validacao reutilizavel simples para bancos de conteudo antes de migrar outro topico gramatical.
 
 ## .gitignore
 

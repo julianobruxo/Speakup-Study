@@ -56,6 +56,14 @@ Atualizado em: 2026-07-22
 
    Os 60 pares explicitos de `WORDS` foram normalizados em `src/content/data/vocabulary.ts`. Os 50 Irregular Verbs foram movidos de `taxonomy.ts` para `src/content/data/irregularVerbs.ts`. `taxonomy.ts` fica restrito a metadados.
 
+14. Banco piloto Present TO BE
+
+   Criado banco piloto `present_tobe` com 130 questoes: 50 `easy`, 80 `medium` e nenhuma dificuldade `challenge`. O formato usa apenas ID, topicId, difficulty, question, options, correctAnswer e feedback.
+
+15. Action Verbs e Routine Verbs iniciais
+
+   Criadas 10 entradas simples de Action Verbs e 10 entradas simples de Routine Verbs, sem frases, imagens, audio ou explicacoes. Expressoes mais avancadas do legado, como `wind down`, `catch up on`, `grab a bite` e `run errands`, continuam fora do MVP inicial.
+
 ## Necessarias antes de comecar implementacao visual/home
 
 1. Primeiro baseline Git
@@ -88,9 +96,13 @@ Atualizado em: 2026-07-22
 
    As 600 questoes gramaticais, os 60 itens de vocabulario e os bancos de jogos devem ser inventariados antes de qualquer migracao para `src/`.
 
-5. Action Verbs e Routine Verbs
+5. Revisao dos seeds de Action Verbs e Routine Verbs
 
-   O legado contem esses topicos como 60 perguntas cada, nao como listas explicitas ingles-portugues. E necessario decidir se as listas serao curadas manualmente, fornecidas por outra fonte ou derivadas depois com revisao humana.
+   Os 10 itens iniciais de cada categoria existem, mas ainda podem ser revisados pelo usuario antes de virarem experiencia final para alunos.
+
+6. Proximo topico gramatical
+
+   Os outros sete topicos do MVP ainda nao foram migrados. A ordem da proxima migracao deve ser aprovada separadamente.
 
 ## Podem esperar
 
@@ -139,7 +151,7 @@ Atualizado em: 2026-07-22
 ## Recomendacoes pendentes de aprovacao
 
 - Usar abordagem hibrida: preservar base Vite/React, refatorar arquitetura progressivamente e reconstruir parcialmente fluxos/visual que conflitam com `CLAUDE.md`.
-- Proxima fase recomendada: revisar o inventario e aprovar validadores de conteudo pequenos antes de aumentar bancos de questoes ou jogos.
+- Proxima fase recomendada: revisar o banco piloto `present_tobe` e aprovar uma validacao simples reutilizavel antes de migrar outro topico.
 - Antes de construir home, criar design system alinhado a referencia para evitar home provisoria que precise ser refeita.
 - Corrigir o conflito guest-first antes de implementar login real.
 - Centralizar taxonomia e conteudo antes de migrar jogos.

@@ -55,6 +55,16 @@ export interface GrammarQuestion {
   tags?: string[];
 }
 
+export interface GrammarPracticeQuestion {
+  id: QuestionId;
+  topicId: GrammarTopicId;
+  difficulty: MvpGrammarDifficulty;
+  question: string;
+  options: [string, string, string];
+  correctAnswer: string;
+  feedback: string;
+}
+
 export interface VocabularyCategory {
   id: VocabularyCategoryId;
   groupId: VocabularyGroupId;

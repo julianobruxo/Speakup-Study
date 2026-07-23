@@ -16,6 +16,7 @@ Este documento registra o conteudo legado encontrado sem migrar os 600 exercicio
 - Categorias de vocabulario em `WORDS`: 6.
 - Itens por categoria em `WORDS`: 10.
 - Total de pares explicitos em `WORDS`: 60.
+- Seeds adicionais normalizados nesta fase: 10 Action Verbs e 10 Routine Verbs.
 - Jogos registrados em `GAME_META`: 7.
 - Banco `TF_BANK`: 20 itens.
 - Banco `WORD_BANK`: 3 niveis com 30 palavras cada, 90 pares totais.
@@ -80,7 +81,71 @@ Inventario estrutural:
 - `action_verbs`: 60 perguntas, 60 respostas corretas, 60 respostas corretas unicas.
 - `routine_verbs`: 60 perguntas, 60 respostas corretas, 50 respostas corretas unicas.
 
-Decisao: nao normalizar entradas vocabulares para essas categorias nesta fase. E necessario fornecer ou aprovar uma lista explicita ingles-portugues antes de popular `src/content/data/vocabulary.ts` com esses grupos.
+Decisao posterior: o usuario autorizou criar 10 entradas simples para cada categoria usando verbos/expressoes presentes no legado. Foram evitadas expressoes mais avancadas ou idiomaticas como `wind down`, `catch up on`, `grab a bite` e `run errands`.
+
+Action Verbs normalizados:
+
+- `action_walk`: walk / andar
+- `action_jump`: jump / pular
+- `action_swim`: swim / nadar
+- `action_catch`: catch / pegar
+- `action_throw`: throw / arremessar
+- `action_kick`: kick / chutar
+- `action_push`: push / empurrar
+- `action_pull`: pull / puxar
+- `action_open`: open / abrir
+- `action_close`: close / fechar
+
+Routine Verbs normalizados:
+
+- `routine_wake_up`: wake up / acordar
+- `routine_get_up`: get up / levantar
+- `routine_take_a_shower`: take a shower / tomar banho
+- `routine_brush_your_teeth`: brush your teeth / escovar os dentes
+- `routine_have_breakfast`: have breakfast / tomar cafe da manha
+- `routine_go_to_school`: go to school / ir para a escola
+- `routine_have_lunch`: have lunch / almocar
+- `routine_do_homework`: do homework / fazer o dever
+- `routine_watch_tv`: watch TV / assistir TV
+- `routine_go_to_bed`: go to bed / ir para a cama
+
+## Inventario de trabalho - present_tobe
+
+As 60 questoes legadas de `TOPIC_BANK.present_tobe` foram avaliadas antes da criacao do banco piloto.
+
+Resumo:
+
+- 20 `facil` avaliadas.
+- 20 `medio` avaliadas.
+- 20 `dificil` avaliadas.
+- 51 questoes reaproveitadas sem alteracao textual relevante.
+- 0 questoes corrigidas com pequena alteracao.
+- 9 questoes descartadas.
+- 12 questoes de `dificil` reclassificadas como `medium`.
+- 79 questoes novas criadas manualmente.
+
+Classificacao:
+
+- `facil` 1-20: aproveitadas como `easy`.
+- `medio` 1-12 e 14-20: aproveitadas como `medium`.
+- `medio` 13: descartada porque testa diretamente `There is / There are`.
+- `dificil` 1, 2, 3, 5, 7, 9, 10, 14, 15, 16, 18 e 20: reclassificadas como `medium`.
+- `dificil` 4: descartada por usar estrutura de Present Continuous como contexto central.
+- `dificil` 6: descartada por envolver `be going to`.
+- `dificil` 8: descartada por usar Present Continuous como alvo forte.
+- `dificil` 11 e 13: descartadas por dependerem de escolha de variante ou leitura de coletivo que pode gerar ambiguidade.
+- `dificil` 12: descartada por complexidade alta para o piloto.
+- `dificil` 17: descartada por regra excepcional pouco proporcional ao MVP inicial.
+- `dificil` 19: descartada por item abstrato/avancado demais para o piloto.
+
+Banco final:
+
+- `src/content/data/presentTobeQuestions.ts`.
+- 50 questoes `easy`.
+- 80 questoes `medium`.
+- 130 questoes unicas.
+- Nenhuma questao `challenge`.
+- Nenhum outro topico gramatical migrado.
 
 ## Vocabulario WORDS
 
@@ -202,6 +267,8 @@ Estas partes existem no legado, mas nao devem ser migradas para o novo MVP:
 Migrado para `src/content/data/vocabulary.ts`:
 
 - Corpo, Roupas, Moveis, Animais, Profissoes e Lugares.
+- 10 Action Verbs.
+- 10 Routine Verbs.
 
 Migrado para `src/content/data/irregularVerbs.ts`:
 
@@ -210,9 +277,9 @@ Migrado para `src/content/data/irregularVerbs.ts`:
 
 Bloqueado por decisao/curadoria:
 
-- Action Verbs.
-- Routine Verbs.
-- 600 perguntas gramaticais.
+- Expansao completa de Action Verbs.
+- Expansao completa de Routine Verbs.
+- Outros topicos gramaticais alem de `present_tobe`.
 - WORD_BANK.
 - TF_BANK.
 - Jogos.

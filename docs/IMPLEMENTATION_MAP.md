@@ -329,7 +329,7 @@ Decisoes:
 
 Objetivo: normalizar dados claros do legado e preparar validadores antes de volume.
 
-Status em 2026-07-22: normalizacao inicial em andamento no working tree, sem stage e sem novo commit. Criado inventario do legado e separados dados reais de `taxonomy.ts`.
+Status em 2026-07-22: banco piloto `present_tobe` em andamento no working tree, sem stage e sem novo commit. A normalizacao anterior foi commitada em `b70f520 feat: normalize legacy vocabulary content`.
 
 Por que agora: motores precisam de dados confiaveis, nao arrays em componente.
 
@@ -345,13 +345,17 @@ Novos modulos:
 
 - `src/content/data/vocabulary.ts`
 - `src/content/data/irregularVerbs.ts`
+- `src/content/data/presentTobeQuestions.ts`
 - `docs/LEGACY_CONTENT_INVENTORY.md`
 
 Funcionalidades:
 
 - 60 pares explicitos de vocabulario legado normalizados.
+- 10 Action Verbs simples.
+- 10 Routine Verbs simples.
 - 50 Irregular Verbs mantidos em arquivo de dados simples.
 - Modos de pratica de Irregular Verbs normalizados com hifen.
+- Banco piloto `present_tobe` com 50 questoes `easy` e 80 `medium`.
 - Taxonomia reduzida a metadados, categorias, disponibilidade e metas.
 - Inventario factual dos bancos legados sem copiar as 600 questoes para `src/`.
 
@@ -360,7 +364,7 @@ Fora do escopo:
 - Gerar banco completo em massa.
 - Copiar exercicios de livro.
 - Live generation por IA para usuarios.
-- Migrar os 600 exercicios gramaticais.
+- Migrar os outros sete topicos gramaticais do MVP.
 - Migrar jogos.
 - Implementar motor de sessao/randomizacao.
 
@@ -381,12 +385,13 @@ Criterios:
 
 - Conteudo normalizado passa validacao estrutural.
 - Formato permite revisao humana.
+- Banco piloto passa revisao pedagogica manual.
 
 Decisoes:
 
 - Manter formato TS simples nesta etapa.
 - Processo de revisao pedagogica.
-- Definir se Action Verbs/Routine Verbs serao curados manualmente ou extraidos de outra fonte explicita.
+- Revisar se os 10 Action Verbs e 10 Routine Verbs iniciais sao suficientes para a primeira experiencia de vocabulario.
 
 ## Fase 6 - Motor de sessoes de pratica
 
