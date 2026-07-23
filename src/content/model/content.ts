@@ -84,12 +84,12 @@ export interface VocabularyEntry {
 }
 
 export type IrregularVerbPracticeMode =
-  | "base_to_past"
-  | "base_to_participle"
-  | "past_to_base"
-  | "participle_to_base"
-  | "verb_to_translation"
-  | "translation_to_verb"
+  | "base-to-past"
+  | "base-to-participle"
+  | "past-to-base"
+  | "participle-to-base"
+  | "verb-to-translation"
+  | "translation-to-verb"
   | "mixed";
 
 export interface IrregularVerbEntry {

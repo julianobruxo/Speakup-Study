@@ -16,6 +16,9 @@ src/
     types/
       domain.ts
   content/
+    data/
+      irregularVerbs.ts
+      vocabulary.ts
     model/
       content.ts
     taxonomy.ts
@@ -49,11 +52,16 @@ Defines static arrays for the MVP active catalog:
 
 - `ACTIVE_GRAMMAR_TOPICS`;
 - `ACTIVE_VOCABULARY_GROUPS`;
-- `ACTIVE_VOCABULARY_CATEGORIES`;
-- `IRREGULAR_VERB_PRACTICE_MODES`;
-- `IRREGULAR_VERBS`.
+- `ACTIVE_VOCABULARY_CATEGORIES`.
 
-It also exposes small lookup helpers by ID. There are no repositories, adapters, providers, factories, or generated banks in this taxonomy.
+It also exposes small lookup helpers by ID. There are no repositories, adapters, providers, factories, generated banks, or real item lists in this taxonomy.
+
+`src/content/data`
+
+Defines simple data files for content that has already been normalized:
+
+- `vocabulary.ts`: 60 explicit legacy vocabulary pairs across 6 categories;
+- `irregularVerbs.ts`: 50 Irregular Verb entries and approved practice mode strings.
 
 `src/services/sessions`
 
@@ -136,12 +144,12 @@ The current list has exactly 50 entries.
 
 Approved future practice modes:
 
-- `base_to_past`;
-- `base_to_participle`;
-- `past_to_base`;
-- `participle_to_base`;
-- `verb_to_translation`;
-- `translation_to_verb`;
+- `base-to-past`;
+- `base-to-participle`;
+- `past-to-base`;
+- `participle-to-base`;
+- `verb-to-translation`;
+- `translation-to-verb`;
 - `mixed`.
 
 These modes are modeled only as data/types. No interface or game logic is implemented in this phase.
@@ -164,7 +172,7 @@ Expected formats:
 - vocabulary group: `mvp_verbs`
 - vocabulary category: `irregular_verbs`
 - irregular verb: `irregular_go`
-- question: `to_be_present_easy_0037`
+- question: `present_tobe_easy_0037`
 - practice session: generated stable session ID
 - profile: local guest profile ID first, optionally linked to account later
 
@@ -196,10 +204,10 @@ Current state:
 
 - visual and functional references are no longer missing blockers;
 - official separated logo/assets are still pending if the embedded reference logo must become reusable project assets;
-- grammar questions were not migrated;
+- grammar questions were inventoried but not migrated;
 - games were not migrated;
-- Action Verbs and Routine Verbs still need careful reclassification before becoming vocabulary entries;
-- only the confirmed MVP taxonomy and Irregular Verbs list were modeled.
+- Action Verbs and Routine Verbs remain taxonomy categories without entries because the legacy source does not provide explicit English-to-Portuguese pairs for them;
+- 60 explicit vocabulary pairs and 50 Irregular Verbs are normalized in data files.
 
 ## Not Implemented
 
@@ -208,7 +216,7 @@ This phase does not implement:
 - new UI;
 - home screen;
 - grammar question banks;
-- vocabulary banks for Corpo/Roupas/Moveis/Animais/Profissoes/Lugares/Action Verbs/Routine Verbs;
+- vocabulary banks for Action Verbs/Routine Verbs;
 - flashcards;
 - games;
 - session engine;

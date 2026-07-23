@@ -327,39 +327,48 @@ Decisoes:
 
 ## Fase 5 - Conteudo versionado e validacao
 
-Objetivo: criar formato de bancos de questoes e vocabulario, com validadores antes de volume.
+Objetivo: normalizar dados claros do legado e preparar validadores antes de volume.
+
+Status em 2026-07-22: normalizacao inicial em andamento no working tree, sem stage e sem novo commit. Criado inventario do legado e separados dados reais de `taxonomy.ts`.
 
 Por que agora: motores precisam de dados confiaveis, nao arrays em componente.
 
 Areas afetadas:
 
-- `src/content/questions`
-- `src/content/vocabulary`
-- scripts de validacao
-- docs de autoria
+- `src/content/data`
+- `src/content/taxonomy.ts`
+- `src/content/model/content.ts`
+- `docs/LEGACY_CONTENT_INVENTORY.md`
+- docs de planejamento
 
 Novos modulos:
 
-- schemas de `Question`, `VocabularyEntry`, `Feedback`, `Distractor`
-- validadores de duplicidade, opcoes repetidas, IDs e dificuldade
-- fixtures pequenas para desenvolvimento
+- `src/content/data/vocabulary.ts`
+- `src/content/data/irregularVerbs.ts`
+- `docs/LEGACY_CONTENT_INVENTORY.md`
 
 Funcionalidades:
 
-- Banco piloto pequeno e original.
-- Feedback pedagogico.
-- Metadados de fonte curricular sem expor livro/unidade como organizacao publica.
+- 60 pares explicitos de vocabulario legado normalizados.
+- 50 Irregular Verbs mantidos em arquivo de dados simples.
+- Modos de pratica de Irregular Verbs normalizados com hifen.
+- Taxonomia reduzida a metadados, categorias, disponibilidade e metas.
+- Inventario factual dos bancos legados sem copiar as 600 questoes para `src/`.
 
 Fora do escopo:
 
 - Gerar banco completo em massa.
 - Copiar exercicios de livro.
 - Live generation por IA para usuarios.
+- Migrar os 600 exercicios gramaticais.
+- Migrar jogos.
+- Implementar motor de sessao/randomizacao.
 
 Riscos:
 
 - Conteudo artificial/semantico ruim.
 - Copyright se migrar frases de material protegido.
+- Derivar traducoes de Action/Routine a partir de perguntas sem pares explicitos.
 
 Testes:
 
@@ -370,13 +379,14 @@ Testes:
 
 Criterios:
 
-- Conteudo piloto passa validacao automatica.
+- Conteudo normalizado passa validacao estrutural.
 - Formato permite revisao humana.
 
 Decisoes:
 
-- Formato final: TS, JSON ou hibrido.
+- Manter formato TS simples nesta etapa.
 - Processo de revisao pedagogica.
+- Definir se Action Verbs/Routine Verbs serao curados manualmente ou extraidos de outra fonte explicita.
 
 ## Fase 6 - Motor de sessoes de pratica
 

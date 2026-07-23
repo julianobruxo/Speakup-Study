@@ -6,7 +6,7 @@ Atualizado em: 2026-07-22
 
 O workspace atual e um esqueleto Vite + React + TypeScript para o app Speak UP Study. Ele contem rotas e telas placeholder suficientes para demonstrar um fluxo inicial, mas ainda nao contem motor de pratica, banco de conteudo, flashcards, jogos, progresso persistente, autenticacao real, analytics, PWA, testes ou integracoes externas.
 
-Fase atual: Fase 2 - taxonomia real do MVP e referencias aprovadas no working tree. A Fase 1 foi reavaliada e permanece pequena; a taxonomia ativa agora contem somente os topicos e categorias confirmados para o MVP.
+Fase atual: Normalizacao inicial do conteudo legado no working tree, sem stage e sem novo commit. O checkpoint anterior foi consolidado no commit local `99ad453 feat: establish MVP content foundation and references`.
 
 ## Git
 
@@ -119,6 +119,39 @@ Decisoes tomadas:
 - Foram modelados os modos futuros de pratica de Irregular Verbs: base -> passado, base -> participio, passado -> base, participio -> base, verbo -> traducao, traducao -> verbo e misto.
 - A taxonomia nao contem banco real de perguntas, frases de exemplo, traducoes de frases, imagens, audio ou explicacoes longas.
 
+## Normalizacao inicial do conteudo legado
+
+Arquivos criados:
+
+- `docs/LEGACY_CONTENT_INVENTORY.md`
+- `src/content/data/vocabulary.ts`
+- `src/content/data/irregularVerbs.ts`
+
+Arquivos modificados:
+
+- `src/content/model/content.ts`
+- `src/content/taxonomy.ts`
+- `docs/ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_MAP.md`
+- `docs/OPEN_DECISIONS.md`
+- `STATUS.md`
+
+Decisoes tomadas:
+
+- `src/content/taxonomy.ts` passa a conter somente metadados de catalogo: IDs, grupos, categorias, disponibilidade, sequencia e metas.
+- Os 50 Irregular Verbs foram movidos para `src/content/data/irregularVerbs.ts`.
+- Os modos de pratica de Irregular Verbs foram normalizados com hifen: `base-to-past`, `base-to-participle`, `past-to-base`, `participle-to-base`, `verb-to-translation`, `translation-to-verb` e `mixed`.
+- O vocabulario legado explicito foi extraido para `src/content/data/vocabulary.ts`: 6 categorias, 10 itens por categoria, 60 entradas totais.
+- IDs gramaticais ativos foram alinhados aos IDs do legado para os 8 topicos do MVP: `present_tobe`, `past_tobe`, `simple_present`, `present_continuous`, `be_going_to`, `simple_past`, `there_tobe`, `prepositions`.
+- `Action Verbs` e `Routine Verbs` continuam como categorias de vocabulario planejadas, mas sem entradas normalizadas porque o legado as fornece como perguntas, nao como pares explicitos ingles-portugues.
+
+Fora do escopo mantido:
+
+- Os 600 exercicios de gramatica nao foram copiados para `src/`.
+- Nenhum jogo foi migrado.
+- Nenhum motor de sessao, randomizacao ou feedback foi implementado.
+- Nenhuma UI foi alterada.
+
 ## Referencias e legado
 
 - `reference/home-approved.html`: disponivel e validado como referencia visual aprovada. Arquivo standalone/offline, com logo embutido, fundo branco, navy `#17234b`, vinho `#8d1d30`, chamada "Bora praticar", jogos rapidos e navegacao inferior.
@@ -210,7 +243,7 @@ Ausentes, mas recomendados antes ou logo apos o primeiro commit:
 
 ## Proxima fase recomendada
 
-Recomendo consolidar o checkpoint atual em um commit local e seguir com a normalizacao inicial do conteudo legado: inventariar o HTML funcional, extrair somente vocabulario claro, mover Irregular Verbs para arquivo de dados simples e manter os 600 exercicios de gramatica fora de `src/` ate haver estrategia de migracao e revisao pedagogica.
+Recomendo revisar o inventario e decidir como tratar `Action Verbs` e `Routine Verbs` antes de criar qualquer banco novo. Depois disso, a proxima fase segura e criar validadores de conteudo pequenos para garantir IDs unicos, contagens por categoria e campos obrigatorios.
 
 ## .gitignore
 

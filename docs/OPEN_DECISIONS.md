@@ -42,7 +42,7 @@ Atualizado em: 2026-07-22
 
 10. Modos de pratica de Irregular Verbs
 
-   Decidido: modelar os modos `base_to_past`, `base_to_participle`, `past_to_base`, `participle_to_base`, `verb_to_translation`, `translation_to_verb` e `mixed`, sem implementar interface ou jogo nesta fase.
+   Decidido: modelar os modos `base-to-past`, `base-to-participle`, `past-to-base`, `participle-to-base`, `verb-to-translation`, `translation-to-verb` e `mixed`, sem implementar interface ou jogo nesta fase.
 
 11. Referencia visual aprovada
 
@@ -51,6 +51,10 @@ Atualizado em: 2026-07-22
 12. Legado funcional
 
    `reference/speakup-english-challenge.html` existe no workspace e foi validado como fonte funcional legada: 10 topicos, 3 dificuldades, 20 questoes por topico/dificuldade, 600 questoes totais, sessoes 10/20/30, 6 categorias de vocabulario com 10 itens cada e 7 jogos. Multitec, leads, ranking, roleta, CSV, premios e gate 75% nao pertencem ao novo MVP.
+
+13. Normalizacao inicial de vocabulario
+
+   Os 60 pares explicitos de `WORDS` foram normalizados em `src/content/data/vocabulary.ts`. Os 50 Irregular Verbs foram movidos de `taxonomy.ts` para `src/content/data/irregularVerbs.ts`. `taxonomy.ts` fica restrito a metadados.
 
 ## Necessarias antes de comecar implementacao visual/home
 
@@ -83,6 +87,10 @@ Atualizado em: 2026-07-22
 4. Revisao pedagogica do legado
 
    As 600 questoes gramaticais, os 60 itens de vocabulario e os bancos de jogos devem ser inventariados antes de qualquer migracao para `src/`.
+
+5. Action Verbs e Routine Verbs
+
+   O legado contem esses topicos como 60 perguntas cada, nao como listas explicitas ingles-portugues. E necessario decidir se as listas serao curadas manualmente, fornecidas por outra fonte ou derivadas depois com revisao humana.
 
 ## Podem esperar
 
@@ -131,7 +139,7 @@ Atualizado em: 2026-07-22
 ## Recomendacoes pendentes de aprovacao
 
 - Usar abordagem hibrida: preservar base Vite/React, refatorar arquitetura progressivamente e reconstruir parcialmente fluxos/visual que conflitam com `CLAUDE.md`.
-- Proxima fase recomendada: criar inventario do legado e normalizar apenas dados claros de vocabulario/Irregular Verbs, sem migrar os 600 exercicios gramaticais.
+- Proxima fase recomendada: revisar o inventario e aprovar validadores de conteudo pequenos antes de aumentar bancos de questoes ou jogos.
 - Antes de construir home, criar design system alinhado a referencia para evitar home provisoria que precise ser refeita.
 - Corrigir o conflito guest-first antes de implementar login real.
 - Centralizar taxonomia e conteudo antes de migrar jogos.
