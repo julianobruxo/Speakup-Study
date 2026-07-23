@@ -1,93 +1,62 @@
-import type {
-  AnswerResult,
-  GrammarTopicId,
-  IsoDateTimeString,
-  LearningStatus,
-  PracticeDifficulty,
-  PracticeMode,
-  PracticeQuestionCount,
-  PracticeSessionId,
-  ProfileId,
-  QuestionId,
-  SessionState,
-  VocabularyCategoryId,
-  VocabularyEntryId,
-} from "../../shared/types/domain";
+import type { MvpGrammarDifficulty } from "../../content/model/content";
+import type { GrammarTopicId } from "../../shared/types/domain";
 
 export interface QuestionProgress {
-  questionId: QuestionId;
+  questionId: string;
+  topicId: GrammarTopicId;
+  difficulty: MvpGrammarDifficulty;
   timesSeen: number;
   correctCount: number;
   wrongCount: number;
-  lastSeenAt?: IsoDateTimeString;
-  lastResult?: AnswerResult;
-  averageResponseMs?: number;
-  masteryScore: number;
-  nextReviewAt?: IsoDateTimeString;
+  lastSeenAt: string;
+  lastResult: boolean;
 }
 
-export interface VocabularyProgress {
-  vocabularyEntryId: VocabularyEntryId;
-  status: LearningStatus;
-  timesSeen: number;
+export interface CompletedSessionProgress {
+  sessionId: string;
+  topicId: GrammarTopicId;
+  difficulty: MvpGrammarDifficulty;
+  questionCount: number;
   correctCount: number;
   wrongCount: number;
-  lastReviewedAt?: IsoDateTimeString;
-  nextReviewAt?: IsoDateTimeString;
-}
-
-export interface SessionHistoryEntry {
-  id: PracticeSessionId;
-  profileId: ProfileId;
-  mode: PracticeMode;
-  state: SessionState;
-  requestedQuestionCount: PracticeQuestionCount;
-  correctCount: number;
-  durationMs: number;
-  startedAt: IsoDateTimeString;
-  completedAt?: IsoDateTimeString;
-  abandonedAt?: IsoDateTimeString;
-  topicId?: GrammarTopicId;
-  categoryId?: VocabularyCategoryId;
-  difficulty?: PracticeDifficulty;
+  percentage: number;
+  bestStreak: number;
+  completedAt: string;
 }
 
 export interface ProgressSnapshot {
-  profileId: ProfileId;
   questions: QuestionProgress[];
-  vocabulary: VocabularyProgress[];
-  sessions: SessionHistoryEntry[];
+  sessions: CompletedSessionProgress[];
 }
 
 export interface AnswerProgressRecord {
-  profileId: ProfileId;
-  questionId: QuestionId;
-  result: AnswerResult;
-  responseMs: number;
-  answeredAt: IsoDateTimeString;
+  questionId: string;
+  topicId: GrammarTopicId;
+  difficulty: MvpGrammarDifficulty;
+  correct: boolean;
+  answeredAt: string;
 }
 
-export interface PendingReview {
-  profileId: ProfileId;
-  questionId?: QuestionId;
-  vocabularyEntryId?: VocabularyEntryId;
-  dueAt: IsoDateTimeString;
+export interface ProgressSummary {
+  uniqueQuestions: number;
+  totalQuestions: 130;
+  totalAnswers: number;
+  correctAnswers: number;
+  accuracy: number | null;
+  completedSessions: number;
+  bestStreak: number;
+  bestResult: number | null;
+  lastActivity: string | null;
+  reviewCount: number;
+  easyPracticed: number;
+  mediumPracticed: number;
+  easyReviewCount: number;
+  mediumReviewCount: number;
 }
 
 export interface ProgressRepository {
-  getQuestionProgress(
-    profileId: ProfileId,
-    questionId: QuestionId,
-  ): Promise<QuestionProgress | undefined>;
-  listQuestionProgress(profileId: ProfileId): Promise<QuestionProgress[]>;
-  saveAnswerResult(record: AnswerProgressRecord): Promise<void>;
-  saveSession(entry: SessionHistoryEntry): Promise<void>;
-  getInterruptedSession(
-    profileId: ProfileId,
-  ): Promise<SessionHistoryEntry | undefined>;
-  listPendingReviews(
-    profileId: ProfileId,
-    now: IsoDateTimeString,
-  ): Promise<PendingReview[]>;
-  clearProfileProgress(profileId: ProfileId): Promise<void>;
+  getSnapshot(): Promise<ProgressSnapshot>;
+  recordAnswer(record: AnswerProgressRecord): Promise<void>;
+  saveSession(session: CompletedSessionProgress): Promise<void>;
+  clear(): Promise<void>;
 }

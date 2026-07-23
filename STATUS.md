@@ -1,25 +1,27 @@
 # STATUS.md
 
-Atualizado em: 2026-07-22
+Atualizado em: 2026-07-23
 
 ## Estado executivo
 
-O workspace atual e um esqueleto Vite + React + TypeScript para o app Speak UP Study. Ele contem rotas e telas placeholder suficientes para demonstrar um fluxo inicial, mas ainda nao contem motor de pratica, banco de conteudo, flashcards, jogos, progresso persistente, autenticacao real, analytics, PWA, testes ou integracoes externas.
+O workspace atual contem um MVP visual navegavel em Vite + React + TypeScript. A home guest-first, as areas principais e o fluxo completo de pratica de `present_tobe` estao implementados. Os demais topicos, jogos e a pratica de vocabulario aparecem em estado final de "Em breve", sem simular funcionalidades inexistentes.
 
-Fase atual: rebalanceamento editorial do banco piloto `present_tobe` e correcao do ambiente PowerShell/Node no working tree, sem stage e sem segundo commit. O banco piloto foi consolidado no commit local `5811a13 feat: add present to be pilot content`.
+Fase atual: MVP jogavel de `present_tobe` concluido, com persistencia local, documentacao e smoke tests. O trabalho posterior a `ce27d32` foi preparado para o commit `feat: complete playable present to be MVP` e publicacao da branch `main`.
 
 ## Git
 
 - Repositorio Git: inicializado localmente com `git init` em 2026-07-22.
-- Branch atual: `master`.
+- Branch principal: `main`.
 - Baseline local: `06af0e4 chore: establish initial project baseline`.
 - Checkpoint de referencias e arquitetura: `99ad453 feat: establish MVP content foundation and references`.
 - Checkpoint de normalizacao de vocabulario legado: `b70f520 feat: normalize legacy vocabulary content`.
 - Checkpoint do banco piloto Present TO BE: `5811a13 feat: add present to be pilot content`.
-- Remotos configurados: nenhum; `git remote -v` nao retornou entradas.
-- Arquivos staged: nenhum esperado ao fim da fase; verificar com `git diff --cached`.
+- Checkpoint do rebalanceamento e auditoria: `ce27d32 fix: rebalance present to be pilot content`.
+- MVP jogavel completo: `feat: complete playable present to be MVP`.
+- Remoto: `origin` em `https://github.com/julianobruxo/Speakup-Study.git`.
+- Arquivos staged: nenhum ao fim da publicacao.
 - Arquivos ignorados relevantes: `node_modules/` e `dist/`.
-- Divergencia com remoto: nao aplicavel porque nao ha remoto configurado.
+- Tracking final esperado: `main` acompanha `origin/main`, sem commits locais pendentes.
 - Mudancas do usuario a preservar: todos os arquivos existentes devem ser tratados como trabalho do usuario/projeto e preservados.
 
 ## Stack detectada
@@ -30,7 +32,7 @@ Fase atual: rebalanceamento editorial do banco piloto `present_tobe` e correcao 
 - React Router DOM 7.18.x.
 - TypeScript 6.0.x.
 - Tailwind CSS 4.3.x via `@tailwindcss/vite`.
-- Framer Motion 12.42.x instalado no manifesto, mas nao usado no codigo atual.
+- Framer Motion 12.42.x usado em transicoes, selecao, feedback e celebracao.
 - Oxlint configurado em `.oxlintrc.json`.
 - Node local: v22.22.0.
 - npm local: 10.9.4.
@@ -64,11 +66,11 @@ Versoes efetivamente instaladas apos `npm ci`:
 - `node_modules` existe apos `npm ci`. Nao foi executado `npm install`.
 - `dist/` existe apos `npm run build` e e artefato ignorado por `.gitignore`.
 - `package.json`, `package-lock.json`, configs e codigo da aplicacao nao foram alterados deliberadamente; hashes de manifestos/configs conferidos antes/depois permaneceram iguais.
-- Nao ha testes configurados.
+- Nao ha framework de testes unitarios; existe smoke automatizado em `scripts/smokeUi.mjs`.
 - Nao ha arquivos de ambiente (`.env`, `.env.example`) detectados.
 - Nao ha service worker, manifest PWA, backend, Firebase, Supabase, analytics ou autenticacao real.
-- O fluxo atual inicia em uma tela de login com botao "Entrar com Google", o que conflita com a diretriz guest-first/local-first do `CLAUDE.md`.
-- A UI atual usa fundo navy com blobs/glassmorphism herdado do SpeakIt, diferente da direcao visual aprovada de fundo branco com logo integrado.
+- O fluxo atual inicia na home guest-first e nao exige login.
+- A UI atual usa fundo branco, logo integrado e paleta navy/vinho alinhados a referencia aprovada.
 
 ## Fase 1 - arquitetura base reavaliada
 
@@ -263,7 +265,7 @@ Ambiente do terminal:
 - `node -v` e `npm -v` foram validados em novo PowerShell.
 - `npm run dev -- --host 127.0.0.1 --port 5173` foi validado.
 - Smoke test HTTP retornou 200 e HTML para `/`, `/bem-vindo`, `/tutorial`, `/hub`, `/estudar`, `/praticar` e `/vocabulario`.
-- Servidor Vite mantido ativo em `http://127.0.0.1:5173/`; listener observado no PID `28360`.
+- O servidor Vite foi validado em `http://127.0.0.1:5173/`.
 
 Validacoes finais da auditoria:
 
@@ -278,13 +280,104 @@ Fora do escopo mantido:
 - Nenhum outro topico foi migrado.
 - Nenhum segundo commit foi criado.
 
+## MVP visual e fluxo funcional
+
+Implementado no working tree apos o commit `ce27d32`:
+
+- Home guest-first baseada em `reference/home-approved.html`.
+- Logo oficial extraido do PNG base64 da referencia aprovada.
+- App shell branco, paleta navy/vinho, header, botao voltar e navegacao inferior.
+- Bottom sheet "Bora praticar" com escolhas de Gramatica e Vocabulario.
+- Rotas finais para Home, Estudar, Gramatica, Vocabulario, Jogos, Progresso e Perfil.
+- Redirects para as rotas placeholder antigas.
+- Oito topicos gramaticais visiveis; somente `present_tobe` jogavel.
+- Nove categorias de vocabulario consultaveis; pratica bloqueada como "Em breve".
+- Tres jogos rapidos visiveis na Home e seis em `/jogos`, todos bloqueados como "Em breve".
+- Configuracao de `present_tobe` com `easy`, `medium` e 10, 20 ou 30 questoes.
+- Selecao embaralhada sem repeticao na sessao e alternativas embaralhadas.
+- Questao, confirmacao, feedback pedagogico, progresso, sequencia de acertos e avancar.
+- Confirmacao ao sair por acao da tela ou pelo botao voltar do navegador.
+- Resultado com acertos, erros, percentual, melhor sequencia, replay, reconfiguracao e retorno a home.
+- Sons simples por Web Audio, com preferencia pequena em `localStorage`.
+- Animacoes com Framer Motion, celebracao leve e suporte a `prefers-reduced-motion`.
+- Foco visivel, botoes semanticos, `aria-current`, `aria-disabled` e dialogs nativos.
+
+Refinamento visual e responsivo concluido no working tree:
+
+- Desktop tratado como produto real, com largura util de ate 1200 px, navegacao horizontal e composicoes em colunas.
+- Android/mobile tratado em 360x800, 390x844 e 412x915, com conteudo rolavel separado da navegacao e suporte a safe area.
+- Navegacao global restrita a Inicio, Estudar, Progresso e Perfil.
+- Topicos, configuracao, sessao, feedback, resultado e dialogs usam fluxo focado sem navegacao global.
+- Home reorganizada com uma unica chamada principal, atividade disponivel honesta e jogos visualmente diferenciados.
+- Cards bloqueados receberam cadeado, badge, contraste proprio e resposta ao toque.
+- Configuracao passou de formulario para montagem de desafio.
+- Sessao ganhou composicoes mobile/desktop, progresso reforcado, alternativas com estados completos e CTA proximo das respostas.
+- Resultado ganhou composicao de celebracao propria, total, acertos, erros, percentual, melhor sequencia e tres caminhos de saida.
+- Nenhum texto interno como MVP, placeholder, mock, prototipo ou seed aparece nas rotas finais.
+
+Rotas finais:
+
+- `/`
+- `/praticar`
+- `/gramatica`
+- `/gramatica/present_tobe`
+- `/praticar/present_tobe/sessao`
+- `/vocabulario`
+- `/vocabulario/:categoryId`
+- `/jogos`
+- `/progresso`
+- `/perfil`
+
+Validacao visual automatizada:
+
+- Script sem dependencia nova: `node scripts/smokeUi.mjs`.
+- Viewports: 360x800, 390x844, 768x1024, 1366x768 e 1440x900.
+- Sem overflow horizontal, navegacao sobre conteudo ou barra global em fluxo focado.
+- Home, bottom sheet, navegacao inferior, voltar, topico bloqueado e toggle de som verificados.
+- Sessoes de 10, 20 e 30 questoes verificadas.
+- Rodada completa de 30 questoes confirmou 30 enunciados unicos.
+- Resposta correta, resposta incorreta, feedback, resultado, replay e abandono verificados.
+- Reload das rotas principais verificado.
+- Erros de browser: zero.
+
+## Feedback contextual - Present TO BE
+
+Implementado no working tree:
+
+- Acertos bloqueiam as alternativas, mostram somente `Correto!` e uma barra verde linear de 3 segundos, sem explicacao ou botao de avancar.
+- Ao fim dos 3 segundos, a proxima questao abre automaticamente; na ultima questao, o resultado abre automaticamente.
+- O timer e unico por resposta e e limpo em desmontagem, mudanca de rota, saida e reinicio.
+- Erros mantem a alternativa escolhida e a correta visiveis, exibem o feedback pedagogico existente e nunca avancam por timer.
+- O erro avanca somente pelo botao `Continuar` ou por clique/toque no card de explicacao.
+- `Estudar esse topico` aparece somente no erro e abre um guia exclusivo de Present TO BE sem alterar questao, resposta, score, sequencia ou som.
+- Um helper pequeno classifica o contexto entre forma, afirmativa, negativa, pergunta, resposta curta, ordem, contracao e concordancia, sem novos campos nas 130 questoes.
+- O guia cobre am/is/are, afirmativas, negativas, perguntas, respostas curtas, contracoes, concordancia e erros comuns.
+- Dialog nativo preserva Escape, overlay, foco preso, retorno de foco, titulo acessivel e rolagem interna.
+- Reduced motion remove efeitos decorativos, mas preserva a espera e a barra linear de 3 segundos.
+
+Smoke atualizado:
+
+- Viewports: 360x800, 390x844, 768x1024, 1366x768 e 1440x900.
+- Acerto sem explicacao ou CTA, bloqueio de clique/Enter/Espaco, barra e avancamento unico apos aproximadamente 3 segundos.
+- Erro sem avancamento automatico, avancamento por botao e card, clique externo inofensivo e ultima questao manual.
+- Guia contextual e completo, fechamento por X/Escape/botao, foco restaurado e estado da sessao preservado.
+- Score, melhor sequencia, replay, abandono, voltar do navegador, 30 questoes unicas e zero erro de browser.
+
+Limitacoes mantidas:
+
+- Progresso existe somente no dispositivo/navegador atual, sem conta, sync, exportacao ou recuperacao remota.
+- Sem login, backend, sync, analytics, monetizacao ou PWA.
+- Sem pratica funcional de vocabulario.
+- Sem jogos funcionais.
+- Sem migracao dos outros sete topicos gramaticais.
+
 ## Referencias e legado
 
 - `reference/home-approved.html`: disponivel e validado como referencia visual aprovada. Arquivo standalone/offline, com logo embutido, fundo branco, navy `#17234b`, vinho `#8d1d30`, chamada "Bora praticar", jogos rapidos e navegacao inferior.
 - `reference/speakup-english-challenge.html`: disponivel e validado como legado funcional. Contem 10 topicos, 3 dificuldades legadas, 20 questoes por topico/dificuldade, 600 questoes no total, sessoes de 10/20/30, 6 categorias de vocabulario com 10 itens cada e 7 jogos.
 - Mecanicas legadas fora do novo MVP: Multitec, leads, ranking, roleta, CSV, premios e gate de 75%.
 - HTML adicional: `index.html` e o shell Vite.
-- Logo oficial / imagens claras da marca: nao encontrados. Existem `public/favicon.svg`, `public/icons.svg`, `src/assets/vite.svg` e `src/assets/hero.png`, mas nao ha evidencia de logo oficial Speak UP integrado.
+- O logo aprovado foi extraido da referencia para `src/assets/speakup-logo.png` e integrado ao MVP.
 - ZIPs: nao encontrados.
 - Bancos de questoes / JSONs de conteudo: nenhum encontrado alem de `package.json`, `package-lock.json` e `.oxlintrc.json`; o banco legado esta embutido no HTML funcional.
 - Codigo legado real de jogos: encontrado em HTML standalone, ainda nao migrado para React.
@@ -367,9 +460,37 @@ Ausentes, mas recomendados antes ou logo apos o primeiro commit:
 - `docs/IMPLEMENTATION_MAP.md`
 - `docs/OPEN_DECISIONS.md`
 
+## Persistencia local e progresso
+
+Implementado no working tree:
+
+- IndexedDB nativo, versao 1, com stores `questions` e `sessions`.
+- Uma resposta confirmada atualiza uma unica linha por `questionId`, com contagens de acerto/erro e ultimo resultado.
+- Uma sessao entra no historico somente quando concluida e usa `sessionId` idempotente.
+- Preferencia pequena da ultima configuracao fica em `localStorage`.
+- Home mostra questoes unicas praticadas, precisao total, sessoes concluidas e revisoes; conserva uma unica chamada principal e apenas tres jogos rapidos.
+- Progresso mostra cobertura `easy` (50), `medium` (80), recordes e CTA de revisao quando ha erros recentes.
+- Proximas rodadas priorizam perguntas ineditas, depois perguntas cujo ultimo resultado foi erro e depois as vistas ha mais tempo.
+- Falhas de storage exibem aviso discreto e nao bloqueiam a sessao nem as acoes do resultado.
+
+Definicoes:
+
+- Questoes praticadas: quantidade de `questionId` unicos com ao menos uma resposta.
+- Precisao: total de acertos dividido pelo total de respostas confirmadas, incluindo repeticoes.
+- Para revisar: questoes cujo resultado mais recente foi incorreto.
+- Melhor resultado, melhor sequencia e sessoes: calculados somente sobre sessoes concluidas.
+- Sessao abandonada: respostas confirmadas permanecem no historico por questao, mas a sessao nao entra nos recordes.
+
+Validacao da fase:
+
+- `npm run lint`: passou.
+- `npm run build`: passou; 452 modulos transformados.
+- `node scripts/validateContent.mjs`: passou; 130 questoes, 50 `easy`, 80 `medium`.
+- `node scripts/smokeUi.mjs`: passou em cinco viewports, oito rotas, rodadas 10/20/30, reload, idempotencia, prioridade e falha simulada; zero erros de browser.
+
 ## Proxima fase recomendada
 
-Recomendo aprovar ou ajustar a auditoria do banco piloto `present_tobe`. Se aprovado, a proxima fase segura e migrar `past_tobe` usando o handoff atual.
+Aguardar a revisao do usuario. Nao iniciar outro topico, ranking, login, backend, sync, analytics, deploy ou limpeza de progresso sem nova autorizacao.
 
 ## .gitignore
 

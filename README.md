@@ -1,44 +1,42 @@
-# Speak UP Study (esqueleto)
+# Speak UP Study
 
-Nome provisório. Vite + React 19 + TypeScript + Tailwind v4 + React Router +
-framer-motion (instalado, ainda não usado nas transições).
+Aplicacao publica e guest-first para pratica de ingles. O MVP atual oferece
+sessoes completas de Present TO BE com feedback pedagogico e progresso local.
 
-## Rodar localmente
+## Requisitos
 
+- Node.js 22 ou versao compativel com Vite 8
+- npm
+
+## Instalacao
+
+```bash
+npm ci
 ```
-npm install
+
+## Desenvolvimento
+
+```bash
 npm run dev
 ```
 
-## O que já existe
+O Vite informa a URL local ao iniciar.
 
-- Design tokens da marca SpeakUp em `src/index.css` (navy/red/cream/paper)
-  aplicados nos efeitos visuais herdados do projeto SpeakIt: blobs de
-  gradiente animados no fundo, glass cards com borda em gradiente, glow
-  button com shimmer, texto com gradiente animado.
-- Componentes reutilizáveis em `src/components/`: `AppBackground`,
-  `GlassCard`, `GlowButton`, `GradientText`.
-- Fluxo de rotas completo (esqueleto, sem lógica real ainda):
-  Login → Boas-vindas → Tutorial (swipe placeholder) → Hub → (Estudar
-  tópicos | Praticar | Vocabulário) → fork "estudar tópico primeiro" vs
-  "apenas praticar" dentro de cada tópico.
+## Validacao
 
-## O que falta migrar (do HTML antigo / speakit-app)
+Com o servidor de desenvolvimento ativo:
 
-Ver blocos `// TODO:` espalhados pelas páginas em `src/pages/`. Resumo:
+```bash
+node scripts/validateContent.mjs
+npm run lint
+npm run build
+node scripts/smokeUi.mjs
+```
 
-- Login Google de verdade (hoje é um botão placeholder)
-- Banco de frases (600 questões, `topics_bank.json` do projeto antigo) →
-  `src/data/`
-- State machine dos 7 jogos (English Challenge, Beat the Clock, Memória,
-  Palavras Embaralhadas, Verdadeiro ou Falso, Revelação, Soletrando) — a
-  regra de negócio migra igual, o gate de 75%/roleta de prêmio NÃO migra
-  (era mecânica específica da feira Multitec, foi descartada)
-- Tela de estudo do tópico: conteúdo didático interativo + vídeo do
-  YouTube embutido — ainda não desenhada
-- Flashcards de vocabulário (termo + som na frente, tradução + imagem/
-  emoji no verso), no formato do speakit-app — ainda não implementado
-- Motor de som (efeitos do jogo hoje são beeps via Web Audio API no HTML
-  antigo; pronúncia de palavras/verbos pode usar `speechSynthesis`
-  nativo do navegador, gratuito, sem precisar de arquivo de áudio)
-- Tutorial de fato swipável (hoje é botão "Próximo")
+## Estado Atual
+
+- `present_tobe` e o unico topico gramatical funcional.
+- O banco possui 130 questoes: 50 `easy` e 80 `medium`.
+- Outros topicos, jogos e pratica de vocabulario permanecem em "Em breve".
+- O progresso e salvo somente no navegador/dispositivo atual.
+- Nao ha login, backend, sincronizacao, analytics ou ranking global.

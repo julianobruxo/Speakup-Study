@@ -8,7 +8,7 @@ Esta auditoria leu o `CLAUDE.md`, manifestos, lockfile, README, configuracoes, e
 
 ## 2. Git
 
-O diretorio `C:\Users\User\Desktop\Apps and Projects\Speakup Study` foi inicializado como repositorio Git local em 2026-07-22 com `git init`.
+A raiz atual do projeto foi inicializada como repositorio Git local em 2026-07-22 com `git init`.
 
 Comandos executados:
 

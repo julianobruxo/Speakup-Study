@@ -1,12 +1,12 @@
 # Architecture
 
-Updated: 2026-07-22
+Updated: 2026-07-23
 
 ## Goal
 
 The current architecture is intentionally small. This app is a simple English practice game, not an LMS, ERP, generic framework, or integration platform.
 
-The current phase consolidates the real MVP taxonomy and the minimum content shapes needed to represent grammar topics, vocabulary categories, and Irregular Verbs. It does not change UI, routes, games, persistence, login, analytics, PWA, monetization, dependencies, or build configuration.
+The current architecture includes the real MVP taxonomy, the Present TO BE practice flow, and local guest-first progress. It uses native browser storage without adding dependencies, backend, login, sync, analytics, ranking, PWA, or monetization.
 
 ## Directories Created
 
@@ -28,6 +28,9 @@ src/
       practiceSession.ts
     progress/
       progress.ts
+      localProgress.ts
+      practicePreferences.ts
+      useProgressSummary.ts
 ```
 
 ## Responsibilities
@@ -71,7 +74,7 @@ Defines the shape of future practice sessions: selected questions, answers, resu
 
 `src/services/progress`
 
-Defines the shape of future local progress records and the `ProgressRepository` contract.
+Defines local progress contracts, native IndexedDB access, the last small practice preference, and a React summary hook. Components do not access IndexedDB directly.
 
 ## MVP Grammar Catalog
 
@@ -169,7 +172,7 @@ The question shape is intentionally minimal:
 }
 ```
 
-No UI, session engine, randomization, progress, storage, analytics, audio, images, or games consume this bank yet.
+The Present TO BE session flow consumes this bank with seeded option shuffling, no repeated question within a session, and progress-aware selection.
 
 Approved future practice modes:
 
@@ -238,33 +241,51 @@ Current state:
 - Action Verbs and Routine Verbs now have 10 simple seed entries each;
 - 80 vocabulary pairs, 50 Irregular Verbs, and 130 Present TO BE questions are normalized in data files.
 
+## Local Progress
+
+The native IndexedDB database uses a generic product-independent name, schema version 1, and two object stores:
+
+- `questions`, keyed by `questionId`;
+- `sessions`, keyed by `sessionId`.
+
+Question records aggregate times seen, correct/wrong counts, last seen timestamp, and last result. Session records are written only after completion and use a stable ID so repeated effects overwrite instead of duplicating.
+
+Selection order is:
+
+1. unseen questions;
+2. questions whose latest result is wrong;
+3. correctly answered questions ordered by oldest `lastSeenAt`.
+
+`localStorage` is restricted to small preferences: sound and the last valid practice configuration. Storage failures are handled at the service boundary and never block active practice.
+
+Metric definitions:
+
+- practiced questions are unique question IDs;
+- accuracy is correct answers divided by all confirmed answers;
+- review count is the number whose latest result is wrong;
+- records are derived only from completed sessions.
+
 ## Not Implemented
 
 This phase does not implement:
 
-- new UI;
-- home screen;
 - grammar question banks for the other seven MVP topics;
 - complete Action Verbs/Routine Verbs banks beyond the 10-item seeds;
 - flashcards;
-- games;
-- session engine;
-- IndexedDB;
-- `localStorage`;
+- functional games;
+- storage migration beyond schema version 1;
+- visible progress reset/export;
 - login;
 - sync;
 - analytics;
-- audio;
 - PWA;
 - monetization;
 - external services.
 
 ## Known Risks
 
-- Existing UI still uses placeholder routes and hardcoded topic labels.
-- Existing first screen remains login-first until a later guest-first navigation phase.
 - No test framework is configured yet.
-- Approved visual and legacy functional references are present, but React UI reconstruction is still pending.
-- Official separated logo/assets are still pending.
+- The current smoke suite is custom browser automation rather than a unit/integration test framework.
+- Additional official brand asset variants and a dedicated favicon remain pending.
 - Faithful content migration still requires gradual extraction and pedagogical review.
 - Irregular Verbs should receive human/pedagogical review before being treated as final teaching content.

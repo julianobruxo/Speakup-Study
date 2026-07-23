@@ -1,8 +1,59 @@
 # Mapa de Implementacao
 
-Atualizado em: 2026-07-22
+Atualizado em: 2026-07-23
 
 Este mapa assume uma abordagem hibrida: evolucao incremental da base Vite/React existente, com refatoracao progressiva da arquitetura e reconstrucao parcial das telas/fluxos que conflitam com o `CLAUDE.md`. A base atual e pequena demais para justificar uma reescrita completa, mas tambem e placeholder demais para ser apenas "preenchida" sem criar fundamentos de dominio.
+
+## Execucao consolidada do MVP visual - 2026-07-23
+
+Status: consolidado no commit `feat: complete playable present to be MVP`.
+
+Entregue:
+
+- Fases 2 e 3 aplicadas como um design system simples e uma home guest-first fiel a referencia.
+- Parte navegavel das Fases 6 e 11 aplicada somente ao banco `present_tobe`.
+- Home, shell, rotas principais, bottom navigation, bottom sheet, estados bloqueados e estados vazios.
+- Sessao `easy`/`medium` de 10/20/30 questoes, sem repeticao, com alternativas embaralhadas.
+- Feedback, progresso, saida confirmada, resultado, replay, som, animacoes e celebracao.
+- Vocabulario apenas consultavel e jogos apenas visiveis como "Em breve".
+
+Nao antecipado:
+
+- persistencia local basica da Fase 7 foi concluida; migracao avancada e limpeza continuam pendentes;
+- flashcards da Fase 8;
+- jogos funcionais da Fase 9;
+- recomendacoes, login, backend, analytics, PWA ou monetizacao.
+
+Verificacao:
+
+- lint e build aprovados;
+- conteudo preservado em 130 questoes;
+- smoke automatizado em cinco viewports e no fluxo completo;
+- zero erro de browser e zero rota principal quebrada.
+
+### Feedback contextual de Present TO BE
+
+Status: implementado no working tree, sem alterar o banco de 130 questoes.
+
+- Acerto: confirmacao curta, barra verde linear de 3 segundos e avancamento automatico.
+- Erro: feedback pedagogico existente, avancamento manual por botao ou card e acesso a estudo.
+- Guia: classificador pequeno derivado do enunciado/respostas e conteudo exclusivo de Present TO BE.
+- Modal: painel alto mobile, dialog amplo desktop, rolagem interna, Escape e retorno de foco.
+- Timer: uma instancia por acerto, com limpeza no ciclo de vida e sem repeticao de som.
+- Smoke: cinco viewports, temporizacao, interacoes bloqueadas, modal, score, replay, saida e ultimas questoes correta/incorreta.
+- Fora do escopo preservado: metadados em massa, outros topicos, backend, login e analytics.
+
+### Refinamento visual e responsivo
+
+Status: concluido no working tree e pendente de aprovacao visual do usuario.
+
+- Desktop ampliado para uma experiencia de produto entre aproximadamente 1050 e 1200 px, sem moldura de celular.
+- Navegacao horizontal desktop usa os mesmos quatro destinos da barra mobile.
+- Navegacao global existe somente nas quatro areas principais.
+- Android/mobile usa conteudo rolavel separado da navegacao, safe area e viewports 360x800, 390x844 e 412x915.
+- Home, configuracao, sessao, feedback e resultado receberam composicoes especificas para mobile e desktop.
+- Energia game-like vem de hierarquia, cores auxiliares controladas, formas geometricas, estados, sons e microinteracoes, sem mascote ou visual infantil.
+- Smoke ampliado para cinco viewports, largura desktop, overlays, ausencia de sobreposicao e fluxo completo.
 
 ## Fase 0 - Baseline executavel e higiene de projeto
 
@@ -458,7 +509,7 @@ Decisoes:
 - Algoritmo inicial de mastery.
 - Politica quando ha menos questoes que a quantidade pedida.
 
-## Fase 7 - Persistencia local e progresso
+## Fase 7 - Persistencia local e progresso (concluida no recorte MVP)
 
 Objetivo: salvar progresso guest-first sem backend.
 
@@ -469,20 +520,21 @@ Areas afetadas:
 - `src/services/progress`
 - telas de progresso/continuar
 
-Novos modulos:
+Modulos implementados:
 
-- `ProgressRepository`
-- `IndexedDbProgressStore`
-- `LocalStoragePreferencesStore`
-- `ProgressMigration`
+- contratos em `progress.ts`
+- `localProgress.ts`
+- `practicePreferences.ts`
+- `useProgressSummary.ts`
 
 Funcionalidades:
 
-- Sessoes iniciadas/concluidas.
-- Historico por questao.
-- Mastery inicial.
-- Revisoes vencidas.
-- Configuracoes basicas.
+- Respostas confirmadas agregadas por questao.
+- Sessoes concluidas idempotentes.
+- Revisao pelo ultimo resultado incorreto.
+- Ultima configuracao de pratica.
+- Home e pagina Progresso com metricas reais.
+- Priorizacao de ineditas, ultimo erro e vistas ha mais tempo.
 
 Fora do escopo:
 
@@ -498,8 +550,9 @@ Riscos:
 Testes:
 
 - Persistencia/reload.
-- Migracao de schema.
 - Falhas de storage.
+- Idempotencia de resposta e sessao.
+- Selecao priorizada e sem repeticao.
 
 Criterios:
 
@@ -508,8 +561,8 @@ Criterios:
 
 Decisoes:
 
-- Retencao/limpeza de dados locais.
-- Estrategia de versao/migracao dos schemas IndexedDB.
+- Retencao/limpeza de dados locais continua pendente.
+- A versao inicial do schema e 1; estrategia para migracoes futuras continua pendente.
 
 ## Fase 8 - Flashcards e vocabulario
 

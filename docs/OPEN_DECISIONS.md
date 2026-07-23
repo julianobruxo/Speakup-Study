@@ -1,6 +1,6 @@
 # Decisoes Abertas
 
-Atualizado em: 2026-07-22
+Atualizado em: 2026-07-23
 
 ## Resolvidas
 
@@ -80,6 +80,50 @@ Atualizado em: 2026-07-22
 
    Node existente encontrado em `C:\Program Files\nodejs`; PATH do usuario atualizado para incluir esse diretorio sem remover entradas existentes.
 
+20. MVP visual e fluxo `present_tobe`
+
+   Decidido e implementado no working tree: experiencia guest-first baseada nos dois HTMLs de referencia, com somente `present_tobe` funcional. Outros topicos, jogos e pratica de vocabulario ficam visiveis e bloqueados como "Em breve".
+
+21. Logo da primeira versao
+
+   Resolvido para o MVP: o PNG base64 exato de `reference/home-approved.html` foi extraido para `src/assets/speakup-logo.png`. Nenhum logo foi recriado.
+
+22. Sons do MVP
+
+   Decidido: Web Audio nativo para efeitos leves; a preferencia ligado/desligado usa `localStorage`.
+
+23. Navegacao e responsividade do MVP
+
+   Decidido: desktop e uma versao importante com largura util real e navegacao horizontal. Android/mobile usa navegacao inferior somente nas quatro areas principais, em regiao separada do conteudo e com safe area. Topicos, configuracao, sessao, feedback, resultado e dialogs sao fluxos focados sem navegacao global.
+
+24. Direcao game-like all ages
+
+   Decidido: navy e vinho continuam dominantes; cores auxiliares, formas geometricas, icones, estados, sons e microinteracoes fornecem energia. Nao usar mascote, linguagem infantil ou aparencia de dashboard corporativo.
+
+25. Aprovacao visual
+
+   Pendente: a implementacao refinada passou lint, build e smoke automatizado, mas a aprovacao visual final continua com o usuario.
+
+26. Feedback e estudo contextual de Present TO BE
+
+   Decidido e implementado no working tree: acertos avancam automaticamente apos 3 segundos; erros exigem acao manual e oferecem um guia contextual. O guia e exclusivo de `present_tobe`, usa classificacao local simples e nao adiciona metadados as 130 questoes. A aprovacao final continua pendente do usuario.
+
+27. Persistencia local e metricas
+
+   Decidido e implementado: IndexedDB nativo para progresso por questao e sessoes concluidas; `localStorage` somente para preferencias pequenas. Questoes praticadas contam IDs unicos; precisao considera todas as respostas; revisao significa ultimo resultado incorreto; recordes consideram apenas sessoes concluidas.
+
+28. Limpeza de progresso
+
+   Pendente: nao existe acao visivel para apagar progresso. Uma futura acao destrutiva exige decisao de produto, confirmacao explicita e tratamento claro da perda local.
+
+29. Ranking e conta
+
+   Ranking global semanal entre participantes e fase futura e esta fora do escopo atual. Exigira login ou identidade opcional, apelido publico, backend compartilhado, regra de pontos, periodo semanal, privacidade e prevencao minima contra pontuacao artificial. Login/sync tambem exigem estrategia de merge do progresso local e credenciais aprovadas.
+
+30. Repositorio publico
+
+   Decidido: consolidar o MVP jogavel em `main` e publicar o historico local no repositorio publico `https://github.com/julianobruxo/Speakup-Study.git`, sem deploy, release, tag ou pull request.
+
 ## Necessarias antes de comecar implementacao visual/home
 
 1. Primeiro baseline Git
@@ -92,7 +136,7 @@ Atualizado em: 2026-07-22
 
 3. Logo e assets oficiais
 
-   O app usa placeholder "SU" e assets derivados do Vite. Precisamos dos arquivos oficiais de logo/favicon ou aprovacao para criar assets temporarios.
+   Resolvido para o MVP com a extracao do logo aprovado. Variantes oficiais separadas e favicon dedicado podem ser avaliados em uma fase posterior de publicacao.
 
 ## Necessarias antes de migrar jogos/conteudo
 
