@@ -92,6 +92,23 @@ Multitec, leads, ranking, roleta, premios, CSV, gate de 75%, login, sync, analyt
 
 O MVP visual, o fluxo funcional de `present_tobe` e a persistencia local estao consolidados no commit `feat: complete playable present to be MVP`. A Home e Progresso usam metricas reais salvas em IndexedDB; sessoes futuras priorizam ineditas, ultimo erro e itens vistos ha mais tempo. Aguardar revisao do usuario e nao iniciar outro topico, ranking, login, backend, sync ou deploy sem nova autorizacao.
 
+Atualizacao de 2026-07-23: o working tree agora inclui o primeiro template completo de vocabulario. Partes do corpo possui 24 flashcards em `/vocabulario/body/flashcards`; as demais categorias e a acao Praticar continuam bloqueadas. Esta sessao nao grava progresso e nao altera as metricas gramaticais.
+
+Atualizacao de 2026-07-23 (revamp FASE 0/FASE 1): ver `docs/REVAMP_ROADMAP.md` para o roteiro completo. Nesta sessao:
+
+- Auditoria comparando o React atual com `reference/ingles-em-jogo-product-vision.html`, `reference/home-approved.html` e `reference/speakup-english-challenge.html`, sem alterar conteudo/regras.
+- Tokens visuais estendidos em `src/index.css` (superficie, texto, bordas, feedback, categorias, radius/spacing/motion/focus-ring), preservando navy/vinho/branco.
+- `AppShell` ganhou uma sidebar desktop persistente (`DesktopSidebar`) substituindo a pilula de navegacao horizontal antiga; rail de icones entre 900-1099px, versao completa com rotulos a partir de 1100px; mesmos quatro destinos da navegacao inferior mobile, mais um acesso secundario a Jogos.
+- Avatar ficticio "J" removido do cabecalho mobile e de `ProfilePage` (nao ha login/nome real neste app); substituido por icone generico de perfil.
+- `scripts/smokeUi.mjs` atualizado para validar a nova sidebar (presenca, rail vs. completa, item ativo, ausencia de Jogos como quinto item mobile) no lugar da antiga navegacao horizontal.
+- Nenhuma rota, dado, regra pedagogica ou fluxo de sessao/flashcards foi alterado.
+
+Atualizacao de 2026-07-23 (fechamento FASE 1 + FASE 2): o bloqueio da Fase 1 (bottom navigation/sidebar visivel durante o dialog "Bora praticar") foi corrigido. Causa raiz: em modo headless (`--headless=new`, usado por `scripts/smokeUi.mjs`), o Edge so recalcula estilo/computa `requestAnimationFrame` apos um frame real ser solicitado; sem isso, `getComputedStyle` e a restauracao de foco liam estado desatualizado. Confirmado em navegador real que o app sempre se comportou corretamente. Correcao: `AppShell` ganhou uma prop `dialogOpen` explicita, repassada como `hidden` para `BottomNavigation`/`DesktopSidebar` (classe local `nav-hidden`, sem depender de `document.body.classList`); `scripts/smokeUi.mjs` passou a forcar `Page.captureScreenshot` antes de checar visibilidade/foco nesses pontos. Codigo de diagnostico temporario foi totalmente removido antes do fechamento. Gate completo (validateContent, tsc, lint, build, smoke em 7 viewports) aprovado antes de iniciar a Fase 2.
+
+FASE 2 implementada: Home reestruturada em `src/components/home/` (`HomeHero`, `LearningPathSection`, `HomeProgressSummary`, `QuickGamesSection`, `PersonalRecordsSection`). Nova secao "Seu caminho de pratica" unifica proximo-passo-recomendado e o resumo de Gramatica/Vocabulario (evita duplicar o mesmo CTA); hero ganhou link secundario "Explorar conteudos"; painel de progresso perdeu o botao de acao duplicado e ganhou link "Ver progresso completo". Nenhum dado ficticio (XP, nivel, streak, liga, missao, conquista, ranking) foi introduzido. Gate revalidado apos a Fase 2, smoke com novas asserções para Home vazia, Home com progresso real e navegacao dos novos links.
+
+Atualizacao de 2026-07-23 (complemento de viewports e flake do timer): `scripts/smokeUi.mjs` passou a cobrir tambem `1024x768` e `1920x1080` (dimensoes exatas, alem dos sete ja existentes). Inspecao visual manual nos dois confirmou shell/sidebar corretos, sem overflow, boa ocupacao de largura, dialogs dentro da viewport, sem dados ficticios. A asserção do timer de 3 segundos (avanco automatico apos resposta correta) apresentou uma falha isolada por timeout sob carga do Edge headless apos muitas execucoes consecutivas nesta sessao; nao se repetiu na tentativa seguinte. Ampliei a tolerancia de espera do teste (nao o comportamento de producao, que continua exatamente 3s via CSS) de 1500ms/3900ms para 4000ms/6000ms; a checagem de que a questao nao avanca antes de 3s permanece igual. **Se esse timeout voltar a ocorrer de forma consistente (duas falhas seguidas) em sessoes futuras, deve ser investigado como possivel regressao real antes de qualquer fase ser declarada concluida** — nesta sessao, apos o ajuste, dois smokes completos consecutivos passaram sem falha.
+
 ## Ambiente do terminal
 
 - Causa do erro anterior no PowerShell do VS Code: Node/npm estavam instalados, mas o PATH do usuario nao continha `C:\Program Files\nodejs`; a entrada existia no PATH de maquina e podia nao estar disponivel para processos ja abertos.
@@ -124,22 +141,25 @@ Rotas finais:
 - `/gramatica`: oito topicos; somente `present_tobe` disponivel.
 - `/gramatica/present_tobe`: configuracao de dificuldade e quantidade.
 - `/praticar/present_tobe/sessao`: quiz e resultado.
-- `/vocabulario` e `/vocabulario/:categoryId`: catalogo e previa, sem pratica.
+- `/vocabulario` e `/vocabulario/:categoryId`: catalogo; somente Partes do corpo esta liberado.
+- `/vocabulario/body/flashcards`: sessao focada com 24 cards, SVG local e pronuncia nativa.
 - `/jogos`: seis jogos em estado "Em breve".
 - `/progresso`: estado vazio inicial e resumo real por dificuldade, revisao e recordes apos a pratica.
 - `/perfil`: modo visitante e preferencia de som.
 
 Componentes principais:
 
-- `AppShell`, `GlobalHeader`, `PageHeader`, `GlobalNavigation`.
+- `AppShell` (sidebar desktop + navegacao inferior mobile + fluxos focados), `GlobalHeader`, `PageHeader`.
 - `AppCard`, `LockedCard`, `PrimaryButton`.
 - `AppDialog`, `AppIcon`, `Toast`.
+- `src/components/home/`: `HomeHero`, `LearningPathSection`, `HomeProgressSummary`, `QuickGamesSection`, `PersonalRecordsSection` (composicao da Home, Fase 2 do revamp).
 
 Servicos simples:
 
 - `selectPracticeQuestions`: filtro, embaralhamento deterministico e corte sem repeticao.
 - `shuffleOptions`: embaralhamento visual das alternativas.
 - `sound`: efeitos Web Audio e preferencia local de som.
+- `pronunciation`: Web Speech API, cancelamento local, fallback e a mesma preferencia de som.
 - `localProgress`: IndexedDB nativo para respostas por questao e sessoes concluidas.
 - `practicePreferences`: ultima dificuldade e tamanho em `localStorage`.
 - `useProgressSummary`: leitura reativa das metricas sem acesso direto a storage nos componentes.
@@ -161,7 +181,7 @@ Validacoes:
 - `npm run build`.
 - `node scripts/smokeUi.mjs`.
 
-O smoke automatizado cobre 360x800, 390x844, 768x1024, 1366x768 e 1440x900; rotas com reload; navegacao responsiva; 10/20/30 questoes; 30 itens unicos; barra e timer de acerto; bloqueio de avancamento antecipado; erro manual; guia contextual; X, Escape e Voltar ao jogo; retorno de foco; score; sequencia; replay; saida; voltar do navegador e zero erro de browser.
+O smoke automatizado cobre 360x800, 390x844, 412x915, 768x1024, 1366x768 e 1440x900; rotas com reload; os 24 flashcards e SVGs; fala simulada, mute e fallback; flip, teclado, swipe e conclusao; navegacao responsiva; 10/20/30 questoes; 30 itens unicos; feedback gramatical; persistencia e zero erro de browser.
 
 ## Contrato atual de feedback
 

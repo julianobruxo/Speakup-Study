@@ -8,6 +8,7 @@ interface AppShellProps {
   activeNav?: "home" | "study" | "progress" | "profile";
   className?: string;
   hideNavigation?: boolean;
+  dialogOpen?: boolean;
 }
 
 export function AppShell({
@@ -15,6 +16,7 @@ export function AppShell({
   children,
   className = "",
   hideNavigation = false,
+  dialogOpen = false,
 }: PropsWithChildren<AppShellProps>) {
   const showGlobalNavigation = Boolean(activeNav) && !hideNavigation;
 
@@ -25,19 +27,47 @@ export function AppShell({
           showGlobalNavigation ? "main-shell" : "focus-shell"
         }`}
       >
-        {showGlobalNavigation && <GlobalHeader active={activeNav} />}
+        {showGlobalNavigation && <GlobalHeader />}
+        {showGlobalNavigation && (
+          <DesktopSidebar active={activeNav} hidden={dialogOpen} />
+        )}
         <main className={`app-content ${className}`}>{children}</main>
-        {showGlobalNavigation && <GlobalNavigation active={activeNav} />}
+        {showGlobalNavigation && (
+          <BottomNavigation active={activeNav} hidden={dialogOpen} />
+        )}
       </div>
     </div>
   );
 }
 
-function GlobalHeader({
-  active,
-}: {
-  active?: "home" | "study" | "progress" | "profile";
-}) {
+type NavId = "home" | "study" | "progress" | "profile";
+
+const NAV_ITEMS: {
+  id: NavId;
+  label: string;
+  icon: "home" | "book" | "chart" | "user";
+  to: string;
+}[] = [
+  { id: "home", label: "Início", icon: "home", to: "/" },
+  { id: "study", label: "Estudar", icon: "book", to: "/praticar" },
+  { id: "progress", label: "Progresso", icon: "chart", to: "/progresso" },
+  { id: "profile", label: "Perfil", icon: "user", to: "/perfil" },
+];
+
+function isItemActive(
+  itemId: NavId,
+  itemTo: string,
+  active: NavId | undefined,
+  pathname: string,
+) {
+  return (
+    active === itemId ||
+    (!active &&
+      (pathname === itemTo || (itemTo !== "/" && pathname.startsWith(itemTo))))
+  );
+}
+
+function GlobalHeader() {
   const navigate = useNavigate();
   return (
     <header className="global-header">
@@ -48,15 +78,68 @@ function GlobalHeader({
       >
         <img alt="Speak UP English School" src={logo} />
       </button>
-      <GlobalNavigation active={active} desktop />
       <button
         aria-label="Abrir perfil"
         className="avatar-button"
         onClick={() => navigate("/perfil")}
       >
-        J
+        <AppIcon name="user" size={18} />
       </button>
     </header>
+  );
+}
+
+function DesktopSidebar({
+  active,
+  hidden = false,
+}: {
+  active?: NavId;
+  hidden?: boolean;
+}) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  return (
+    <aside
+      aria-hidden={hidden || undefined}
+      aria-label="Navegação principal"
+      className={`app-sidebar ${hidden ? "nav-hidden" : ""}`}
+    >
+      <button
+        aria-label="Ir para o início"
+        className="sidebar-brand"
+        onClick={() => navigate("/")}
+      >
+        <img alt="Speak UP English School" src={logo} />
+      </button>
+      <nav className="sidebar-nav" aria-label="Áreas principais">
+        {NAV_ITEMS.map((item) => {
+          const isActive = isItemActive(
+            item.id,
+            item.to,
+            active,
+            location.pathname,
+          );
+          return (
+            <button
+              aria-current={isActive ? "page" : undefined}
+              className={isActive ? "active" : ""}
+              key={item.id}
+              onClick={() => navigate(item.to)}
+            >
+              <AppIcon name={item.icon} size={20} />
+              <span className="sidebar-nav-label">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+      <div className="sidebar-secondary">
+        <button onClick={() => navigate("/jogos")}>
+          <AppIcon name="game" size={20} />
+          <span className="sidebar-nav-label">Jogos</span>
+        </button>
+      </div>
+    </aside>
   );
 }
 
@@ -177,48 +260,29 @@ export function LockedCard({
   );
 }
 
-function GlobalNavigation({
+function BottomNavigation({
   active,
-  desktop = false,
+  hidden = false,
 }: {
-  active?: "home" | "study" | "progress" | "profile";
-  desktop?: boolean;
+  active?: NavId;
+  hidden?: boolean;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const items = [
-    { id: "home" as const, label: "Início", icon: "home" as const, to: "/" },
-    {
-      id: "study" as const,
-      label: "Estudar",
-      icon: "book" as const,
-      to: "/praticar",
-    },
-    {
-      id: "progress" as const,
-      label: "Progresso",
-      icon: "chart" as const,
-      to: "/progresso",
-    },
-    {
-      id: "profile" as const,
-      label: "Perfil",
-      icon: "user" as const,
-      to: "/perfil",
-    },
-  ];
 
   return (
     <nav
+      aria-hidden={hidden || undefined}
       aria-label="Navegação principal"
-      className={desktop ? "desktop-navigation" : "bottom-navigation"}
+      className={`bottom-navigation ${hidden ? "nav-hidden" : ""}`}
     >
-      {items.map((item) => {
-        const isActive =
-          active === item.id ||
-          (!active &&
-            (location.pathname === item.to ||
-              (item.to !== "/" && location.pathname.startsWith(item.to))));
+      {NAV_ITEMS.map((item) => {
+        const isActive = isItemActive(
+          item.id,
+          item.to,
+          active,
+          location.pathname,
+        );
         return (
           <button
             aria-current={isActive ? "page" : undefined}

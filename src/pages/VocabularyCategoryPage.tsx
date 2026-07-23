@@ -49,6 +49,40 @@ export default function VocabularyCategoryPage() {
     window.setTimeout(() => setNotice(""), 2200);
   }
 
+  if (category.id === "body") {
+    return (
+      <AppShell className="standard-page vocabulary-detail">
+        <PageHeader backTo="/vocabulario" title="Partes do corpo" />
+        <section className="page-lead compact">
+          <span className="eyebrow">24 flashcards</span>
+          <h2>Aprenda com imagem e pronúncia</h2>
+          <p>Aprenda 24 palavras com imagens e pronúncia.</p>
+        </section>
+        <div className="word-preview-grid" aria-label="Prévia do conteúdo">
+          {regularEntries.slice(0, 6).map((entry) => (
+            <div className="word-preview" key={entry.id}>
+              <strong>{entry.translation}</strong>
+              <span>{entry.term}</span>
+            </div>
+          ))}
+        </div>
+        <PrimaryButton
+          icon={<AppIcon name="book" size={19} />}
+          onClick={() => navigate("/vocabulario/body/flashcards")}
+        >
+          Estudar com flashcards
+        </PrimaryButton>
+        <div className="locked-action" aria-label="Praticar: em breve">
+          <AppIcon name="lock" />
+          <div>
+            <strong>Praticar</strong>
+            <span>Em breve</span>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell className="standard-page vocabulary-detail">
       <PageHeader backTo="/vocabulario" title={category.title} />

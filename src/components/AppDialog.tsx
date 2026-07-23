@@ -32,15 +32,8 @@ export default function AppDialog({
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    if (open && !dialog.open) {
-      dialog.showModal();
-      document.body.classList.add("dialog-open");
-    }
-    if (!open && dialog.open) {
-      dialog.close();
-      document.body.classList.remove("dialog-open");
-    }
-    return () => document.body.classList.remove("dialog-open");
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
   }, [open]);
 
   return (

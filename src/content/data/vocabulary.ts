@@ -5,16 +5,30 @@ import type {
 } from "../../shared/types/domain";
 
 export const MVP_VOCABULARY_ENTRIES: VocabularyEntry[] = [
-  vocabularyEntry("body_head", "body", "Head", "Cabeça"),
-  vocabularyEntry("body_hand", "body", "Hand", "Mão"),
-  vocabularyEntry("body_foot", "body", "Foot", "Pé"),
-  vocabularyEntry("body_eye", "body", "Eye", "Olho"),
-  vocabularyEntry("body_ear", "body", "Ear", "Orelha"),
-  vocabularyEntry("body_arm", "body", "Arm", "Braço"),
-  vocabularyEntry("body_leg", "body", "Leg", "Perna"),
-  vocabularyEntry("body_nose", "body", "Nose", "Nariz"),
-  vocabularyEntry("body_mouth", "body", "Mouth", "Boca"),
-  vocabularyEntry("body_finger", "body", "Finger", "Dedo"),
+  vocabularyEntry("body_head", "body", "Head", "Cabeça", "head"),
+  vocabularyEntry("body_hair", "body", "Hair", "Cabelo", "hair"),
+  vocabularyEntry("body_face", "body", "Face", "Rosto", "face"),
+  vocabularyEntry("body_eye", "body", "Eye", "Olho", "eye"),
+  vocabularyEntry("body_ear", "body", "Ear", "Orelha", "ear"),
+  vocabularyEntry("body_nose", "body", "Nose", "Nariz", "nose"),
+  vocabularyEntry("body_mouth", "body", "Mouth", "Boca", "mouth"),
+  vocabularyEntry("body_teeth", "body", "Teeth", "Dentes", "teeth"),
+  vocabularyEntry("body_tongue", "body", "Tongue", "Língua", "tongue"),
+  vocabularyEntry("body_neck", "body", "Neck", "Pescoço", "neck"),
+  vocabularyEntry("body_shoulder", "body", "Shoulder", "Ombro", "shoulder"),
+  vocabularyEntry("body_arm", "body", "Arm", "Braço", "arm"),
+  vocabularyEntry("body_elbow", "body", "Elbow", "Cotovelo", "elbow"),
+  vocabularyEntry("body_hand", "body", "Hand", "Mão", "hand"),
+  vocabularyEntry("body_finger", "body", "Finger", "Dedo", "finger"),
+  vocabularyEntry("body_thumb", "body", "Thumb", "Polegar", "thumb"),
+  vocabularyEntry("body_chest", "body", "Chest", "Peito", "chest"),
+  vocabularyEntry("body_stomach", "body", "Stomach", "Barriga", "stomach"),
+  vocabularyEntry("body_back", "body", "Back", "Costas", "back"),
+  vocabularyEntry("body_leg", "body", "Leg", "Perna", "leg"),
+  vocabularyEntry("body_knee", "body", "Knee", "Joelho", "knee"),
+  vocabularyEntry("body_ankle", "body", "Ankle", "Tornozelo", "ankle"),
+  vocabularyEntry("body_foot", "body", "Foot", "Pé", "foot"),
+  vocabularyEntry("body_toe", "body", "Toe", "Dedo do pé", "toe"),
 
   vocabularyEntry("clothes_shirt", "clothes", "Shirt", "Camisa"),
   vocabularyEntry("clothes_pants", "clothes", "Pants", "Calça"),
@@ -128,6 +142,7 @@ function vocabularyEntry(
   categoryId: VocabularyCategoryId,
   term: string,
   translation: string,
+  visualKey?: string,
 ): VocabularyEntry {
   return {
     id,
@@ -135,5 +150,6 @@ function vocabularyEntry(
     term,
     translation,
     availabilityStatus: "available",
+    ...(visualKey ? { visualKey } : {}),
   };
 }

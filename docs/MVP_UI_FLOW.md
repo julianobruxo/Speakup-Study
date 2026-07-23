@@ -61,6 +61,7 @@ Home
 | `/praticar/present_tobe/sessao` | Questões, feedback e resultado |
 | `/vocabulario` | Categorias |
 | `/vocabulario/:categoryId` | Prévia da categoria |
+| `/vocabulario/body/flashcards` | 24 flashcards de Partes do corpo |
 | `/jogos` | Jogos bloqueados |
 | `/progresso` | Estado vazio inicial ou progresso real |
 | `/perfil` | Visitante e som |
@@ -113,11 +114,22 @@ Home
 - X, Escape, overlay e `Voltar ao jogo` fecham o dialog e restauram foco ao gatilho.
 - Questão, resposta, score, sequência e posição são preservados.
 
+## Flashcards de Partes do corpo
+
+1. Em `/vocabulario`, Partes do corpo e a unica categoria disponivel; as outras oito exibem `Em breve`.
+2. A categoria oferece `Estudar com flashcards`; `Praticar` permanece bloqueado.
+3. A frente mostra ilustracao SVG local, destaque anatomico, portugues e `Toque para revelar`.
+4. Clique, toque, Enter ou Espaco revelam o ingles e disparam uma unica pronuncia quando som/API estao disponiveis.
+5. O verso oferece `Ouvir novamente`, sem pronuncia escrita.
+6. Botoes, setas e swipe navegam; todo novo card inicia pela frente e cancela fala anterior.
+7. O ultimo card conclui a sessao sem criar um item 25.
+8. A conclusao oferece revisar, outro tema e inicio, sem score ou persistencia.
+
 ## Smoke test
 
 Executado com `node scripts/smokeUi.mjs`, sem dependências adicionais:
 
-- viewports 360x800, 390x844, 768x1024, 1366x768 e 1440x900;
+- viewports 360x800, 390x844, 412x915, 768x1024, 1366x768 e 1440x900;
 - ausência de overflow horizontal;
 - navegação adaptativa, largura desktop, safe area e ausência de sobreposição;
 - ausência de navegação global em configuração, sessão, resultado e dialogs;
@@ -135,4 +147,6 @@ Executado com `node scripts/smokeUi.mjs`, sem dependências adicionais:
 - modal de estudo sem gravação duplicada e falha simulada de IndexedDB sem bloqueio;
 - três jogos na Home e seis em `/jogos`;
 - toggle de som;
+- 24 entradas e ilustracoes em ordem, flip, fala unica, repetir, mute, fallback, teclado, swipe e conclusao;
+- vocabulario sem alteracao do progresso gramatical;
 - zero erro de browser.

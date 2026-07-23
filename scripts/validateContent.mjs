@@ -16,8 +16,48 @@ const actionVerbs = vocabularyCalls.filter(
 const routineVerbs = vocabularyCalls.filter(
   ([, categoryId]) => categoryId === "routine_verbs",
 );
+const bodyParts = vocabularyCalls.filter(([, categoryId]) => categoryId === "body");
 const vocabularyIds = vocabularyCalls.map(([id]) => id);
 
+const expectedBodyParts = [
+  ["body_head", "Head", "Cabeça", "head"],
+  ["body_hair", "Hair", "Cabelo", "hair"],
+  ["body_face", "Face", "Rosto", "face"],
+  ["body_eye", "Eye", "Olho", "eye"],
+  ["body_ear", "Ear", "Orelha", "ear"],
+  ["body_nose", "Nose", "Nariz", "nose"],
+  ["body_mouth", "Mouth", "Boca", "mouth"],
+  ["body_teeth", "Teeth", "Dentes", "teeth"],
+  ["body_tongue", "Tongue", "Língua", "tongue"],
+  ["body_neck", "Neck", "Pescoço", "neck"],
+  ["body_shoulder", "Shoulder", "Ombro", "shoulder"],
+  ["body_arm", "Arm", "Braço", "arm"],
+  ["body_elbow", "Elbow", "Cotovelo", "elbow"],
+  ["body_hand", "Hand", "Mão", "hand"],
+  ["body_finger", "Finger", "Dedo", "finger"],
+  ["body_thumb", "Thumb", "Polegar", "thumb"],
+  ["body_chest", "Chest", "Peito", "chest"],
+  ["body_stomach", "Stomach", "Barriga", "stomach"],
+  ["body_back", "Back", "Costas", "back"],
+  ["body_leg", "Leg", "Perna", "leg"],
+  ["body_knee", "Knee", "Joelho", "knee"],
+  ["body_ankle", "Ankle", "Tornozelo", "ankle"],
+  ["body_foot", "Foot", "Pé", "foot"],
+  ["body_toe", "Toe", "Dedo do pé", "toe"],
+];
+
+assert(bodyParts.length === 24, `Expected 24 body parts, got ${bodyParts.length}`);
+assert(
+  JSON.stringify(
+    bodyParts.map(([id, , term, translation, visualKey]) => [
+      id,
+      term,
+      translation,
+      visualKey,
+    ]),
+  ) === JSON.stringify(expectedBodyParts),
+  "Body parts must preserve the required order, terms, translations, and visual keys",
+);
 assert(actionVerbs.length === 10, `Expected 10 Action Verbs, got ${actionVerbs.length}`);
 assert(routineVerbs.length === 10, `Expected 10 Routine Verbs, got ${routineVerbs.length}`);
 assertUnique(vocabularyIds, "vocabulary IDs");
@@ -111,6 +151,7 @@ assert(
 console.log(
   JSON.stringify(
     {
+      bodyParts: bodyParts.length,
       actionVerbs: actionVerbs.length,
       routineVerbs: routineVerbs.length,
       totalVocabulary: vocabularyCalls.length,

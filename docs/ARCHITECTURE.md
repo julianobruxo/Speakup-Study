@@ -6,7 +6,7 @@ Updated: 2026-07-23
 
 The current architecture is intentionally small. This app is a simple English practice game, not an LMS, ERP, generic framework, or integration platform.
 
-The current architecture includes the real MVP taxonomy, the Present TO BE practice flow, and local guest-first progress. It uses native browser storage without adding dependencies, backend, login, sync, analytics, ranking, PWA, or monetization.
+The current architecture includes the real MVP taxonomy, the Present TO BE practice flow, local guest-first progress, and one vocabulary flashcard template. It uses native browser capabilities without adding dependencies, backend, login, sync, analytics, ranking, PWA, or monetization.
 
 ## Directories Created
 
@@ -24,6 +24,9 @@ src/
       content.ts
     taxonomy.ts
   services/
+    audio/
+      pronunciation.ts
+      sound.ts
     sessions/
       practiceSession.ts
     progress/
@@ -64,7 +67,7 @@ It also exposes small lookup helpers by ID. There are no repositories, adapters,
 
 Defines simple data files for content that has already been normalized:
 
-- `vocabulary.ts`: 80 vocabulary pairs across 8 populated categories;
+- `vocabulary.ts`: 94 vocabulary pairs across 8 populated categories, including 24 ordered body-part entries;
 - `irregularVerbs.ts`: 50 Irregular Verb entries and approved practice mode strings;
 - `presentTobeQuestions.ts`: 130 pilot grammar questions for `present_tobe`.
 
@@ -239,7 +242,7 @@ Current state:
 - grammar questions were inventoried; only `present_tobe` has a pilot bank;
 - games were not migrated;
 - Action Verbs and Routine Verbs now have 10 simple seed entries each;
-- 80 vocabulary pairs, 50 Irregular Verbs, and 130 Present TO BE questions are normalized in data files.
+- 94 vocabulary pairs, 50 Irregular Verbs, and 130 Present TO BE questions are normalized in data files.
 
 ## Local Progress
 
@@ -258,6 +261,14 @@ Selection order is:
 
 `localStorage` is restricted to small preferences: sound and the last valid practice configuration. Storage failures are handled at the service boundary and never block active practice.
 
+## Vocabulary Flashcards
+
+`VocabularyFlashcardPage` reads the canonical `body` entries directly from `vocabulary.ts`. It does not duplicate vocabulary data or persist vocabulary progress.
+
+`BodyPartIllustration` is a local reusable SVG component. A small set of anatomical compositions is selected by the optional `visualKey` field, with a specific highlight and callout for every body entry.
+
+`pronunciation.ts` wraps the native Web Speech API for English playback. It reuses the global sound preference from `sound.ts`, cancels the session's previous utterance before navigation/repetition, and returns a capability result so the UI can expose a non-blocking fallback.
+
 Metric definitions:
 
 - practiced questions are unique question IDs;
@@ -271,7 +282,7 @@ This phase does not implement:
 
 - grammar question banks for the other seven MVP topics;
 - complete Action Verbs/Routine Verbs banks beyond the 10-item seeds;
-- flashcards;
+- flashcards for categories other than Partes do corpo;
 - functional games;
 - storage migration beyond schema version 1;
 - visible progress reset/export;

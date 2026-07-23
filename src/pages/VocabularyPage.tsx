@@ -3,6 +3,7 @@ import AppIcon from "../components/AppIcon";
 import {
   AppCard,
   AppShell,
+  LockedCard,
   PageHeader,
 } from "../components/AppShell";
 import { ACTIVE_VOCABULARY_CATEGORIES } from "../content/taxonomy";
@@ -27,9 +28,9 @@ export default function VocabularyPage() {
     <AppShell className="standard-page">
       <PageHeader backTo="/praticar" title="Vocabulário" />
       <section className="page-lead compact">
-        <span className="eyebrow">9 categorias</span>
+        <span className="eyebrow">1 categoria disponível</span>
         <h2>Explore novas palavras</h2>
-        <p>Consulte o conteúdo disponível. Flashcards e jogos chegam em breve.</p>
+        <p>Comece por Partes do corpo. As outras categorias chegam em breve.</p>
       </section>
       <div className="vocabulary-list">
         {ACTIVE_VOCABULARY_CATEGORIES.map((category) => {
@@ -37,14 +38,24 @@ export default function VocabularyPage() {
             category.id === "irregular_verbs"
               ? IRREGULAR_VERBS.length
               : getVocabularyEntriesByCategory(category.id).length;
+          if (category.id !== "body") {
+            return (
+              <LockedCard
+                description={categoryDescriptions[category.id]}
+                key={category.id}
+                onClick={() => undefined}
+                title={category.title}
+              />
+            );
+          }
           return (
             <AppCard
               description={categoryDescriptions[category.id]}
               icon={<AppIcon name="grid" size={20} />}
               key={category.id}
               onClick={() => navigate(`/vocabulario/${category.id}`)}
-              title={category.title}
-              trailing={<span className="count-pill">{count} itens</span>}
+              title="Partes do corpo"
+              trailing={<span className="count-pill">{count} palavras</span>}
             />
           );
         })}

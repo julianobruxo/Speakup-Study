@@ -4,9 +4,40 @@ Atualizado em: 2026-07-23
 
 ## Estado executivo
 
-O workspace atual contem um MVP visual navegavel em Vite + React + TypeScript. A home guest-first, as areas principais e o fluxo completo de pratica de `present_tobe` estao implementados. Os demais topicos, jogos e a pratica de vocabulario aparecem em estado final de "Em breve", sem simular funcionalidades inexistentes.
+O workspace atual contem um MVP visual navegavel em Vite + React + TypeScript. A home guest-first, as areas principais, o fluxo completo de pratica de `present_tobe` e o primeiro template de flashcards de vocabulario estao implementados. Os demais topicos, categorias e jogos aparecem em estado final de "Em breve", sem simular funcionalidades inexistentes.
 
-Fase atual: MVP jogavel de `present_tobe` concluido, com persistencia local, documentacao e smoke tests. O trabalho posterior a `ce27d32` foi preparado para o commit `feat: complete playable present to be MVP` e publicacao da branch `main`.
+Fase atual: MVP jogavel de `present_tobe` consolidado e template de 24 flashcards de Partes do corpo concluido no working tree, sem persistencia de vocabulario. Em paralelo, FASE 0 (auditoria), FASE 1 (fundacao visual e App Shell) e FASE 2 (Home e navegacao principal) do revamp descrito em `docs/REVAMP_ROADMAP.md` foram executadas e validadas nesta sessao, sem alterar conteudo, regras pedagogicas ou persistencia.
+
+## Revamp - FASE 1 fechamento e FASE 2 (2026-07-23)
+
+O bloqueio da Fase 1 (bottom navigation/sidebar nao escondendo durante o dialog "Bora praticar") foi corrigido: a causa raiz era um problema do ambiente de teste headless (Edge `--headless=new` nao gera frame real ate uma screenshot ser solicitada, entao `getComputedStyle` e `requestAnimationFrame` liam estado desatualizado em `scripts/smokeUi.mjs`; confirmado em navegador real que o comportamento sempre esteve correto). A solucao adotada foi trocar o mecanismo global (`document.body.classList` + seletor `.dialog-open`) por uma prop React explicita (`AppShell` recebe `dialogOpen`, repassada como `hidden` para `BottomNavigation`/`DesktopSidebar`, aplicando uma classe local `nav-hidden`), e o smoke test passou a forcar um frame real antes de checar visibilidade/foco. Todo codigo de diagnostico temporario foi removido antes do fechamento. Gate da Fase 1 aprovado (validateContent, tsc, lint, build, smoke completo em 7 viewports, 0 erros de navegador) antes de qualquer arquivo da Fase 2 ser alterado.
+
+A Home foi reestruturada na Fase 2 em componentes dedicados (`src/components/home/HomeHero.tsx`, `LearningPathSection.tsx`, `HomeProgressSummary.tsx`, `QuickGamesSection.tsx`, `PersonalRecordsSection.tsx`), compostos por `src/pages/HomePage.tsx`. Estrutura: hero com CTA "Bora praticar" + link secundario "Explorar conteudos"; secao unificada "Seu caminho de pratica" (Gramatica/Present TO BE com progresso real + Vocabulario/Partes do corpo) que substitui a duplicacao entre "proximo passo" e cards de conteudo; painel de progresso simplificado (sem botao de acao duplicado, com link "Ver progresso completo"); jogos rapidos e recordes pessoais mantidos. Nenhum dado ficticio (XP, nivel, streak, liga, missao, conquista, ranking) foi introduzido. Gate completo revalidado apos a Fase 2.
+
+Complemento a pedido de Juliano: `scripts/smokeUi.mjs` passou a cobrir tambem os viewports exatos `1024x768` e `1920x1080` (alem dos sete ja existentes). Inspecao visual manual dos screenshots gerados confirmou shell/sidebar corretos (rail em 1024x768, sidebar completa em 1920x1080), ausencia de overflow, boa ocupacao da largura, dialogs dentro da viewport e ausencia de dados ficticios em ambos. A asserção do timer de 3 segundos (avanco automatico apos resposta correta) teve sua tolerancia de espera ampliada no teste (1500ms -> 4000ms; limite superior 3900ms -> 6000ms) apos uma falha isolada por scheduling do navegador headless sob carga; a exigencia de nao avancar antes de 3s permanece inalterada e o comportamento de producao (animacao CSS de 3s) nao foi tocado. Apos o ajuste, dois smoke completos consecutivos passaram sem falha.
+
+## Revamp - FASE 0 e FASE 1 (2026-07-23)
+
+Documento criado: `docs/REVAMP_ROADMAP.md` (auditoria, prioridade das referencias, fases, riscos, estado).
+
+Entregue nesta sessao:
+
+- Tokens visuais centralizados/estendidos em `src/index.css` (`--surface`, `--text`, `--border`, `--success`, `--warning`, `--error`, `--vocabulary`, `--grammar`, `--game`, escalas de radius/spacing/motion, `--focus-ring-*`), preservando navy/vinho/branco como base e usando cyan/violeta/laranja apenas como auxiliares controlados.
+- `src/components/AppShell.tsx`: nova sidebar desktop persistente (`DesktopSidebar`), substituindo a pilula de navegacao horizontal (`.desktop-navigation`) que existia dentro do cabecalho. A sidebar usa fundo branco (nao navy escuro, para preservar a base branca aprovada), rail de icones entre 900-1099px e versao completa com rotulos a partir de 1100px. Inclui Inicio/Estudar/Progresso/Perfil (mesmos destinos da navegacao inferior mobile) e uma secao secundaria com acesso a Jogos.
+- Corrigido avatar ficticio "J" (sem login/nome real) no cabecalho mobile (`GlobalHeader`) e em `ProfilePage`, substituido por icone generico de perfil, conforme regra de nao simular identidade antes de existir dado real.
+- `src/index.css`: bloco "Adaptive product shell" reescrito para grid de duas colunas (sidebar + conteudo) a partir de 900px; removidas as regras mortas de `.desktop-navigation`.
+- `scripts/smokeUi.mjs`: `assertFocusedFlow` e `assertMainNavigation` atualizados para `.app-sidebar` (no lugar de `.desktop-navigation`); nova verificacao de rail (900-1099px) vs. sidebar completa (>=1100px); nova verificacao de que "Jogos" nao aparece como quinto item na bottom navigation mobile; nova cobertura de item ativo e navegacao pela sidebar; viewport `1000x800` adicionado para cobrir o rail.
+- Nenhuma rota, dado, regra pedagogica, persistencia ou fluxo de sessao/flashcards foi alterado.
+
+Validacoes desta fase:
+
+- `npx tsc -b`: passou.
+- `npm run lint`: passou.
+- `npm run build`: passou.
+- `node scripts/smokeUi.mjs`: ver resultado registrado ao final desta sessao.
+- Inspecao visual manual via navegador em 1440px (sidebar completa), 1000px (verificacao de innerWidth), fluxo Home -> Estudar -> Gramatica confirmando sidebar some em fluxo focado.
+
+FASE 2 foi concluida nesta mesma sessao (ver secao acima). FASE 3 permanece bloqueada ate autorizacao explicita de Juliano.
 
 ## Git
 
@@ -291,7 +322,7 @@ Implementado no working tree apos o commit `ce27d32`:
 - Rotas finais para Home, Estudar, Gramatica, Vocabulario, Jogos, Progresso e Perfil.
 - Redirects para as rotas placeholder antigas.
 - Oito topicos gramaticais visiveis; somente `present_tobe` jogavel.
-- Nove categorias de vocabulario consultaveis; pratica bloqueada como "Em breve".
+- Nove categorias de vocabulario visiveis; somente Partes do corpo possui flashcards disponiveis.
 - Tres jogos rapidos visiveis na Home e seis em `/jogos`, todos bloqueados como "Em breve".
 - Configuracao de `present_tobe` com `easy`, `medium` e 10, 20 ou 30 questoes.
 - Selecao embaralhada sem repeticao na sessao e alternativas embaralhadas.
@@ -324,6 +355,7 @@ Rotas finais:
 - `/praticar/present_tobe/sessao`
 - `/vocabulario`
 - `/vocabulario/:categoryId`
+- `/vocabulario/body/flashcards`
 - `/jogos`
 - `/progresso`
 - `/perfil`
@@ -331,7 +363,7 @@ Rotas finais:
 Validacao visual automatizada:
 
 - Script sem dependencia nova: `node scripts/smokeUi.mjs`.
-- Viewports: 360x800, 390x844, 768x1024, 1366x768 e 1440x900.
+- Viewports: 360x800, 390x844, 412x915, 768x1024, 1366x768 e 1440x900.
 - Sem overflow horizontal, navegacao sobre conteudo ou barra global em fluxo focado.
 - Home, bottom sheet, navegacao inferior, voltar, topico bloqueado e toggle de som verificados.
 - Sessoes de 10, 20 e 30 questoes verificadas.
@@ -367,9 +399,32 @@ Limitacoes mantidas:
 
 - Progresso existe somente no dispositivo/navegador atual, sem conta, sync, exportacao ou recuperacao remota.
 - Sem login, backend, sync, analytics, monetizacao ou PWA.
-- Sem pratica funcional de vocabulario.
+- Somente os flashcards de Partes do corpo estao funcionais; pratica pontuada e outras categorias continuam fora do escopo.
 - Sem jogos funcionais.
 - Sem migracao dos outros sete topicos gramaticais.
+
+## Flashcards de vocabulario - Partes do corpo
+
+Implementado no working tree:
+
+- 24 entradas canonicas em `src/content/data/vocabulary.ts`, na ordem pedagogica aprovada.
+- IDs `body_*` preservados e campo opcional `visualKey` adicionado ao contrato.
+- Categoria Corpo apresentada como Partes do corpo e unica categoria liberada.
+- Rota focada `/vocabulario/body/flashcards`, sem navegacao global.
+- Frente em portugues com SVG local e destaque anatomico; verso em ingles sem pronuncia escrita.
+- Pronuncia nativa por Web Speech API ao revelar e por `Ouvir novamente`.
+- Preferencia global de som reutilizada; nenhum segundo controle persistente foi criado.
+- Fallback visivel e controle desabilitado quando a API de fala nao existe.
+- Navegacao por botoes, setas do teclado e swipe, sempre reiniciando o novo card pela frente.
+- Conclusao sem score, acuracia, ranking ou progresso persistido.
+- Jogos de vocabulario continuam indicados somente como fase futura.
+
+Validacao:
+
+- O validador fixa as 24 entradas, ordem, termos, traducoes e chaves visuais.
+- O smoke percorre os 24 SVGs, fala simulada, mute, fallback, flip, repeticao, teclado, swipe, conclusao e regressao do progresso gramatical.
+- Viewports validados: 360x800, 390x844, 412x915, 768x1024, 1366x768 e 1440x900.
+- `node scripts/validateContent.mjs`, `npm run lint`, `npm run build` e `node scripts/smokeUi.mjs` passaram.
 
 ## Referencias e legado
 

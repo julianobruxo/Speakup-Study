@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f1738" />
+  <title>Inglês em Jogo — Visão de Produto</title>
+  <style>
+    :root {
+      --navy-950:#0a1029;
+      --navy-900:#0f1738;
+      --navy-800:#17234b;
+      --navy-700:#24366d;
+      --wine-700:#7d1730;
+      --wine-600:#981f3b;
+      --wine-500:#b42f50;
+      --cyan-500:#36c6d9;
+      --cyan-300:#7de5ef;
+      --gold-500:#f5b642;
+      --green-500:#2fbf71;
+      --green-600:#21995a;
+      --violet-500:#8b6cf6;
+      --orange-500:#f27d42;
+      --ink:#17203a;
+      --muted:#69738d;
+      --paper:#f7f9ff;
+      --white:#ffffff;
+      --line:#e2e7f2;
+      --shadow:0 24px 70px rgba(16,25,60,.14);
+      --shadow-soft:0 12px 32px rgba(16,25,60,.09);
+      --radius-xl:30px;
+      --radius-lg:22px;
+      --radius-md:16px;
+      --radius-sm:12px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior:smooth; }
+    body {
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 8% -10%, rgba(54,198,217,.16), transparent 30%),
+        radial-gradient(circle at 94% 0%, rgba(180,47,80,.14), transparent 28%),
+        var(--paper);
+      color:var(--ink);
+      min-height:100vh;
+    }
+
+    button, input { font:inherit; }
+    button { cursor:pointer; }
+    a { color:inherit; text-decoration:none; }
+    svg { display:block; }
+
+    .app-shell {
+      min-height:100vh;
+      display:grid;
+      grid-template-columns:248px 1fr;
+    }
+
+    .sidebar {
+      position:sticky;
+      top:0;
+      height:100vh;
+      padding:26px 18px;
+      background:linear-gradient(180deg,var(--navy-950),var(--navy-900) 55%,#121c43);
+      color:#fff;
+      display:flex;
+      flex-direction:column;
+      z-index:30;
+      box-shadow:18px 0 45px rgba(10,16,41,.12);
+    }
+
+    .brand {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:2px 10px 24px;
+    }
+    .brand-mark {
+      width:46px;height:46px;border-radius:15px;
+      background:linear-gradient(145deg,var(--wine-500),var(--wine-700));
+      position:relative;box-shadow:0 10px 28px rgba(180,47,80,.35);
+      overflow:hidden;
+    }
+    .brand-mark:before,
+    .brand-mark:after {content:"";position:absolute;background:#fff;border-radius:4px;}
+    .brand-mark:before {width:24px;height:7px;left:11px;top:13px;transform:rotate(-8deg)}
+    .brand-mark:after {width:18px;height:7px;left:14px;top:26px;transform:rotate(8deg)}
+    .brand h1 {font-size:17px;line-height:1.05;margin:0;font-weight:900;letter-spacing:-.02em}
+    .brand span {display:block;color:#9fabcb;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-top:5px}
+
+    .nav-label {font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:#6f7ca5;font-weight:800;padding:0 12px;margin:6px 0 10px}
+    .nav-list {display:grid;gap:7px}
+    .nav-button {
+      border:0;background:transparent;color:#aeb8d2;
+      display:flex;align-items:center;gap:12px;
+      border-radius:14px;padding:12px 13px;text-align:left;font-weight:750;
+      transition:.2s ease;width:100%;
+    }
+    .nav-button:hover {background:rgba(255,255,255,.07);color:#fff;transform:translateX(2px)}
+    .nav-button.active {background:linear-gradient(90deg,rgba(180,47,80,.95),rgba(180,47,80,.58));color:#fff;box-shadow:0 12px 26px rgba(125,23,48,.26)}
+    .nav-icon {width:22px;height:22px;display:grid;place-items:center}
+    .nav-badge {margin-left:auto;background:rgba(255,255,255,.12);padding:3px 7px;border-radius:999px;font-size:10px;color:#dbe1f0}
+
+    .sidebar-footer {margin-top:auto;display:grid;gap:12px}
+    .streak-panel {padding:14px;border:1px solid rgba(255,255,255,.1);border-radius:18px;background:rgba(255,255,255,.055)}
+    .streak-top {display:flex;align-items:center;justify-content:space-between}
+    .streak-value {font-size:22px;font-weight:900}
+    .streak-panel p {margin:7px 0 0;color:#9ea9c7;font-size:12px;line-height:1.45}
+    .mini-days {display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:13px}
+    .mini-day {height:7px;border-radius:999px;background:#2a355d}
+    .mini-day.done {background:var(--gold-500)}
+
+    .main {
+      min-width:0;
+      padding:24px 30px 46px;
+    }
+
+    .topbar {
+      height:58px;display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:22px;
+    }
+    .page-kicker {font-size:12px;text-transform:uppercase;letter-spacing:.12em;font-weight:850;color:var(--wine-600)}
+    .page-title {font-size:25px;font-weight:900;margin-top:4px;letter-spacing:-.035em}
+    .top-actions {display:flex;align-items:center;gap:10px}
+    .icon-button {
+      width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;color:var(--navy-800);box-shadow:var(--shadow-soft);
+    }
+    .profile-button {border:1px solid var(--line);background:#fff;border-radius:16px;padding:6px 10px 6px 7px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-soft)}
+    .avatar {width:34px;height:34px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:900;background:linear-gradient(145deg,var(--cyan-500),var(--violet-500))}
+    .profile-copy {text-align:left}
+    .profile-copy strong {font-size:12px;display:block}
+    .profile-copy span {font-size:10px;color:var(--muted)}
+
+    .screen {display:none;animation:screenIn .35s ease}
+    .screen.active {display:block}
+    @keyframes screenIn {from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:none}}
+
+    .hero-grid {display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.75fr);gap:20px;margin-bottom:22px}
+    .hero {
+      min-height:300px;border-radius:var(--radius-xl);padding:34px;position:relative;overflow:hidden;color:#fff;
+      background:
+        radial-gradient(circle at 76% 27%, rgba(125,229,239,.28), transparent 25%),
+        radial-gradient(circle at 102% 94%, rgba(180,47,80,.5), transparent 37%),
+        linear-gradient(130deg,var(--navy-900),var(--navy-700));
+      box-shadow:var(--shadow);
+    }
+    .hero:before {content:"";position:absolute;width:260px;height:260px;border:1px solid rgba(255,255,255,.12);border-radius:50%;right:-60px;top:-100px}
+    .hero:after {content:"";position:absolute;width:180px;height:180px;border:1px solid rgba(255,255,255,.08);border-radius:50%;right:50px;bottom:-120px}
+    .hero-content {position:relative;z-index:2;max-width:590px}
+    .pill {display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.13);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+    .hero h2 {font-size:clamp(34px,4.3vw,62px);line-height:.98;letter-spacing:-.055em;margin:24px 0 18px;max-width:650px}
+    .hero h2 em {font-style:normal;color:var(--cyan-300)}
+    .hero p {font-size:15px;color:#c5cde1;max-width:510px;line-height:1.65;margin:0}
+    .hero-actions {display:flex;flex-wrap:wrap;gap:11px;margin-top:26px}
+    .primary-button,.secondary-button,.ghost-button {
+      border:0;border-radius:15px;padding:13px 18px;font-weight:850;display:inline-flex;align-items:center;justify-content:center;gap:9px;transition:.2s ease;
+    }
+    .primary-button {background:linear-gradient(135deg,var(--wine-500),var(--wine-700));color:#fff;box-shadow:0 12px 28px rgba(125,23,48,.35)}
+    .primary-button:hover {transform:translateY(-2px);box-shadow:0 16px 32px rgba(125,23,48,.4)}
+    .secondary-button {background:#fff;color:var(--navy-900);box-shadow:0 10px 25px rgba(10,16,41,.12)}
+    .secondary-button:hover {transform:translateY(-2px)}
+    .ghost-button {background:transparent;color:inherit;border:1px solid currentColor;opacity:.78}
+    .ghost-button:hover {opacity:1;background:rgba(255,255,255,.06)}
+
+    .hero-orbit {position:absolute;right:24px;bottom:19px;width:168px;height:168px;border-radius:50%;background:conic-gradient(var(--cyan-300) 0 68%,rgba(255,255,255,.1) 68% 100%);display:grid;place-items:center;z-index:1;box-shadow:0 22px 50px rgba(0,0,0,.2)}
+    .hero-orbit:before {content:"";width:132px;height:132px;border-radius:50%;background:linear-gradient(145deg,#162551,#101839);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+    .orbit-copy {position:absolute;text-align:center}
+    .orbit-copy strong {display:block;font-size:30px;letter-spacing:-.05em}
+    .orbit-copy span {font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:#9ca9c9;font-weight:800}
+
+    .daily-card {background:#fff;border-radius:var(--radius-xl);padding:24px;box-shadow:var(--shadow);border:1px solid rgba(226,231,242,.78);display:flex;flex-direction:column;min-height:300px}
+    .section-eyebrow {font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:850}
+    .daily-head {display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .daily-head h3 {margin:7px 0 0;font-size:23px;letter-spacing:-.04em}
+    .day-score {width:48px;height:48px;border-radius:16px;background:#eef7ff;display:grid;place-items:center;color:var(--cyan-500);font-weight:900}
+    .daily-path {display:grid;grid-template-columns:38px 1fr;gap:12px;margin-top:22px;position:relative}
+    .daily-path:before {content:"";position:absolute;left:18px;top:30px;bottom:31px;width:2px;background:linear-gradient(var(--green-500) 0 45%,var(--line) 45% 100%)}
+    .step-dot {width:38px;height:38px;border-radius:13px;display:grid;place-items:center;position:relative;z-index:1;background:#edf0f8;color:#9aa4bb;font-weight:900}
+    .step-dot.done {background:#e7f8ef;color:var(--green-600)}
+    .step-dot.current {background:linear-gradient(145deg,var(--wine-500),var(--wine-700));color:#fff;box-shadow:0 8px 20px rgba(152,31,59,.24)}
+    .step-copy {padding:2px 0 14px}
+    .step-copy strong {font-size:13px;display:block}
+    .step-copy span {font-size:11px;color:var(--muted);display:block;margin-top:4px}
+    .daily-card .primary-button {margin-top:auto;width:100%}
+
+    .dashboard-grid {display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr);gap:20px}
+    .section-card {background:#fff;border:1px solid rgba(226,231,242,.85);border-radius:var(--radius-xl);padding:25px;box-shadow:var(--shadow-soft)}
+    .section-header {display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:19px}
+    .section-header h3 {font-size:22px;margin:5px 0 0;letter-spacing:-.04em}
+    .text-button {border:0;background:transparent;color:var(--wine-600);font-weight:850;font-size:12px;padding:6px}
+
+    .learning-map {display:grid;gap:13px}
+    .map-card {display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:14px;padding:14px;border-radius:18px;border:1px solid var(--line);transition:.2s ease;background:#fff}
+    .map-card:hover {transform:translateY(-2px);box-shadow:var(--shadow-soft);border-color:#d8deec}
+    .map-icon {width:56px;height:56px;border-radius:17px;display:grid;place-items:center;font-size:23px}
+    .map-icon.grammar {background:#f4ebef;color:var(--wine-600)}
+    .map-icon.vocab {background:#e6f7fa;color:#159aac}
+    .map-icon.game {background:#f4efff;color:var(--violet-500)}
+    .map-copy strong {font-size:14px;display:block}
+    .map-copy span {display:block;color:var(--muted);font-size:11px;margin-top:5px;line-height:1.45}
+    .progress-mini {height:6px;background:#edf0f6;border-radius:999px;overflow:hidden;margin-top:10px;max-width:280px}
+    .progress-mini span {display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--wine-500),var(--cyan-500))}
+    .map-action {width:38px;height:38px;border-radius:13px;border:0;background:#f3f5fa;display:grid;place-items:center;color:var(--navy-800)}
+
+    .league-card {background:linear-gradient(150deg,#fff,#f5f7ff);overflow:hidden}
+    .league-top {display:flex;align-items:center;justify-content:space-between}
+    .league-badge {padding:6px 9px;border-radius:999px;background:#fff7e5;color:#a56a00;font-size:10px;font-weight:850;border:1px solid #ffe2a8}
+    .podium {display:grid;grid-template-columns:1fr 1.12fr 1fr;gap:8px;align-items:end;margin:25px 0 17px}
+    .podium-item {text-align:center}
+    .podium-avatar {margin:0 auto 8px;width:45px;height:45px;border-radius:15px;background:linear-gradient(145deg,#90d7e0,#5478d8);display:grid;place-items:center;color:#fff;font-weight:900;border:3px solid #fff;box-shadow:0 8px 20px rgba(20,35,75,.14)}
+    .podium-item.first .podium-avatar {width:57px;height:57px;background:linear-gradient(145deg,#ffd56d,#e89529)}
+    .podium-name {font-size:11px;font-weight:850}
+    .podium-points {font-size:10px;color:var(--muted);margin-top:2px}
+    .podium-base {height:55px;border-radius:13px 13px 6px 6px;background:#e7ebf5;display:grid;place-items:center;font-weight:900;color:#7b86a1;margin-top:9px}
+    .first .podium-base {height:76px;background:linear-gradient(180deg,#ffe4a3,#f5bd4a);color:#865500}
+    .rank-list {display:grid;gap:8px}
+    .rank-row {display:grid;grid-template-columns:26px 34px 1fr auto;align-items:center;gap:9px;padding:9px 10px;border-radius:13px;background:#f6f8fc;font-size:11px}
+    .rank-row.me {background:#f8edf1;border:1px solid #efd4dc}
+    .rank-no {font-weight:900;color:var(--muted)}
+    .rank-avatar {width:30px;height:30px;border-radius:10px;background:#dfe6f5;display:grid;place-items:center;font-weight:900;color:var(--navy-700)}
+    .rank-name {font-weight:800}
+    .rank-xp {font-weight:900;color:var(--wine-600)}
+
+    .games-strip {margin-top:20px}
+    .game-grid {display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+    .game-card {border:0;text-align:left;border-radius:22px;padding:20px;min-height:165px;color:#fff;position:relative;overflow:hidden;transition:.2s ease;box-shadow:var(--shadow-soft)}
+    .game-card:hover {transform:translateY(-4px)}
+    .game-card:nth-child(1) {background:linear-gradient(145deg,#17a8b9,#127a91)}
+    .game-card:nth-child(2) {background:linear-gradient(145deg,#8a66f1,#6041c5)}
+    .game-card:nth-child(3) {background:linear-gradient(145deg,#f08b46,#d85d30)}
+    .game-card:after {content:"";position:absolute;width:130px;height:130px;border-radius:50%;border:1px solid rgba(255,255,255,.18);right:-40px;bottom:-55px}
+    .game-symbol {font-size:31px;margin-bottom:24px}
+    .game-card strong {display:block;font-size:17px;letter-spacing:-.03em}
+    .game-card span {display:block;font-size:11px;color:rgba(255,255,255,.77);margin-top:6px;max-width:180px;line-height:1.45}
+    .game-lock {position:absolute;right:16px;top:16px;padding:5px 8px;background:rgba(255,255,255,.16);border-radius:999px;font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.08em}
+
+    .learn-layout {display:grid;grid-template-columns:1fr 330px;gap:20px}
+    .learn-hero {background:linear-gradient(140deg,#fff,#f5f8ff);border-radius:var(--radius-xl);padding:28px;border:1px solid var(--line);box-shadow:var(--shadow-soft)}
+    .learn-hero h2 {font-size:36px;letter-spacing:-.05em;margin:10px 0 12px}
+    .learn-hero p {color:var(--muted);line-height:1.65;max-width:620px}
+    .filter-row {display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}
+    .filter-chip {border:1px solid var(--line);background:#fff;padding:9px 13px;border-radius:999px;font-size:11px;font-weight:800;color:var(--muted)}
+    .filter-chip.active {background:var(--navy-900);border-color:var(--navy-900);color:#fff}
+    .topic-grid {display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+    .topic-card {border:1px solid var(--line);background:#fff;border-radius:20px;padding:18px;text-align:left;position:relative;transition:.2s ease}
+    .topic-card:hover {transform:translateY(-2px);box-shadow:var(--shadow-soft)}
+    .topic-card.available {border-color:#bde6e9;background:linear-gradient(150deg,#fff,#effbfc)}
+    .topic-card strong {display:block;font-size:15px}
+    .topic-card p {margin:7px 0 0;font-size:11px;color:var(--muted);line-height:1.5}
+    .topic-card .tag {position:absolute;right:14px;top:14px;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:850;background:#edf0f7;color:#79849d}
+    .topic-card.available .tag {background:#dff7f8;color:#167b89}
+    .route-card {background:linear-gradient(150deg,var(--navy-900),var(--navy-700));color:#fff;border-radius:var(--radius-xl);padding:24px;box-shadow:var(--shadow);height:max-content}
+    .route-card h3 {font-size:22px;margin:8px 0}
+    .route-card p {font-size:11px;line-height:1.6;color:#b7c1da}
+    .route-progress {margin:20px 0 18px;background:rgba(255,255,255,.1);height:10px;border-radius:999px;overflow:hidden}
+    .route-progress span {display:block;width:32%;height:100%;background:linear-gradient(90deg,var(--cyan-300),var(--cyan-500));border-radius:inherit}
+    .route-list {display:grid;gap:9px;margin:18px 0}
+    .route-step {display:flex;align-items:center;gap:9px;font-size:11px;color:#c6cee0}
+    .route-step i {width:21px;height:21px;border-radius:8px;background:rgba(255,255,255,.1);display:grid;place-items:center;font-style:normal;font-size:10px}
+    .route-step.done i {background:var(--green-500);color:#fff}
+
+    .progress-layout {display:grid;grid-template-columns:1fr 340px;gap:20px}
+    .metric-grid {display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+    .metric-card {background:#fff;border-radius:20px;padding:18px;border:1px solid var(--line);box-shadow:var(--shadow-soft)}
+    .metric-card span {font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:850}
+    .metric-card strong {display:block;font-size:28px;margin-top:9px;letter-spacing:-.05em}
+    .metric-card small {display:block;color:var(--green-600);font-size:10px;margin-top:6px;font-weight:800}
+    .chart-card {background:#fff;border-radius:var(--radius-xl);padding:25px;border:1px solid var(--line);box-shadow:var(--shadow-soft)}
+    .chart-bars {height:240px;display:flex;align-items:flex-end;gap:13px;padding:25px 4px 10px;border-bottom:1px solid var(--line);position:relative}
+    .chart-bars:before,.chart-bars:after {content:"";position:absolute;left:0;right:0;border-top:1px dashed #e8ebf3}
+    .chart-bars:before {top:85px}.chart-bars:after {top:155px}
+    .chart-bar-wrap {flex:1;height:100%;display:flex;align-items:flex-end;justify-content:center;position:relative}
+    .chart-bar {width:70%;border-radius:9px 9px 3px 3px;background:linear-gradient(180deg,var(--cyan-500),var(--navy-700));min-height:18px;position:relative;z-index:1}
+    .chart-bar.today {background:linear-gradient(180deg,var(--wine-500),var(--wine-700));box-shadow:0 9px 20px rgba(152,31,59,.18)}
+    .chart-labels {display:grid;grid-template-columns:repeat(7,1fr);gap:13px;font-size:10px;color:var(--muted);text-align:center;margin-top:10px}
+    .achievement-list {display:grid;gap:11px}
+    .achievement {display:grid;grid-template-columns:46px 1fr auto;gap:12px;align-items:center;padding:13px;border-radius:17px;background:#fff;border:1px solid var(--line)}
+    .achievement-icon {width:46px;height:46px;border-radius:15px;background:#fff4d8;display:grid;place-items:center;font-size:21px}
+    .achievement strong {font-size:12px;display:block}
+    .achievement span {font-size:10px;color:var(--muted);display:block;margin-top:4px}
+    .achievement b {font-size:10px;color:var(--green-600)}
+
+    .profile-layout {display:grid;grid-template-columns:350px 1fr;gap:20px}
+    .profile-main {background:linear-gradient(145deg,var(--navy-900),var(--navy-700));border-radius:var(--radius-xl);padding:28px;color:#fff;box-shadow:var(--shadow);text-align:center}
+    .profile-big-avatar {width:100px;height:100px;border-radius:32px;margin:4px auto 16px;background:linear-gradient(145deg,var(--cyan-500),var(--violet-500));display:grid;place-items:center;font-size:34px;font-weight:900;border:5px solid rgba(255,255,255,.14)}
+    .profile-main h2 {margin:0;font-size:24px}
+    .profile-main p {color:#b9c3dc;font-size:11px;line-height:1.6}
+    .profile-stats {display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:22px}
+    .profile-stat {padding:12px 5px;border-radius:15px;background:rgba(255,255,255,.08)}
+    .profile-stat strong {display:block;font-size:18px}
+    .profile-stat span {font-size:9px;color:#aeb9d3;text-transform:uppercase;letter-spacing:.08em}
+    .settings-card {background:#fff;border:1px solid var(--line);border-radius:var(--radius-xl);padding:26px;box-shadow:var(--shadow-soft)}
+    .setting-row {display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 0;border-bottom:1px solid var(--line)}
+    .setting-row:last-child {border-bottom:0}
+    .setting-copy strong {display:block;font-size:13px}
+    .setting-copy span {display:block;color:var(--muted);font-size:10px;margin-top:5px}
+    .toggle {width:46px;height:26px;border-radius:999px;background:#d9deea;padding:3px;border:0;transition:.2s ease}
+    .toggle:before {content:"";display:block;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15);transition:.2s ease}
+    .toggle.on {background:var(--green-500)}
+    .toggle.on:before {transform:translateX(20px)}
+
+    .modal-backdrop {position:fixed;inset:0;background:rgba(8,13,32,.68);backdrop-filter:blur(7px);display:none;align-items:center;justify-content:center;padding:20px;z-index:80}
+    .modal-backdrop.open {display:flex;animation:fade .2s ease}
+    @keyframes fade {from{opacity:0}to{opacity:1}}
+    .modal {width:min(940px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:30px;box-shadow:0 30px 100px rgba(5,10,30,.4);position:relative}
+    .modal-close {position:sticky;float:right;top:14px;margin:14px 14px 0 0;width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;z-index:4}
+    .modal-body {padding:28px}
+    .mode-grid {display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+    .mode-option {border:1px solid var(--line);border-radius:22px;padding:22px;text-align:left;background:#fff;transition:.2s ease}
+    .mode-option:hover {transform:translateY(-2px);box-shadow:var(--shadow-soft)}
+    .mode-option .mode-icon {width:50px;height:50px;border-radius:16px;display:grid;place-items:center;font-size:24px;background:#f6e9ee;color:var(--wine-600);margin-bottom:16px}
+    .mode-option.vocab .mode-icon {background:#e4f8fa;color:#168d9d}
+    .mode-option strong {display:block;font-size:16px}
+    .mode-option span {display:block;font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
+
+    .flashcard-stage {padding:18px 28px 30px}
+    .focus-header {display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:16px}
+    .focus-back {border:1px solid var(--line);background:#fff;width:42px;height:42px;border-radius:14px;display:grid;place-items:center}
+    .focus-title {text-align:center;flex:1}
+    .focus-title strong {display:block;font-size:15px}
+    .focus-title span {font-size:10px;color:var(--muted)}
+    .sound-pill {border:1px solid var(--line);background:#fff;border-radius:14px;padding:10px 12px;font-size:11px;font-weight:800}
+    .focus-progress {height:8px;background:#edf0f6;border-radius:999px;overflow:hidden;margin:0 0 20px}
+    .focus-progress span {display:block;height:100%;width:4.166%;background:linear-gradient(90deg,var(--cyan-500),var(--violet-500));border-radius:inherit;transition:.3s ease}
+    .flashcard-layout {display:grid;grid-template-columns:60px minmax(0,1fr) 60px;align-items:center;gap:14px}
+    .arrow-control {width:50px;height:50px;border-radius:16px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;color:var(--navy-800);box-shadow:var(--shadow-soft)}
+    .arrow-control:disabled {opacity:.32;cursor:not-allowed;box-shadow:none}
+    .card-scene {perspective:1400px;min-height:480px}
+    .flashcard {width:100%;height:480px;position:relative;transform-style:preserve-3d;transition:transform .62s cubic-bezier(.2,.75,.2,1);cursor:pointer}
+    .flashcard.flipped {transform:rotateY(180deg)}
+    .flash-face {position:absolute;inset:0;backface-visibility:hidden;border-radius:30px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;background:#fff}
+    .flash-face.back {transform:rotateY(180deg);background:linear-gradient(145deg,var(--navy-900),var(--navy-700));color:#fff;border:0}
+    .body-illustration {width:min(310px,80%);height:300px;position:relative;margin-bottom:16px}
+    .body-svg {width:100%;height:100%}
+    .flash-translation {font-size:30px;font-weight:950;letter-spacing:-.04em;text-transform:uppercase}
+    .flip-hint {font-size:10px;color:var(--muted);margin-top:9px;font-weight:750;letter-spacing:.06em;text-transform:uppercase}
+    .english-word {font-size:clamp(42px,6vw,74px);font-weight:950;letter-spacing:-.06em;text-transform:uppercase;margin-bottom:20px}
+    .listen-button {border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.09);color:#fff;border-radius:17px;padding:13px 17px;font-weight:850;display:flex;align-items:center;gap:10px}
+    .card-caption {display:flex;align-items:center;justify-content:space-between;margin-top:16px;color:var(--muted);font-size:11px}
+    .dots {display:flex;gap:5px}
+    .dot {width:6px;height:6px;border-radius:50%;background:#d6dbe8}
+    .dot.active {width:18px;border-radius:999px;background:var(--wine-500)}
+
+    .practice-stage {padding:20px 28px 30px}
+    .question-card {max-width:800px;margin:20px auto 0;background:#fff;border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:var(--shadow)}
+    .question-meta {display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:11px;font-weight:800}
+    .question-card h3 {font-size:31px;line-height:1.2;letter-spacing:-.045em;margin:26px 0}
+    .answers {display:grid;gap:10px}
+    .answer {border:1px solid var(--line);background:#fff;border-radius:17px;padding:15px 16px;text-align:left;font-weight:800;color:var(--navy-800);transition:.18s ease;display:flex;align-items:center;justify-content:space-between}
+    .answer:hover {border-color:#bbc6db;background:#f8faff;transform:translateX(2px)}
+    .answer.selected {border-color:var(--navy-700);background:#edf1fb}
+    .answer.correct {border-color:#8bd6ac;background:#eaf9f1;color:#157344}
+    .answer.wrong {border-color:#e8a4b5;background:#fff1f4;color:#9b2845}
+    .question-footer {display:flex;justify-content:flex-end;margin-top:18px}
+    .feedback-card {display:none;margin-top:16px;padding:17px;border-radius:18px}
+    .feedback-card.show {display:block;animation:screenIn .25s ease}
+    .feedback-card.good {background:#e8f8ef;border:1px solid #a5dfbe;color:#176e42;position:relative;overflow:hidden}
+    .feedback-card.bad {background:#fff1f4;border:1px solid #efbcc8;color:#82213b}
+    .feedback-fill {position:absolute;left:0;bottom:0;height:6px;background:var(--green-600);width:0}
+    .feedback-fill.go {animation:fill 3s linear forwards}
+    @keyframes fill {to{width:100%}}
+    .feedback-head {font-weight:950;font-size:16px}
+    .feedback-card p {font-size:12px;line-height:1.55;margin:8px 0 0}
+    .feedback-actions {display:flex;gap:9px;margin-top:13px;flex-wrap:wrap}
+    .inline-button {border:0;border-radius:12px;padding:9px 12px;font-weight:850;font-size:11px}
+    .inline-button.study {background:#fff;color:var(--wine-600);border:1px solid #e8c0cb}
+    .inline-button.continue {background:var(--wine-600);color:#fff}
+
+    .study-dialog {max-width:760px;padding:28px}
+    .study-dialog h2 {font-size:29px;margin:0 0 8px;letter-spacing:-.045em}
+    .study-dialog p {color:var(--muted);line-height:1.65;font-size:12px}
+    .rule-banner {padding:17px;border-radius:18px;background:#eef8fb;border:1px solid #ccecef;margin:18px 0}
+    .rule-grid {display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .rule-chip {padding:14px;border-radius:16px;background:#f6f8fc;text-align:center}
+    .rule-chip strong {font-size:18px;display:block;color:var(--navy-800)}
+    .rule-chip span {font-size:10px;color:var(--muted)}
+
+    .mobile-nav {display:none}
+    .mobile-only {display:none}
+
+    .toast {position:fixed;right:22px;bottom:22px;background:var(--navy-900);color:#fff;padding:13px 16px;border-radius:15px;box-shadow:var(--shadow);font-size:11px;font-weight:800;opacity:0;transform:translateY(15px);pointer-events:none;transition:.25s ease;z-index:120}
+    .toast.show {opacity:1;transform:none}
+
+    @media (max-width:1100px) {
+      .app-shell {grid-template-columns:92px 1fr}
+      .sidebar {padding:24px 14px;align-items:center}
+      .brand {padding:0 0 25px}.brand-copy,.nav-label,.nav-button span,.nav-badge,.sidebar-footer {display:none}
+      .nav-button {width:52px;height:52px;justify-content:center;padding:0}
+      .hero-grid,.dashboard-grid,.learn-layout,.progress-layout {grid-template-columns:1fr}
+      .profile-layout {grid-template-columns:300px 1fr}
+      .hero-orbit {right:18px;bottom:16px;width:145px;height:145px}.hero-orbit:before{width:112px;height:112px}
+      .metric-grid {grid-template-columns:repeat(2,1fr)}
+    }
+
+    @media (max-width:760px) {
+      body {background:#f7f9ff}
+      .app-shell {display:block;padding-bottom:80px}
+      .sidebar {display:none}
+      .main {padding:14px 14px 24px}
+      .topbar {height:54px;margin-bottom:14px}
+      .page-title {font-size:20px}.page-kicker {font-size:9px}
+      .profile-copy {display:none}.profile-button{padding:5px}
+      .hero-grid,.dashboard-grid,.learn-layout,.progress-layout,.profile-layout {grid-template-columns:1fr;gap:14px}
+      .hero {padding:24px;min-height:360px;border-radius:26px}
+      .hero h2 {font-size:39px;max-width:320px;margin-top:20px}
+      .hero p {font-size:13px;max-width:300px}
+      .hero-actions {position:relative;z-index:3}
+      .hero-orbit {width:128px;height:128px;right:14px;bottom:18px}.hero-orbit:before{width:98px;height:98px}.orbit-copy strong{font-size:23px}
+      .daily-card,.section-card,.learn-hero,.route-card,.chart-card,.settings-card,.profile-main {border-radius:24px;padding:20px}
+      .dashboard-grid {display:block}.league-card {margin-top:14px}
+      .game-grid {grid-template-columns:1fr;gap:10px}
+      .game-card {min-height:140px}
+      .topic-grid {grid-template-columns:1fr}
+      .learn-hero h2 {font-size:30px}
+      .metric-grid {grid-template-columns:1fr 1fr;gap:9px}.metric-card{padding:14px}.metric-card strong{font-size:22px}
+      .profile-layout {grid-template-columns:1fr}.profile-main{order:-1}
+      .mobile-nav {position:fixed;left:10px;right:10px;bottom:10px;height:64px;border-radius:22px;background:rgba(15,23,56,.96);backdrop-filter:blur(15px);display:grid;grid-template-columns:repeat(4,1fr);z-index:60;box-shadow:0 18px 45px rgba(10,16,41,.35);padding:6px}
+      .mobile-nav button {border:0;background:transparent;color:#8f9ab9;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:9px;font-weight:800}
+      .mobile-nav button.active {background:var(--wine-600);color:#fff}
+      .mobile-nav .nav-icon {width:19px;height:19px}
+      .mode-grid {grid-template-columns:1fr}
+      .modal-backdrop {padding:0;align-items:flex-end}
+      .modal {border-radius:28px 28px 0 0;max-height:94vh;width:100%}
+      .modal-body {padding:22px}
+      .flashcard-stage,.practice-stage {padding:14px 14px 22px}
+      .focus-header {margin-top:7px}.focus-title strong{font-size:13px}
+      .flashcard-layout {grid-template-columns:1fr;gap:8px}
+      .arrow-control {display:none}
+      .card-scene,.flashcard {height:58vh;min-height:420px}
+      .body-illustration {height:250px;width:90%}
+      .flash-translation {font-size:26px}
+      .english-word {font-size:44px}
+      .card-caption {font-size:10px}
+      .question-card {padding:20px;border-radius:23px}.question-card h3{font-size:25px;margin:20px 0}
+      .rule-grid {grid-template-columns:1fr}
+      .mobile-only {display:block}
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,*::before,*::after {animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}
+      .flashcard {transform:none!important}
+      .flash-face {display:none;transform:none!important}
+      .flash-face.front {display:flex}
+      .flashcard.flipped .front {display:none}
+      .flashcard.flipped .back {display:flex}
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H4.5A1.5 1.5 0 0 1 3 19.5v-9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.8A2.8 2.8 0 0 1 6.8 2H11v18H6.8A2.8 2.8 0 0 0 4 22V4.8Zm16 0A2.8 2.8 0 0 0 17.2 2H13v18h4.2A2.8 2.8 0 0 1 20 22V4.8Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10m6 10V4m6 16v-7m4 7H2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-game" viewBox="0 0 24 24"><path d="M8 8h8a5 5 0 0 1 4.7 3.3l1.1 3.2A3.4 3.4 0 0 1 18.6 19c-1 0-1.9-.4-2.5-1.2L14.7 16H9.3l-1.4 1.8A3.4 3.4 0 0 1 2.2 14.5l1.1-3.2A5 5 0 0 1 8 8Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 11v4m-2-2h4m6-1h.01m2 2h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 9a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Zm-8 12h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Zm12.5.5a4 4 0 0 1 0 5m2.5-8a8 8 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div class="brand-copy"><h1>Inglês<br>em Jogo</h1><span>Speak UP!</span></div>
+      </div>
+
+      <div class="nav-label">Principal</div>
+      <nav class="nav-list" aria-label="Navegação principal">
+        <button class="nav-button active" data-screen="home"><span class="nav-icon"><svg width="22" height="22"><use href="#i-home"/></svg></span><span>Início</span></button>
+        <button class="nav-button" data-screen="learn"><span class="nav-icon"><svg width="22" height="22"><use href="#i-book"/></svg></span><span>Estudar</span><b class="nav-badge">8</b></button>
+        <button class="nav-button" data-screen="progress"><span class="nav-icon"><svg width="22" height="22"><use href="#i-chart"/></svg></span><span>Progresso</span></button>
+        <button class="nav-button" data-screen="profile"><span class="nav-icon"><svg width="22" height="22"><use href="#i-user"/></svg></span><span>Perfil</span></button>
+      </nav>
+
+      <div class="nav-label" style="margin-top:24px">Desafios</div>
+      <nav class="nav-list">
+        <button class="nav-button" data-action="games"><span class="nav-icon"><svg width="22" height="22"><use href="#i-game"/></svg></span><span>Jogos</span><b class="nav-badge">Em breve</b></button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="streak-panel">
+          <div class="streak-top"><span>🔥 Sequência</span><strong class="streak-value">7</strong></div>
+          <p>Você praticou todos os dias nesta semana.</p>
+          <div class="mini-days"><i class="mini-day done"></i><i class="mini-day done"></i><i class="mini-day done"></i><i class="mini-day done"></i><i class="mini-day done"></i><i class="mini-day done"></i><i class="mini-day done"></i></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="page-kicker" id="pageKicker">Sua jornada</div>
+          <div class="page-title" id="pageTitle">Boa tarde, Juliano</div>
+        </div>
+        <div class="top-actions">
+          <button class="icon-button" aria-label="Notificações"><svg width="19" height="19"><use href="#i-bell"/></svg></button>
+          <button class="profile-button" data-screen="profile"><span class="avatar">J</span><span class="profile-copy"><strong>Juliano</strong><span>Nível 4 · Explorador</span></span></button>
+        </div>
+      </header>
+
+      <section class="screen active" id="screen-home">
+        <div class="hero-grid">
+          <article class="hero">
+            <div class="hero-content">
+              <div class="pill">✦ Jornada personalizada</div>
+              <h2>Jogue, aprenda e <em>avance.</em></h2>
+              <p>Um caminho de prática criado para manter o inglês vivo todos os dias — com gramática, vocabulário, jogos e desafios que evoluem junto com você.</p>
+              <div class="hero-actions">
+                <button class="primary-button" data-action="practice">Continuar jornada <svg width="17" height="17"><use href="#i-arrow"/></svg></button>
+                <button class="ghost-button" data-screen="learn">Explorar conteúdos</button>
+              </div>
+            </div>
+            <div class="hero-orbit"><div class="orbit-copy"><strong>68%</strong><span>Meta semanal</span></div></div>
+          </article>
+
+          <article class="daily-card">
+            <div class="daily-head">
+              <div><div class="section-eyebrow">Missão de hoje</div><h3>12 minutos para avançar</h3></div>
+              <div class="day-score">+80</div>
+            </div>
+            <div class="daily-path">
+              <div class="step-dot done"><svg width="18" height="18"><use href="#i-check"/></svg></div><div class="step-copy"><strong>Aquecimento</strong><span>5 perguntas rápidas</span></div>
+              <div class="step-dot current">2</div><div class="step-copy"><strong>Present TO BE</strong><span>Perguntas e respostas curtas</span></div>
+              <div class="step-dot">3</div><div class="step-copy"><strong>Vocabulário</strong><span>Flashcards: partes do corpo</span></div>
+            </div>
+            <button class="primary-button" data-action="practice">Retomar missão</button>
+          </article>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="section-card">
+            <div class="section-header"><div><div class="section-eyebrow">Seu caminho</div><h3>Aprenda em pequenas vitórias</h3></div><button class="text-button" data-screen="learn">Ver jornada</button></div>
+            <div class="learning-map">
+              <article class="map-card"><div class="map-icon grammar">Aa</div><div class="map-copy"><strong>Gramática essencial</strong><span>Present TO BE · 42 de 130 questões praticadas</span><div class="progress-mini"><span style="width:32%"></span></div></div><button class="map-action" data-action="practice"><svg width="17" height="17"><use href="#i-arrow"/></svg></button></article>
+              <article class="map-card"><div class="map-icon vocab">◫</div><div class="map-copy"><strong>Vocabulário visual</strong><span>Partes do corpo · 24 flashcards com áudio</span><div class="progress-mini"><span style="width:8%"></span></div></div><button class="map-action" data-action="flashcards"><svg width="17" height="17"><use href="#i-arrow"/></svg></button></article>
+              <article class="map-card"><div class="map-icon game">✦</div><div class="map-copy"><strong>Jogos rápidos</strong><span>Desafios curtos para reforçar o conteúdo estudado</span><div class="progress-mini"><span style="width:0%"></span></div></div><button class="map-action" data-action="games"><svg width="17" height="17"><use href="#i-arrow"/></svg></button></article>
+            </div>
+          </section>
+
+          <section class="section-card league-card">
+            <div class="league-top"><div><div class="section-eyebrow">Liga da semana</div><h3 style="margin:6px 0 0">Liga Safira</h3></div><span class="league-badge">2d 8h restantes</span></div>
+            <div class="podium">
+              <div class="podium-item"><div class="podium-avatar">M</div><div class="podium-name">Marina</div><div class="podium-points">1.420 XP</div><div class="podium-base">2</div></div>
+              <div class="podium-item first"><div class="podium-avatar">L</div><div class="podium-name">Lucas</div><div class="podium-points">1.690 XP</div><div class="podium-base">1</div></div>
+              <div class="podium-item"><div class="podium-avatar">A</div><div class="podium-name">Ana</div><div class="podium-points">1.310 XP</div><div class="podium-base">3</div></div>
+            </div>
+            <div class="rank-list">
+              <div class="rank-row me"><span class="rank-no">8</span><span class="rank-avatar">J</span><span class="rank-name">Você</span><span class="rank-xp">860 XP</span></div>
+              <div class="rank-row"><span class="rank-no">9</span><span class="rank-avatar">R</span><span class="rank-name">Rafael</span><span class="rank-xp">810 XP</span></div>
+            </div>
+          </section>
+        </div>
+
+        <section class="games-strip section-card">
+          <div class="section-header"><div><div class="section-eyebrow">Jogue para fixar</div><h3>Desafios rápidos</h3></div><button class="text-button" data-action="games">Ver todos</button></div>
+          <div class="game-grid">
+            <button class="game-card" data-action="games"><span class="game-lock">Em breve</span><div class="game-symbol">⏱</div><strong>Contra o tempo</strong><span>Responda rápido e mantenha a sequência.</span></button>
+            <button class="game-card" data-action="games"><span class="game-lock">Em breve</span><div class="game-symbol">◩</div><strong>Memória</strong><span>Encontre os pares entre imagem e palavra.</span></button>
+            <button class="game-card" data-action="games"><span class="game-lock">Em breve</span><div class="game-symbol">ABC</div><strong>Palavras embaralhadas</strong><span>Organize as letras antes que o tempo acabe.</span></button>
+          </div>
+        </section>
+      </section>
+
+      <section class="screen" id="screen-learn">
+        <div class="learn-layout">
+          <section class="learn-hero">
+            <div class="section-eyebrow">Biblioteca de aprendizagem</div>
+            <h2>Escolha o que quer dominar hoje.</h2>
+            <p>Conteúdos organizados por habilidade, com uma trilha clara entre estudar, praticar e revisar.</p>
+            <div class="filter-row"><button class="filter-chip active">Todos</button><button class="filter-chip">Gramática</button><button class="filter-chip">Vocabulário</button><button class="filter-chip">Revisão</button></div>
+            <div class="topic-grid">
+              <button class="topic-card available" data-action="practice"><span class="tag">Disponível</span><strong>Present TO BE</strong><p>Afirmações, negativas, perguntas e respostas curtas.</p></button>
+              <button class="topic-card available" data-action="flashcards"><span class="tag">24 cards</span><strong>Partes do corpo</strong><p>Flashcards visuais com pronúncia automática.</p></button>
+              <button class="topic-card"><span class="tag">Em breve</span><strong>Past TO BE</strong><p>Was, were, negativas e perguntas no passado.</p></button>
+              <button class="topic-card"><span class="tag">Em breve</span><strong>Roupas</strong><p>Vocabulário visual para peças e acessórios.</p></button>
+              <button class="topic-card"><span class="tag">Em breve</span><strong>Simple Present</strong><p>Rotinas, hábitos e fatos gerais.</p></button>
+              <button class="topic-card"><span class="tag">Em breve</span><strong>Animais</strong><p>Palavras essenciais com imagem e áudio.</p></button>
+            </div>
+          </section>
+
+          <aside class="route-card">
+            <div class="section-eyebrow" style="color:#8ce4ed">Rota recomendada</div>
+            <h3>Fundamentos do inglês</h3>
+            <p>Uma sequência curta para consolidar o básico antes de avançar.</p>
+            <div class="route-progress"><span></span></div>
+            <div class="route-list">
+              <div class="route-step done"><i>✓</i><span>Present TO BE · afirmações</span></div>
+              <div class="route-step done"><i>✓</i><span>Present TO BE · negativas</span></div>
+              <div class="route-step"><i>3</i><span>Perguntas e respostas curtas</span></div>
+              <div class="route-step"><i>4</i><span>Partes do corpo</span></div>
+              <div class="route-step"><i>5</i><span>Revisão mista</span></div>
+            </div>
+            <button class="secondary-button" style="width:100%" data-action="practice">Continuar rota</button>
+          </aside>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-progress">
+        <div class="metric-grid">
+          <div class="metric-card"><span>Questões praticadas</span><strong>42/130</strong><small>+10 nesta semana</small></div>
+          <div class="metric-card"><span>Precisão geral</span><strong>84%</strong><small>+6 pontos</small></div>
+          <div class="metric-card"><span>Melhor sequência</span><strong>17</strong><small>Novo recorde</small></div>
+          <div class="metric-card"><span>Sessões concluídas</span><strong>12</strong><small>7 dias ativos</small></div>
+        </div>
+        <div class="progress-layout">
+          <section class="chart-card">
+            <div class="section-header"><div><div class="section-eyebrow">Atividade semanal</div><h3>Você está criando consistência</h3></div><span class="league-badge">Meta: 15 min/dia</span></div>
+            <div class="chart-bars">
+              <div class="chart-bar-wrap"><div class="chart-bar" style="height:42%"></div></div><div class="chart-bar-wrap"><div class="chart-bar" style="height:60%"></div></div><div class="chart-bar-wrap"><div class="chart-bar" style="height:54%"></div></div><div class="chart-bar-wrap"><div class="chart-bar" style="height:78%"></div></div><div class="chart-bar-wrap"><div class="chart-bar" style="height:66%"></div></div><div class="chart-bar-wrap"><div class="chart-bar" style="height:88%"></div></div><div class="chart-bar-wrap"><div class="chart-bar today" style="height:70%"></div></div>
+            </div>
+            <div class="chart-labels"><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Hoje</span></div>
+          </section>
+          <section class="section-card">
+            <div class="section-header"><div><div class="section-eyebrow">Conquistas</div><h3>Últimos marcos</h3></div></div>
+            <div class="achievement-list">
+              <div class="achievement"><div class="achievement-icon">🔥</div><div><strong>Uma semana inteira</strong><span>7 dias consecutivos</span></div><b>Concluído</b></div>
+              <div class="achievement"><div class="achievement-icon">🎯</div><div><strong>Mira certeira</strong><span>Mais de 80% de precisão</span></div><b>Concluído</b></div>
+              <div class="achievement"><div class="achievement-icon">📚</div><div><strong>Explorador</strong><span>Pratique 50 questões únicas</span></div><b>42/50</b></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-profile">
+        <div class="profile-layout">
+          <section class="profile-main">
+            <div class="profile-big-avatar">J</div>
+            <h2>Juliano</h2>
+            <p>Explorador · Nível 4<br>Seu progresso está salvo neste dispositivo.</p>
+            <div class="profile-stats"><div class="profile-stat"><strong>860</strong><span>XP</span></div><div class="profile-stat"><strong>7</strong><span>dias</span></div><div class="profile-stat"><strong>12</strong><span>sessões</span></div></div>
+          </section>
+          <section class="settings-card">
+            <div class="section-header"><div><div class="section-eyebrow">Preferências</div><h3>Personalize sua experiência</h3></div></div>
+            <div class="setting-row"><div class="setting-copy"><strong>Sons e pronúncia</strong><span>Feedback sonoro e leitura automática dos flashcards.</span></div><button class="toggle on" aria-label="Alternar sons"></button></div>
+            <div class="setting-row"><div class="setting-copy"><strong>Animações</strong><span>Movimentos, transições e celebrações.</span></div><button class="toggle on" aria-label="Alternar animações"></button></div>
+            <div class="setting-row"><div class="setting-copy"><strong>Lembrete diário</strong><span>Receba um lembrete para manter sua sequência.</span></div><button class="toggle" aria-label="Alternar lembrete"></button></div>
+            <div class="setting-row"><div class="setting-copy"><strong>Meta diária</strong><span>15 minutos por dia.</span></div><button class="text-button">Alterar</button></div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="mobile-nav" aria-label="Navegação mobile">
+    <button class="active" data-screen="home"><span class="nav-icon"><svg width="19" height="19"><use href="#i-home"/></svg></span>Início</button>
+    <button data-screen="learn"><span class="nav-icon"><svg width="19" height="19"><use href="#i-book"/></svg></span>Estudar</button>
+    <button data-screen="progress"><span class="nav-icon"><svg width="19" height="19"><use href="#i-chart"/></svg></span>Progresso</button>
+    <button data-screen="profile"><span class="nav-icon"><svg width="19" height="19"><use href="#i-user"/></svg></span>Perfil</button>
+  </nav>
+
+  <div class="modal-backdrop" id="practiceModal" role="dialog" aria-modal="true" aria-label="Escolher forma de prática">
+    <div class="modal">
+      <button class="modal-close" data-close="practiceModal" aria-label="Fechar"><svg width="19" height="19"><use href="#i-close"/></svg></button>
+      <div class="modal-body">
+        <div class="section-eyebrow">Escolha seu caminho</div>
+        <h2 style="font-size:31px;letter-spacing:-.05em;margin:8px 0 5px">O que você quer praticar agora?</h2>
+        <p style="color:var(--muted);font-size:12px">Você pode continuar sua rota recomendada ou escolher um conteúdo específico.</p>
+        <div class="mode-grid">
+          <button class="mode-option" data-action="question"><div class="mode-icon">Aa</div><strong>Gramática</strong><span>Present TO BE com sessões de 10, 20 ou 30 questões.</span></button>
+          <button class="mode-option vocab" data-action="flashcards"><div class="mode-icon">◫</div><strong>Vocabulário</strong><span>Flashcards de partes do corpo com imagem e pronúncia.</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="flashcardModal" role="dialog" aria-modal="true" aria-label="Flashcards de partes do corpo">
+    <div class="modal">
+      <div class="flashcard-stage">
+        <div class="focus-header">
+          <button class="focus-back" data-close="flashcardModal" aria-label="Voltar"><svg width="20" height="20"><use href="#i-left"/></svg></button>
+          <div class="focus-title"><strong>Partes do corpo</strong><span id="flashCount">1 de 24</span></div>
+          <button class="sound-pill" id="soundToggle">🔊 Som</button>
+        </div>
+        <div class="focus-progress"><span id="flashProgress"></span></div>
+        <div class="flashcard-layout">
+          <button class="arrow-control" id="prevCard" aria-label="Card anterior" disabled><svg width="20" height="20"><use href="#i-left"/></svg></button>
+          <div>
+            <div class="card-scene">
+              <div class="flashcard" id="flashcard" tabindex="0" role="button" aria-label="Virar flashcard">
+                <div class="flash-face front">
+                  <div class="body-illustration" aria-hidden="true">
+                    <svg class="body-svg" viewBox="0 0 300 300">
+                      <defs><linearGradient id="skin" x1="0" x2="1"><stop stop-color="#d6e3f5"/><stop offset="1" stop-color="#a9bfe0"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                      <circle cx="150" cy="48" r="30" fill="url(#skin)"/>
+                      <rect x="114" y="80" width="72" height="96" rx="30" fill="url(#skin)"/>
+                      <rect x="83" y="88" width="29" height="106" rx="14" fill="url(#skin)" transform="rotate(8 98 141)"/>
+                      <rect x="188" y="88" width="29" height="106" rx="14" fill="url(#skin)" transform="rotate(-8 202 141)"/>
+                      <rect x="119" y="170" width="27" height="106" rx="14" fill="url(#skin)" transform="rotate(3 133 223)"/>
+                      <rect x="154" y="170" width="27" height="106" rx="14" fill="url(#skin)" transform="rotate(-3 168 223)"/>
+                      <ellipse id="highlight" cx="150" cy="48" rx="40" ry="37" fill="rgba(180,47,80,.20)" stroke="#b42f50" stroke-width="5" filter="url(#glow)"/>
+                      <path d="M203 45h55" stroke="#b42f50" stroke-width="3" stroke-linecap="round"/><circle cx="261" cy="45" r="5" fill="#b42f50"/>
+                    </svg>
+                  </div>
+                  <div class="flash-translation" id="flashTranslation">Cabeça</div>
+                  <div class="flip-hint">Toque para revelar</div>
+                </div>
+                <div class="flash-face back">
+                  <div class="section-eyebrow" style="color:#8ce4ed">Em inglês</div>
+                  <div class="english-word" id="flashEnglish">Head</div>
+                  <button class="listen-button" id="listenAgain"><svg width="21" height="21"><use href="#i-volume"/></svg> Ouvir novamente</button>
+                </div>
+              </div>
+            </div>
+            <div class="card-caption"><span>Toque para virar · deslize para navegar</span><div class="dots"><i class="dot active"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i></div></div>
+          </div>
+          <button class="arrow-control" id="nextCard" aria-label="Próximo card"><svg width="20" height="20"><use href="#i-arrow"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="questionModal" role="dialog" aria-modal="true" aria-label="Sessão de gramática">
+    <div class="modal">
+      <div class="practice-stage">
+        <div class="focus-header"><button class="focus-back" data-close="questionModal" aria-label="Voltar"><svg width="20" height="20"><use href="#i-left"/></svg></button><div class="focus-title"><strong>Present TO BE</strong><span>Questão 3 de 10</span></div><button class="sound-pill">🔊 Som</button></div>
+        <div class="focus-progress"><span style="width:30%"></span></div>
+        <article class="question-card">
+          <div class="question-meta"><span>Complete a frase</span><span>Médio</span></div>
+          <h3>My parents ___ at home today.</h3>
+          <div class="answers"><button class="answer" data-value="am">am <span>A</span></button><button class="answer" data-value="is">is <span>B</span></button><button class="answer" data-value="are">are <span>C</span></button></div>
+          <div class="feedback-card good" id="goodFeedback"><div class="feedback-head">Correto!</div><div class="feedback-fill" id="feedbackFill"></div></div>
+          <div class="feedback-card bad" id="badFeedback"><div class="feedback-head">Quase lá. A resposta correta é “are”.</div><p>“My parents” está no plural. Por isso, usamos <strong>are</strong>.</p><div class="feedback-actions"><button class="inline-button study" id="openStudy">Estudar esse tópico</button><button class="inline-button continue" id="continueQuestion">Continuar</button></div></div>
+          <div class="question-footer"><button class="primary-button" id="confirmAnswer" disabled>Confirmar</button></div>
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="studyModal" role="dialog" aria-modal="true" aria-label="Estudar Present TO BE">
+    <div class="modal" style="width:min(760px,100%)">
+      <button class="modal-close" data-close="studyModal" aria-label="Fechar"><svg width="19" height="19"><use href="#i-close"/></svg></button>
+      <div class="study-dialog">
+        <div class="section-eyebrow">Estudar esse tópico</div>
+        <h2>Verbo TO BE — presente</h2>
+        <p>Use <strong>am</strong>, <strong>is</strong> ou <strong>are</strong> conforme o sujeito da frase.</p>
+        <div class="rule-banner"><strong>Nesta questão:</strong><p>“My parents” está no plural. Portanto: <strong>My parents are at home.</strong></p></div>
+        <div class="rule-grid"><div class="rule-chip"><strong>I → am</strong><span>I am ready.</span></div><div class="rule-chip"><strong>He / She / It → is</strong><span>She is at school.</span></div><div class="rule-chip"><strong>You / We / They → are</strong><span>They are busy.</span></div></div>
+        <button class="primary-button" data-close="studyModal" style="margin-top:22px">Voltar ao jogo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const screens = {
+      home: ['Sua jornada','Boa tarde, Juliano'],
+      learn: ['Biblioteca','O que você quer aprender?'],
+      progress: ['Seu desempenho','Progresso e conquistas'],
+      profile: ['Sua conta','Perfil e preferências']
+    };
+    const allScreenButtons = document.querySelectorAll('[data-screen]');
+    function openScreen(name){
+      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+      document.getElementById('screen-'+name)?.classList.add('active');
+      document.querySelectorAll('.nav-button[data-screen], .mobile-nav [data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));
+      document.getElementById('pageKicker').textContent=screens[name][0];
+      document.getElementById('pageTitle').textContent=screens[name][1];
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+    allScreenButtons.forEach(btn=>btn.addEventListener('click',()=>openScreen(btn.dataset.screen)));
+
+    const modals = [...document.querySelectorAll('.modal-backdrop')];
+    function openModal(id){document.getElementById(id)?.classList.add('open');document.body.style.overflow='hidden';}
+    function closeModal(id){document.getElementById(id)?.classList.remove('open');if(!document.querySelector('.modal-backdrop.open'))document.body.style.overflow='';}
+    document.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.close)));
+    modals.forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id)}));
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){const open=document.querySelector('.modal-backdrop.open');if(open)closeModal(open.id)}});
+
+    const toast=document.getElementById('toast');
+    function showToast(message){toast.textContent=message;toast.classList.add('show');clearTimeout(showToast.t);showToast.t=setTimeout(()=>toast.classList.remove('show'),2400)}
+
+    document.querySelectorAll('[data-action="practice"]').forEach(b=>b.addEventListener('click',()=>openModal('practiceModal')));
+    document.querySelectorAll('[data-action="flashcards"]').forEach(b=>b.addEventListener('click',()=>{closeModal('practiceModal');openModal('flashcardModal')}));
+    document.querySelectorAll('[data-action="question"]').forEach(b=>b.addEventListener('click',()=>{closeModal('practiceModal');resetQuestion();openModal('questionModal')}));
+    document.querySelectorAll('[data-action="games"]').forEach(b=>b.addEventListener('click',()=>showToast('Os jogos estarão disponíveis na próxima fase do produto.')));
+
+    document.querySelectorAll('.toggle').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('on')));
+    document.querySelectorAll('.filter-chip').forEach(c=>c.addEventListener('click',()=>{document.querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));c.classList.add('active')}));
+
+    const vocab = [
+      ['Head','Cabeça','head'],['Hair','Cabelo','hair'],['Face','Rosto','face'],['Eye','Olho','eye'],['Ear','Orelha','ear'],['Nose','Nariz','nose'],['Mouth','Boca','mouth'],['Teeth','Dentes','teeth'],['Tongue','Língua','tongue'],['Neck','Pescoço','neck'],['Shoulder','Ombro','shoulder'],['Arm','Braço','arm'],['Elbow','Cotovelo','elbow'],['Hand','Mão','hand'],['Finger','Dedo','finger'],['Thumb','Polegar','thumb'],['Chest','Peito','chest'],['Stomach','Barriga','stomach'],['Back','Costas','back'],['Leg','Perna','leg'],['Knee','Joelho','knee'],['Ankle','Tornozelo','ankle'],['Foot','Pé','foot'],['Toe','Dedo do pé','toe']
+    ];
+    let cardIndex=0, flipped=false, soundOn=true;
+    const flashcard=document.getElementById('flashcard');
+    const flashEnglish=document.getElementById('flashEnglish');
+    const flashTranslation=document.getElementById('flashTranslation');
+    const flashCount=document.getElementById('flashCount');
+    const flashProgress=document.getElementById('flashProgress');
+    const prevCard=document.getElementById('prevCard');
+    const nextCard=document.getElementById('nextCard');
+    const highlight=document.getElementById('highlight');
+
+    const highlightMap={
+      head:[150,48,40,37],hair:[150,28,38,17],face:[150,51,30,26],eye:[140,47,9,7],ear:[119,49,9,14],nose:[150,54,8,12],mouth:[150,66,13,6],teeth:[150,65,11,4],tongue:[150,69,10,5],neck:[150,80,18,12],shoulder:[112,91,22,16],arm:[96,137,20,53],elbow:[91,147,18,18],hand:[86,190,18,22],finger:[82,199,12,18],thumb:[91,192,9,14],chest:[150,116,37,28],stomach:[150,150,35,28],back:[150,124,40,45],leg:[132,220,20,55],knee:[133,220,20,19],ankle:[130,266,17,12],foot:[126,280,27,12],toe:[114,283,13,8]
+    };
+    function updateHighlight(part){const v=highlightMap[part]||highlightMap.head;highlight.setAttribute('cx',v[0]);highlight.setAttribute('cy',v[1]);highlight.setAttribute('rx',v[2]);highlight.setAttribute('ry',v[3]);}
+    function speakCurrent(){
+      if(!soundOn||!('speechSynthesis' in window)) return;
+      speechSynthesis.cancel();
+      const u=new SpeechSynthesisUtterance(vocab[cardIndex][0]);u.lang='en-US';u.rate=.86;speechSynthesis.speak(u);
+    }
+    function renderCard(){
+      const [en,pt,part]=vocab[cardIndex];flashEnglish.textContent=en;flashTranslation.textContent=pt;flashCount.textContent=`${cardIndex+1} de ${vocab.length}`;flashProgress.style.width=`${((cardIndex+1)/vocab.length)*100}%`;updateHighlight(part);prevCard.disabled=cardIndex===0;nextCard.setAttribute('aria-label',cardIndex===vocab.length-1?'Concluir flashcards':'Próximo card');flipped=false;flashcard.classList.remove('flipped');
+    }
+    function flipCard(){flipped=!flipped;flashcard.classList.toggle('flipped',flipped);if(flipped)setTimeout(speakCurrent,220)}
+    flashcard.addEventListener('click',e=>{if(e.target.closest('#listenAgain'))return;flipCard()});
+    flashcard.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flipCard()}});
+    document.getElementById('listenAgain').addEventListener('click',e=>{e.stopPropagation();speakCurrent()});
+    document.getElementById('soundToggle').addEventListener('click',()=>{soundOn=!soundOn;document.getElementById('soundToggle').textContent=soundOn?'🔊 Som':'🔇 Som';if(!soundOn&&'speechSynthesis'in window)speechSynthesis.cancel()});
+    function moveCard(delta){
+      if(delta>0&&cardIndex===vocab.length-1){showToast('Sequência concluída: 24 palavras estudadas.');cardIndex=0;renderCard();return}
+      cardIndex=Math.max(0,Math.min(vocab.length-1,cardIndex+delta));if('speechSynthesis'in window)speechSynthesis.cancel();renderCard();
+    }
+    prevCard.addEventListener('click',()=>moveCard(-1));nextCard.addEventListener('click',()=>moveCard(1));
+    document.addEventListener('keydown',e=>{if(!document.getElementById('flashcardModal').classList.contains('open'))return;if(e.key==='ArrowLeft')moveCard(-1);if(e.key==='ArrowRight')moveCard(1)});
+    let startX=0,startY=0;
+    flashcard.addEventListener('pointerdown',e=>{startX=e.clientX;startY=e.clientY});
+    flashcard.addEventListener('pointerup',e=>{const dx=e.clientX-startX,dy=e.clientY-startY;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.3){e.preventDefault();moveCard(dx<0?1:-1)}});
+    renderCard();
+
+    const answers=[...document.querySelectorAll('.answer')];
+    const confirmAnswer=document.getElementById('confirmAnswer');
+    const goodFeedback=document.getElementById('goodFeedback');
+    const badFeedback=document.getElementById('badFeedback');
+    const feedbackFill=document.getElementById('feedbackFill');
+    let selected=null;
+    function resetQuestion(){selected=null;answers.forEach(a=>a.className='answer');confirmAnswer.disabled=true;confirmAnswer.style.display='inline-flex';goodFeedback.classList.remove('show');badFeedback.classList.remove('show');feedbackFill.classList.remove('go')}
+    answers.forEach(a=>a.addEventListener('click',()=>{if(goodFeedback.classList.contains('show')||badFeedback.classList.contains('show'))return;selected=a.dataset.value;answers.forEach(x=>x.classList.toggle('selected',x===a));confirmAnswer.disabled=false}));
+    confirmAnswer.addEventListener('click',()=>{
+      if(!selected)return;confirmAnswer.style.display='none';answers.forEach(a=>{a.disabled=true;if(a.dataset.value==='are')a.classList.add('correct');if(a.dataset.value===selected&&selected!=='are')a.classList.add('wrong')});
+      if(selected==='are'){goodFeedback.classList.add('show');feedbackFill.classList.add('go');setTimeout(()=>{showToast('Próxima questão carregada automaticamente.');resetQuestion();answers.forEach(a=>a.disabled=false)},3000)}
+      else badFeedback.classList.add('show');
+    });
+    document.getElementById('continueQuestion').addEventListener('click',()=>{resetQuestion();answers.forEach(a=>a.disabled=false);showToast('Próxima questão')});
+    document.getElementById('openStudy').addEventListener('click',e=>{e.stopPropagation();openModal('studyModal')});
+  </script>
+</body>
+</html>

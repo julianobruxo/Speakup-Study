@@ -26,7 +26,9 @@ export default function ProfilePage() {
         <h1>Preferências da experiência</h1>
       </header>
       <section className="profile-intro">
-        <span className="profile-avatar">J</span>
+        <span className="profile-avatar" aria-hidden="true">
+          <AppIcon name="user" size={28} />
+        </span>
         <div>
           <span className="eyebrow">Modo visitante</span>
           <h2>Olá!</h2>

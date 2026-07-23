@@ -8,6 +8,7 @@ import PracticeSetupPage from "./pages/PracticeSetupPage";
 import ProfilePage from "./pages/ProfilePage";
 import ProgressPage from "./pages/ProgressPage";
 import VocabularyCategoryPage from "./pages/VocabularyCategoryPage";
+import VocabularyFlashcardPage from "./pages/VocabularyFlashcardPage";
 import VocabularyPage from "./pages/VocabularyPage";
 
 export default function App() {
@@ -25,6 +26,10 @@ export default function App() {
         element={<PracticeSessionPage />}
       />
       <Route path="/vocabulario" element={<VocabularyPage />} />
+      <Route
+        path="/vocabulario/body/flashcards"
+        element={<VocabularyFlashcardPage />}
+      />
       <Route
         path="/vocabulario/:categoryId"
         element={<VocabularyCategoryPage />}

@@ -90,6 +90,7 @@ export interface VocabularyEntry {
   exampleSentence?: string;
   exampleTranslation?: string;
   audioRef?: string;
+  visualKey?: string;
   tags?: string[];
 }
 

@@ -1,4 +1,5 @@
 const SOUND_KEY = "speakup-sound-enabled";
+export const SOUND_PREFERENCE_EVENT = "speakup-sound-change";
 
 export type SoundKind = "select" | "correct" | "wrong" | "complete";
 
@@ -8,7 +9,7 @@ export function isSoundEnabled(): boolean {
 
 export function setSoundEnabled(enabled: boolean) {
   localStorage.setItem(SOUND_KEY, String(enabled));
-  window.dispatchEvent(new CustomEvent("speakup-sound-change"));
+  window.dispatchEvent(new CustomEvent(SOUND_PREFERENCE_EVENT));
 }
 
 export function playSound(kind: SoundKind) {

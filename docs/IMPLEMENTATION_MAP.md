@@ -4,6 +4,62 @@ Atualizado em: 2026-07-23
 
 Este mapa assume uma abordagem hibrida: evolucao incremental da base Vite/React existente, com refatoracao progressiva da arquitetura e reconstrucao parcial das telas/fluxos que conflitam com o `CLAUDE.md`. A base atual e pequena demais para justificar uma reescrita completa, mas tambem e placeholder demais para ser apenas "preenchida" sem criar fundamentos de dominio.
 
+## Revamp visual - fechamento FASE 1 e FASE 2 - 2026-07-23
+
+Roteiro completo em `docs/REVAMP_ROADMAP.md`. Escopo autorizado nesta execucao: fechar e validar a FASE 1 (bloqueada por um bug de navegacao) e, somente apos o gate aprovado, implementar e validar a FASE 2 (Home). FASE 3 em diante permanecem bloqueadas.
+
+### Fechamento da FASE 1
+
+Bloqueio: a navegacao inferior/sidebar nao escondia durante o dialog "Bora praticar" no smoke test, apesar da regra CSS `.dialog-open .bottom-navigation` parecer correta.
+
+Investigacao: confirmado com um script isolado que, em navegador real (nao headless), o comportamento sempre esteve correto (`visibility:hidden`, `opacity:0`, `pointer-events:none`). O problema era especifico do Edge em modo `--headless=new` (usado por `scripts/smokeUi.mjs`): esse modo nao produz um frame de renderizacao real ate que uma screenshot seja solicitada via CDP, entao chamadas subsequentes a `getComputedStyle` liam um snapshot de estilo desatualizado, e callbacks de `requestAnimationFrame` (usados por `PresentTobeStudyDialog` para restaurar foco) nunca disparavam.
+
+Correcao:
+
+- `AppShell` ganhou uma prop explicita `dialogOpen` (React state, nao `document.body.classList`), repassada como `hidden` para `BottomNavigation` e `DesktopSidebar`, que aplicam uma classe local `nav-hidden` (`src/components/AppShell.tsx`).
+- `AppDialog.tsx` nao manipula mais `document.body.classList` (mecanismo agora obsoleto e removido).
+- `src/index.css`: regra `.dialog-open .bottom-navigation, .dialog-open .app-sidebar` substituida por `.bottom-navigation.nav-hidden, .app-sidebar.nav-hidden`.
+- `scripts/smokeUi.mjs`: pontos que liam `getComputedStyle` (visibilidade da navegacao) ou `document.activeElement` (foco apos fechar o dialog de estudo) passaram a forcar um frame real via `Page.captureScreenshot` antes de ler o estado — helper `forcePaint()`. Nenhuma asserção foi enfraquecida ou removida; o fluxo de fechar/reabrir o dialog e checar navegacao ganhou cobertura permanente e legivel (sem os `try/catch`/`console.error` de diagnostico usados durante a investigacao, todos removidos).
+- Processos duplicados de `npm run dev`/Vite (portas 5174/5175, de sessoes anteriores) foram encerrados; mantida uma unica instancia em `5173`.
+
+Gate da Fase 1 aprovado em 2026-07-23 (nesta ordem, antes de qualquer arquivo da Fase 2 ser tocado): `node scripts/validateContent.mjs`, `npx tsc -b`, `npm run lint`, `npm run build`, `node scripts/smokeUi.mjs` (7 viewports, `browserErrors: 0`).
+
+### FASE 2 — Home e navegacao principal
+
+Novos modulos em `src/components/home/`: `HomeHero.tsx`, `LearningPathSection.tsx`, `HomeProgressSummary.tsx`, `QuickGamesSection.tsx`, `PersonalRecordsSection.tsx`. `src/pages/HomePage.tsx` foi reduzido a composicao desses componentes (214 linhas removidas do arquivo original, logica extraida sem duplicacao).
+
+Decisoes de consolidacao (evitar repeticao funcional, conforme instrucao explicita):
+
+- "Proximo passo recomendado" e "Gramatica e Vocabulario" foram unificados em uma unica secao (`LearningPathSection`, titulo "Seu caminho de pratica"), pois ambos descreviam o mesmo conteudo (Present TO BE com progresso real + Partes do corpo). Duas secoes seguindo a especificacao literal teriam o mesmo CTA duplicado em dois cartoes.
+- O botao de acao que existia no painel de progresso (`Continuar praticando`/`Comecar agora`) foi removido de `HomeProgressSummary`, pois passou a viver exclusivamente no card de Gramatica da `LearningPathSection`; o painel de progresso ganhou em troca um link `Ver progresso completo` (`/progresso`), com funcao distinta (ver metricas completas, nao iniciar pratica).
+- Estado de carregamento do progresso deixou de mostrar "0 de 130" como se fosse definitivo; mostra "Carregando..." ate os dados reais chegarem (`HomeProgressSummary`, `LearningPathSection`).
+- Copy do estado vazio dos recordes ajustada para "Seus recordes aparecerao depois da primeira rodada." (pedido explicito desta fase).
+- `HomeHero` ganhou um link secundario discreto "Explorar conteudos" (`/praticar`), distinto do CTA principal "Bora praticar" (abre o seletor Gramatica/Vocabulario).
+
+Nao alterado nesta fase: as 130 questoes, conteudo pedagogico, selecao de sessoes, IndexedDB, contratos de progresso, timer de 3 segundos, modal de estudo, configuracao de sessao, resultado, flashcards, pronuncia, e as paginas Estudar/Gramatica/Progresso/Perfil/Jogos em profundidade.
+
+Smoke test ampliado (`scripts/smokeUi.mjs`) para cobrir, sem dados ficticios: Home vazia (CTA unico, 0 de 130, precisao "—", estado vazio dos recordes, exatamente 2 cards no caminho de pratica, ausencia de XP/nivel/streak/liga/missao/conquista/ranking/nome ficticio), navegacao dos links novos (Explorar conteudos, Ver progresso completo, card de Vocabulario no caminho de pratica), e Home com progresso real apos sessoes concluidas (contagem de praticadas refletida no card de Gramatica, recordes refletindo sessoes/streak reais).
+
+Gate completo revalidado apos a Fase 2: `node scripts/validateContent.mjs`, `npx tsc -b`, `npm run lint`, `npm run build`, `node scripts/smokeUi.mjs` — todos aprovados, `browserErrors: 0`.
+
+## Revamp visual - FASE 0 e FASE 1 (auditoria e implementacao inicial) - 2026-07-23
+
+Entregue:
+
+- Auditoria com tabela Area/Referencia/Preservar/Transformar/Risco comparando o React atual, `reference/ingles-em-jogo-product-vision.html`, `reference/home-approved.html` e `reference/speakup-english-challenge.html`.
+- Tokens visuais estendidos em `src/index.css` (superficie, texto, bordas, sucesso/aviso/erro, categorias vocabulario/gramatica/jogo, radius, spacing, motion, focus-ring), aditivos sobre os tokens existentes (`--navy`, `--wine`, etc.), sem renomear usos ja existentes.
+- `src/components/AppShell.tsx`: `DesktopSidebar` nova, substituindo a pilula `.desktop-navigation` horizontal; `BottomNavigation` (mobile) e `DesktopSidebar` (desktop) agora compartilham a mesma lista de itens (`NAV_ITEMS`) e a mesma logica de item ativo (`isItemActive`), eliminando duplicacao.
+- Sidebar: fundo branco (nao navy escuro, para nao conflitar com "fundo branco como base" do `CLAUDE.md` e evitar baixo contraste do logo), rail de icones 900-1099px, versao completa com rotulos a partir de 1100px, secao secundaria com acesso a Jogos (nao aparece na bottom navigation mobile, que continua com apenas 4 itens).
+- Avatar ficticio "J" removido de `GlobalHeader` (mobile) e `ProfilePage`; substituido por icone generico de perfil (`AppIcon name="user"`), pois o app e guest-first e nao possui nome real.
+- `scripts/smokeUi.mjs` atualizado: `.desktop-navigation` -> `.app-sidebar` em todas as asserçoes; nova checagem de rail (88px, sem rotulo) vs. sidebar completa (>=200px, com rotulo); nova checagem de item ativo pela sidebar; nova checagem de que "Jogos" nunca aparece na bottom navigation mobile; viewport `1000x800` adicionado para exercitar o rail.
+- Bug encontrado pelo proprio smoke test durante esta execucao: o rotulo da sidebar ficava visivel no rail (900-1099px) por falta de `display:none` explicito; corrigido antes de reportar a fase como concluida.
+
+Fora do escopo desta execucao (nao alterado):
+
+- Home, Estudar, Gramatica, Vocabulario, Progresso, Perfil, Jogos continuam com a mesma estrutura de conteudo/dados/regras.
+- Nenhuma rota nova, nenhum dado ficticio adicionado (XP, nivel, streak, ligas, conquistas, ranking, missao diaria continuam fora do MVP).
+- Sessao, feedback, flashcards e persistencia local nao foram tocados.
+
 ## Execucao consolidada do MVP visual - 2026-07-23
 
 Status: consolidado no commit `feat: complete playable present to be MVP`.
@@ -1080,6 +1136,28 @@ Decisoes:
 - Dominio.
 - Politicas legais.
 - Autorizacao explicita para deploy.
+
+## Template funcional de vocabulario
+
+Implementado:
+
+- `src/content/data/vocabulary.ts`: 24 entradas canonicas de Partes do corpo.
+- `src/content/model/content.ts`: `visualKey` opcional para associacao visual.
+- `src/components/BodyPartIllustration.tsx`: SVG local reutilizavel com variantes e destaques.
+- `src/services/audio/pronunciation.ts`: adaptacao pequena da Web Speech API.
+- `src/pages/VocabularyFlashcardPage.tsx`: sessao focada, flip, fala, navegacao e conclusao.
+- `src/pages/VocabularyCategoryPage.tsx`: entrada funcional para flashcards e pratica bloqueada.
+- `src/pages/VocabularyPage.tsx`: somente Partes do corpo disponivel.
+- `scripts/validateContent.mjs`: contrato de ordem e conteudo das 24 entradas.
+- `scripts/smokeUi.mjs`: cobertura funcional e responsiva do template.
+
+Limites preservados:
+
+- nenhum progresso de vocabulario;
+- nenhum jogo funcional;
+- nenhuma segunda categoria liberada;
+- nenhuma dependencia ou servico externo;
+- nenhuma alteracao nas regras de progresso gramatical.
 
 ## Arquitetura proposta de diretorios
 

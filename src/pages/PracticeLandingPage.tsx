@@ -26,11 +26,11 @@ export default function PracticeLandingPage() {
           trailing={<span className="count-pill">1 disponível</span>}
         />
         <AppCard
-          description="Consulte as categorias. A prática chega em breve."
+          description="Estude Partes do corpo com imagens e pronúncia."
           icon={<AppIcon name="grid" />}
           onClick={() => navigate("/vocabulario")}
           title="Vocabulário"
-          trailing={<span className="count-pill">9 categorias</span>}
+          trailing={<span className="count-pill">1 disponível</span>}
         />
         <AppCard
           description="Seis experiências rápidas já desenhadas para o app."

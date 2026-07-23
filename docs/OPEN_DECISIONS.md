@@ -124,6 +124,38 @@ Atualizado em: 2026-07-23
 
    Decidido: consolidar o MVP jogavel em `main` e publicar o historico local no repositorio publico `https://github.com/julianobruxo/Speakup-Study.git`, sem deploy, release, tag ou pull request.
 
+31. Primeiro template de vocabulario
+
+   Decidido e implementado no working tree: Partes do corpo possui 24 flashcards ordenados, SVGs locais reutilizaveis, pronuncia por Web Speech API e conclusao sem pontuacao. A mesma preferencia global de som e reutilizada. As outras oito categorias, a pratica pontuada e os jogos permanecem bloqueados.
+
+32. Sidebar desktop no lugar da pilula de navegacao horizontal
+
+   Decidido e implementado no working tree: a partir de 900px, a navegacao deixa de ser uma pilula horizontal dentro do cabecalho e passa a ser uma sidebar persistente (rail de icones 900-1099px, completa com rotulos a partir de 1100px). A sidebar usa fundo branco, nao navy escuro como na referencia de visao de produto, para preservar a regra de "fundo branco como base" do `CLAUDE.md` e evitar baixo contraste do logo. Documentado em `docs/REVAMP_ROADMAP.md`.
+
+33. Avatar/identidade ficticia no cabecalho e no perfil
+
+   Decidido e implementado no working tree: o avatar com a letra "J" (sem login ou nome real associado) foi substituido por um icone generico de perfil no cabecalho mobile e em `ProfilePage`. Nao ha login neste app; qualquer elemento de identidade futuro deve depender de dado real.
+
+34. Escopo do revamp visual - FASE 0 e FASE 1 (autorizacao inicial)
+
+   Decidido: executar apenas auditoria (FASE 0) e fundacao visual/App Shell (FASE 1) nessa etapa, conforme `docs/REVAMP_ROADMAP.md`. Superado pela decisao 37: em execucao subsequente, Juliano autorizou fechar a Fase 1 e, apos gate aprovado, implementar e validar tambem a Fase 2 na mesma sessao.
+
+35. Mecanismo de ocultar navegacao global durante dialogs
+
+   Decidido e implementado: em vez de um seletor CSS global amarrado a `document.body.classList.add("dialog-open")` (mutado por qualquer `AppDialog` da arvore), `AppShell` passou a receber uma prop React explicita `dialogOpen`, repassada como `hidden` para `BottomNavigation`/`DesktopSidebar`. Motivo: durante a investigacao de um bug de smoke test, esse mecanismo se mostrou mais robusto e explicito, e o proprio Juliano pediu essa preferencia ("prefira uma solucao React explicita") caso o seletor global se mostrasse fragil.
+
+36. Causa raiz do bug de navegacao no smoke test headless
+
+   Confirmado: o bug ("bottom navigation/sidebar visivel durante o dialog") nao existia na aplicacao real (validado em navegador nao headless) — era um problema do ambiente `--headless=new` do Edge usado por `scripts/smokeUi.mjs`, que nao gera frame de renderizacao real sem uma screenshot explicita via CDP, deixando `getComputedStyle` e callbacks de `requestAnimationFrame` desatualizados. Corrigido forcando um frame (`Page.captureScreenshot`) antes de ler esses estados no smoke test.
+
+37. Autorizacao para encadear fechamento da Fase 1 e execucao da Fase 2
+
+   Decidido: Juliano autorizou, em uma unica execucao, primeiro corrigir e validar completamente a Fase 1 (gate obrigatorio) e, somente depois do gate aprovado, implementar e validar a Fase 2 (Home). Fase 3 em diante continuam bloqueadas ate nova autorizacao.
+
+38. Estrutura final da Home (Fase 2)
+
+   Decidido e implementado: "proximo passo recomendado" e "Gramatica e Vocabulario" foram unificados em uma unica secao (`LearningPathSection`, "Seu caminho de pratica") para evitar duplicar o mesmo CTA (Present TO BE + Partes do corpo) em dois lugares diferentes. O botao de acao do painel de progresso foi removido (ja coberto pelo caminho de pratica) e substituido por um link "Ver progresso completo". Copy do estado vazio dos recordes ajustada para "Seus recordes aparecerao depois da primeira rodada."
+
 ## Necessarias antes de comecar implementacao visual/home
 
 1. Primeiro baseline Git
@@ -180,11 +212,11 @@ Atualizado em: 2026-07-23
 
 4. Audio final
 
-   Decidir depois se `speechSynthesis` basta no MVP ou se havera assets gravados/provedor externo.
+   Para Partes do corpo, `speechSynthesis` foi aprovado como fallback nativo do template. Ainda falta decidir se categorias futuras ou uma versao final exigirao assets gravados/provedor externo.
 
 5. Imagens de vocabulario
 
-   Definir por categoria se imagens, emojis ou nenhum asset sao pedagogicamente uteis.
+   Partes do corpo usa SVG local com destaque anatomico. A estrategia visual das categorias futuras continua pendente por categoria.
 
 6. Monetizacao
 
