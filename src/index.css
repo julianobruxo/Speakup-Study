@@ -1405,7 +1405,7 @@ dialog:focus-visible {
 }
 
 .correct-transition-bar i {
-  animation: correct-transition-fill 3s linear forwards;
+  animation: correct-transition-fill 2s linear forwards;
   background: #195b49;
   border-radius: inherit;
   display: block;
@@ -1839,7 +1839,7 @@ dialog:focus-visible {
   }
 
   .correct-transition-bar i {
-    animation-duration: 3s !important;
+    animation-duration: 2s !important;
     animation-timing-function: linear !important;
   }
 }
@@ -3290,35 +3290,9 @@ dialog:focus-visible {
   padding: 14px;
 }
 
-.quick-game-card.tone-blue {
-  background: #eef2ff;
-  border-color: #d8def4;
-}
-
-.quick-game-card.tone-rose {
-  background: #fff0f3;
-  border-color: #f1d6dc;
-}
-
-.quick-game-card.tone-gold {
-  background: #fff5d9;
-  border-color: #eadcb4;
-}
-
-.quick-game-card.tone-green {
-  background: #eaf7f2;
-  border-color: #cfe7de;
-}
-
-.quick-game-card.tone-violet {
-  background: #f2efff;
-  border-color: #ddd7f4;
-}
-
-.quick-game-card.tone-coral {
-  background: #fff1ea;
-  border-color: #efd9cf;
-}
+/* Tone classes no longer tint the card surface itself (navy border +
+   light-blue glow is shared by every card — see the consolidated system
+   further down); they remain only as hooks for icon-level semantic color. */
 
 .game-card-top {
   align-items: flex-start;
@@ -3381,21 +3355,10 @@ dialog:focus-visible {
   width: 64px;
 }
 
-.locked-card {
-  background: var(--paper);
-  border-color: var(--line-strong);
-  box-shadow: inset 4px 0 0 rgba(141, 29, 48, 0.32);
-}
-
-.locked-card:hover {
-  background: #fff;
-  border-color: rgba(141, 29, 48, 0.28);
-}
-
 .locked-card .card-icon {
   background: #fff;
-  border-color: rgba(141, 29, 48, 0.18);
-  color: var(--wine);
+  border-color: var(--card-border-navy);
+  color: var(--ink-soft);
 }
 
 @media (min-width: 700px) {
@@ -3674,6 +3637,12 @@ dialog:focus-visible {
   height: min(330px, 43dvh);
   max-width: 480px;
   width: 100%;
+}
+
+.flashcard-visual.visual-asset-photo,
+.flashcard-visual.body-part-illustration {
+  height: min(330px, 43dvh);
+  max-width: 480px;
 }
 
 .illustration-backdrop {
@@ -4281,16 +4250,13 @@ body {
 
 .games-strip { margin-top: 20px; }
 .game-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 13px; }
-.game-card { border: 0; text-align: left; border-radius: 22px; padding: 20px; min-height: 165px; color: #fff; position: relative; overflow: hidden; transition: .2s ease; box-shadow: var(--shadow-soft); }
-.game-card:hover { transform: translateY(-4px); }
-.game-card:nth-child(1) { background: linear-gradient(145deg,#17a8b9,#127a91); }
-.game-card:nth-child(2) { background: linear-gradient(145deg,#8a66f1,#6041c5); }
-.game-card:nth-child(3) { background: linear-gradient(145deg,#f08b46,#d85d30); }
-.game-card::after { content: ""; position: absolute; width: 130px; height: 130px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); right: -40px; bottom: -55px; }
-.game-symbol { display: block; font-size: 31px; margin-bottom: 24px; }
+.game-card { text-align: left; border-radius: 22px; padding: 20px; min-height: 165px; color: var(--ink); position: relative; overflow: hidden; transition: .2s ease; }
+.game-card:hover { transform: translateY(-2px); }
+.game-card::after { content: ""; position: absolute; width: 130px; height: 130px; border-radius: 50%; border: 1px solid var(--card-border-navy); right: -40px; bottom: -55px; }
+.game-symbol { display: block; font-size: 31px; margin-bottom: 24px; color: var(--violet-500); }
 .game-card strong { display: block; font-size: 17px; letter-spacing: -.03em; }
-.game-card > span:not(.game-lock):not(.game-symbol) { display: block; font-size: 11px; color: rgba(255,255,255,.77); margin-top: 6px; max-width: 180px; line-height: 1.45; }
-.game-lock { position: absolute; right: 16px; top: 16px; padding: 5px 8px; background: rgba(255,255,255,.16); border-radius: 999px; font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
+.game-card > span:not(.game-lock):not(.game-symbol) { display: block; font-size: 11px; color: var(--muted); margin-top: 6px; max-width: 180px; line-height: 1.45; }
+.game-lock { position: absolute; right: 16px; top: 16px; padding: 5px 8px; background: var(--card-surface-muted); border: 1px solid var(--card-border-navy); color: var(--ink); border-radius: 999px; font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
 
 /* Library */
 .learn-layout { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 20px; }
@@ -4520,5 +4486,1051 @@ html[data-animations="off"] *::after {
     scroll-behavior: auto !important;
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
+  }
+}
+
+/* Games: shared mechanics */
+
+.game-empty-state {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--ink-soft);
+  padding: 24px;
+  text-align: center;
+}
+
+.game-visual-fallback {
+  align-items: center;
+  background: var(--paper);
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  color: var(--ink-soft);
+  display: flex;
+  font-weight: 700;
+  height: 120px;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Photographic vocabulary asset, resolved centrally by VisualAsset. The
+   photos are square with a pure white background; a slightly off-white
+   container background keeps them from visually disappearing into the
+   page, and object-fit: contain guarantees no crop/stretch/arrow loss
+   regardless of the container's aspect ratio. */
+.visual-asset-photo {
+  aspect-ratio: 1 / 1;
+  background: var(--navy-soft, #eef2ff);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: block;
+  height: min(220px, 38dvh);
+  max-width: 320px;
+  object-fit: contain;
+  object-position: center;
+  width: 100%;
+}
+
+.sentence-builder-card,
+.error-hunt-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sentence-builder-slot {
+  background: var(--paper);
+  border: 1.5px dashed var(--line);
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 64px;
+  padding: 12px;
+}
+
+.sentence-builder-slot.correct {
+  background: rgba(35, 112, 91, 0.1);
+  border-color: #23705b;
+  border-style: solid;
+}
+
+.sentence-builder-slot.wrong {
+  background: rgba(178, 46, 46, 0.08);
+  border-color: #b22e2e;
+  border-style: solid;
+}
+
+.sentence-builder-hint {
+  color: var(--ink-soft);
+  font-size: 13px;
+  padding: 6px 2px;
+}
+
+.sentence-builder-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sentence-token {
+  background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 8px 14px;
+}
+
+.sentence-token:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.sentence-token.placed {
+  background: var(--navy-soft);
+  border-color: var(--navy);
+}
+
+.error-hunt-sentence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  line-height: 1.6;
+}
+
+.error-hunt-token {
+  background: transparent;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 4px 8px;
+}
+
+.error-hunt-token:hover:not(:disabled) {
+  border-color: var(--line);
+}
+
+.error-hunt-token.selected {
+  border-color: var(--navy);
+}
+
+.error-hunt-token.correct {
+  background: rgba(35, 112, 91, 0.14);
+  border-color: #23705b;
+  color: #195b49;
+}
+
+.error-hunt-token.wrong {
+  background: rgba(178, 46, 46, 0.12);
+  border-color: #b22e2e;
+  color: #8f2323;
+}
+
+.game-progress {
+  margin-bottom: 14px;
+}
+
+/* Secret Word (Hangman) */
+
+.secret-word-card {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  text-align: center;
+}
+
+.secret-word-letters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.secret-word-letter {
+  align-items: flex-end;
+  border-bottom: 3px solid var(--navy);
+  display: inline-flex;
+  font-size: 22px;
+  font-weight: 900;
+  height: 36px;
+  justify-content: center;
+  min-width: 24px;
+  text-transform: uppercase;
+}
+
+.secret-word-letter.spacer {
+  border-bottom-color: transparent;
+  min-width: 14px;
+}
+
+.secret-word-mistakes {
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.secret-word-keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.secret-word-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.secret-word-key {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  font-weight: 800;
+  height: 40px;
+  width: 32px;
+}
+
+.secret-word-key:disabled {
+  opacity: 0.4;
+}
+
+/* Matching Pairs (Conectando) */
+
+.matching-pairs-card {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.matching-pairs-image {
+  max-width: 260px;
+  width: 100%;
+}
+
+.matching-pairs-options {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+
+.matching-pairs-option {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  font-weight: 800;
+  min-height: 52px;
+  padding: 10px;
+}
+
+.matching-pairs-option.selected {
+  border-color: var(--navy);
+}
+
+.matching-pairs-option.correct {
+  background: rgba(35, 112, 91, 0.14);
+  border-color: #23705b;
+}
+
+.matching-pairs-option.wrong {
+  background: rgba(178, 46, 46, 0.12);
+  border-color: #b22e2e;
+}
+
+/* Memory Match (Par perfeito) */
+
+.memory-match-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+@media (min-width: 640px) {
+  .memory-match-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.memory-match-card {
+  aspect-ratio: 3 / 4;
+  background: var(--navy-soft);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+
+.memory-match-card.is-flipped {
+  background: #fff;
+}
+
+.memory-match-card.is-matched {
+  background: rgba(35, 112, 91, 0.14);
+  border-color: #23705b;
+}
+
+.memory-match-word {
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.memory-match-back {
+  background: var(--navy);
+  border-radius: 6px;
+  display: block;
+  height: 60%;
+  width: 60%;
+}
+
+.memory-match-card .visual-asset-photo {
+  border-width: 0;
+  height: 100%;
+  max-width: 100%;
+  width: 100%;
+}
+
+/* Sorting Station (Cada coisa no seu lugar) */
+
+.sorting-station-card {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sorting-station-item {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 200px;
+}
+
+.sorting-station-item strong {
+  font-size: 16px;
+}
+
+.sorting-station-item span {
+  color: var(--ink-soft);
+}
+
+.sorting-station-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.sorting-station-group {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  font-weight: 700;
+  min-height: 52px;
+  padding: 10px;
+}
+
+.sorting-station-group.selected {
+  border-color: var(--navy);
+}
+
+.sorting-station-group.correct {
+  background: rgba(35, 112, 91, 0.14);
+  border-color: #23705b;
+}
+
+.sorting-station-group.wrong {
+  background: rgba(178, 46, 46, 0.12);
+  border-color: #b22e2e;
+}
+
+.sorting-station-group:disabled {
+  opacity: 0.7;
+}
+
+/* Crossword (Cruzando palavras) */
+
+.crossword-grid {
+  display: grid;
+  gap: 2px;
+  margin: 0 auto 20px;
+  max-width: 100%;
+  overflow-x: auto;
+  width: fit-content;
+}
+
+.crossword-cell {
+  align-items: center;
+  display: flex;
+  font-size: 13px;
+  font-weight: 800;
+  height: 30px;
+  justify-content: center;
+  width: 30px;
+}
+
+.crossword-cell.filled {
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.crossword-cell.empty {
+  background: transparent;
+}
+
+.crossword-clue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.crossword-clue {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.crossword-clue-text {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.crossword-clue-input {
+  display: flex;
+  gap: 8px;
+}
+
+.crossword-clue-input input {
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  text-transform: uppercase;
+}
+
+.crossword-clue-input button {
+  background: var(--navy);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 700;
+  padding: 8px 14px;
+}
+
+.crossword-clue-input button:disabled {
+  opacity: 0.5;
+}
+
+.crossword-result {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.crossword-result.correct {
+  color: #195b49;
+}
+
+.crossword-result.wrong {
+  color: #8f2323;
+}
+
+/* Listening Ear (Ouvido afiado) */
+
+.listening-ear-card {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.listening-ear-audio {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: center;
+}
+
+.listening-ear-play {
+  align-items: center;
+  background: var(--navy);
+  border: none;
+  border-radius: 999px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 800;
+  height: 84px;
+  justify-content: center;
+  width: 84px;
+}
+
+.listening-ear-play:disabled {
+  opacity: 0.4;
+}
+
+.listening-ear-text-fallback {
+  font-size: 20px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.listening-image-options {
+  width: 100%;
+}
+
+.listening-image-option {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.listening-image-option.selected {
+  border-color: var(--navy);
+}
+
+.listening-image-option.correct {
+  background: rgba(35, 112, 91, 0.14);
+  border-color: #23705b;
+}
+
+.listening-image-option.wrong {
+  background: rgba(178, 46, 46, 0.12);
+  border-color: #b22e2e;
+}
+
+.listening-type-word {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.listening-type-word input {
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  font-size: 16px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+/* Beat the Clock (Contra o relógio) */
+
+.beat-clock-timer {
+  background: var(--paper);
+  border-radius: 999px;
+  height: 8px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.beat-clock-timer i {
+  background: linear-gradient(90deg, #b22e2e, var(--wine));
+  display: block;
+  height: 100%;
+  transition: width 0.1s linear;
+}
+
+.beat-clock-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.beat-clock-typing-input {
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  font-size: 16px;
+  padding: 10px 12px;
+}
+
+/* ==========================================================================
+   Harmonização visual — Biblioteca de detalhe, Configuração, Prática,
+   Resultado e os nove jogos (telas dentro de .focus-shell).
+   Estende os tokens da Product Vision (--navy-900/700, --wine-500/700,
+   --cyan-500/300, --violet-500, --gold-500) para as superfícies que ainda
+   usavam apenas a paleta MVP plana. Nenhuma classe é removida; apenas
+   reforçada mais adiante na cascata. Papéis semânticos preservados:
+   navy = estrutura/navegação, vinho = ação principal, cyan = aprendizado/
+   vocabulário, violeta = jogos, dourado = tempo/atenção.
+   ========================================================================== */
+
+/* Biblioteca de detalhe: tópicos de gramática e categorias de vocabulário */
+.focus-shell .page-lead {
+  padding-top: 16px;
+}
+
+.focus-shell .topic-list .app-card,
+.focus-shell .vocabulary-list .app-card {
+  background: var(--white, #fff);
+  border-color: var(--line);
+  box-shadow: var(--shadow-soft);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.focus-shell .topic-list .app-card:hover,
+.focus-shell .vocabulary-list .app-card:hover {
+  border-color: #d8deec;
+  box-shadow: 0 16px 34px rgba(16, 25, 60, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Fundo e borda tingidos por tópico foram removidos — toda superfície de
+   card usa o mesmo par navy border + light-blue glow (ver sistema
+   consolidado mais abaixo). Apenas o ícone interno preserva cor semântica. */
+
+.focus-shell .vocabulary-list .app-card:not(.locked-card) .card-icon {
+  background: var(--cyan-soft);
+  color: var(--cyan-500);
+}
+
+.focus-shell .topic-number {
+  background: linear-gradient(145deg, var(--wine-500), var(--wine-700));
+}
+
+.focus-shell .locked-card {
+  background: var(--paper);
+}
+
+.focus-shell .curriculum-control {
+  background: var(--navy-soft);
+  border-color: rgba(23, 35, 75, 0.08);
+}
+
+.focus-shell .curriculum-control button[aria-pressed="true"] {
+  background: #fff;
+  color: var(--navy-800, var(--navy));
+}
+
+.focus-shell .word-preview {
+  background: linear-gradient(150deg, #fff, #f4f8ff);
+  border-color: var(--line);
+}
+
+.focus-shell .locked-action {
+  background: var(--gold-soft);
+  border-color: rgba(180, 119, 24, 0.18);
+  color: var(--gold);
+}
+
+/* Configuração de sessão: substitui o navy chapado por gradiente do hero */
+.focus-shell .challenge-brief {
+  background:
+    radial-gradient(circle at 85% 0%, rgba(125, 229, 239, 0.22), transparent 45%),
+    radial-gradient(circle at 0% 100%, rgba(139, 108, 246, 0.22), transparent 50%),
+    linear-gradient(150deg, var(--navy-900, var(--navy)), var(--navy-700, var(--navy-2)));
+}
+
+.focus-shell .challenge-brief .setup-icon {
+  background: linear-gradient(145deg, var(--wine-500), var(--wine-700));
+}
+
+.focus-shell .challenge-builder {
+  background: linear-gradient(165deg, #ffffff, #f7faff);
+  border-color: var(--line);
+}
+
+.focus-shell .segmented-control button {
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.focus-shell .segmented-control button.selected {
+  background: linear-gradient(150deg, var(--navy-soft), #eef6ff);
+}
+
+.focus-shell .selector-icon {
+  background: var(--cyan-soft);
+  color: var(--cyan-500, var(--cyan));
+}
+
+.focus-shell .session-summary {
+  background: linear-gradient(150deg, #fff9ec, #fff);
+  color: var(--gold, #96650f);
+}
+
+.focus-shell .session-summary .summary-icon {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+
+/* Prática de gramática: aproxima pergunta e respostas, reduz peso escuro */
+@media (min-width: 900px) {
+  .focus-shell .question-card {
+    grid-template-columns: minmax(260px, 0.42fr) minmax(430px, 0.58fr) !important;
+  }
+}
+
+.focus-shell .question-prompt {
+  background:
+    radial-gradient(circle at 90% 100%, rgba(125, 229, 239, 0.18), transparent 55%),
+    linear-gradient(155deg, var(--navy-900, var(--navy)), var(--violet-500, var(--violet)) 145%);
+}
+
+.focus-shell .question-prompt .question-label {
+  color: var(--gold-500, #f5c85b);
+}
+
+.focus-shell .question-response {
+  background: linear-gradient(180deg, #f7faff, #ffffff);
+}
+
+.focus-shell .answer-options button {
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    box-shadow 0.14s ease,
+    transform 0.14s ease;
+}
+
+.focus-shell .answer-options button:hover:not(:disabled) {
+  background: #fff;
+  border-color: var(--wine-500, var(--wine));
+}
+
+.focus-shell .answer-options button.selected:not(.correct):not(.wrong) {
+  background: var(--cyan-soft);
+  border-color: var(--cyan-500, var(--cyan));
+}
+
+.focus-shell .answer-options button.selected > span {
+  background: var(--cyan-500, var(--cyan));
+}
+
+.focus-shell .answer-options button:disabled:not(.correct):not(.wrong) {
+  opacity: 0.55;
+}
+
+.focus-shell .session-progress {
+  background: var(--navy-soft);
+}
+
+.focus-shell .session-progress i,
+.focus-shell .flashcard-progress i {
+  background: linear-gradient(90deg, var(--wine-500, var(--wine)), var(--violet-500, var(--violet)));
+}
+
+/* Resultado (prática tradicional e os nove jogos, via GameResultScreen) */
+.focus-shell .result-hero {
+  background:
+    radial-gradient(circle at 85% 0%, rgba(125, 229, 239, 0.2), transparent 45%),
+    linear-gradient(150deg, var(--navy-900, var(--navy)), var(--navy-700, var(--navy-2)));
+}
+
+.focus-shell .result-icon {
+  background: linear-gradient(145deg, var(--gold-500, var(--gold)), #d99a2b);
+}
+
+.focus-shell .score-ring {
+  background:
+    radial-gradient(circle at center, #fff 58%, transparent 60%),
+    conic-gradient(var(--wine-500, var(--wine)) calc(var(--score) * 1%), var(--navy-soft) 0);
+}
+
+/* Jogos: header, progresso e feedback consistentes em todas as mecânicas */
+.focus-shell .game-play-page .page-header {
+  margin-bottom: 4px;
+}
+
+.focus-shell .game-progress i {
+  background: linear-gradient(90deg, var(--violet-500, var(--violet)), var(--wine-500, var(--wine)));
+}
+
+.focus-shell .sentence-builder-card .question-prompt,
+.focus-shell .error-hunt-card .question-prompt {
+  background: linear-gradient(150deg, var(--navy-900, var(--navy)), var(--violet-500, var(--violet)) 160%);
+  padding: 14px 18px;
+}
+
+.focus-shell .sentence-builder-slot {
+  background: var(--navy-soft);
+  border-color: rgba(23, 35, 75, 0.16);
+}
+
+.focus-shell .sentence-builder-slot.correct {
+  background: var(--success-soft);
+  border-color: var(--success);
+}
+
+.focus-shell .sentence-builder-slot.wrong {
+  background: var(--error-soft);
+  border-color: var(--error);
+}
+
+.focus-shell .sentence-token {
+  background: #fff;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+}
+
+.focus-shell .sentence-token.placed {
+  background: var(--cyan-soft);
+  border-color: var(--cyan-500, var(--cyan));
+}
+
+.focus-shell .error-hunt-token:hover:not(:disabled) {
+  background: var(--navy-soft);
+}
+
+.focus-shell .error-hunt-token.selected {
+  background: var(--cyan-soft);
+  border-color: var(--cyan-500, var(--cyan));
+}
+
+.focus-shell .secret-word-card .secret-word-letter {
+  border-bottom-color: var(--violet-500, var(--violet));
+  color: var(--navy);
+}
+
+.focus-shell .secret-word-key {
+  background: #fff;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.focus-shell .secret-word-key:hover:not(:disabled) {
+  background: var(--violet-soft);
+  border-color: var(--violet-500, var(--violet));
+}
+
+.focus-shell .secret-word-mistakes {
+  color: var(--wine-600, var(--wine));
+  font-weight: 800;
+}
+
+.focus-shell .matching-pairs-option,
+.focus-shell .sorting-station-group,
+.focus-shell .listening-image-option {
+  background: #fff;
+  border-color: var(--line);
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.focus-shell .matching-pairs-option:hover:not(:disabled),
+.focus-shell .sorting-station-group:hover:not(:disabled),
+.focus-shell .listening-image-option:hover:not(:disabled) {
+  background: var(--violet-soft);
+  border-color: var(--violet-500, var(--violet));
+}
+
+.focus-shell .matching-pairs-option.selected,
+.focus-shell .sorting-station-group.selected,
+.focus-shell .listening-image-option.selected {
+  background: var(--violet-soft);
+  border-color: var(--violet-500, var(--violet));
+}
+
+.focus-shell .memory-match-card {
+  background: var(--violet-soft);
+  border-color: rgba(106, 75, 199, 0.22);
+}
+
+.focus-shell .memory-match-card.is-flipped {
+  background: #fff;
+  border-color: var(--violet-500, var(--violet));
+}
+
+.focus-shell .memory-match-back {
+  background: linear-gradient(145deg, var(--violet-500, var(--violet)), var(--navy-900, var(--navy)));
+}
+
+.focus-shell .crossword-cell.filled {
+  background: #fff;
+  border-color: var(--line-strong);
+}
+
+.focus-shell .crossword-clue {
+  background: linear-gradient(150deg, #fff, #f7f5ff);
+  border-color: var(--line);
+}
+
+.focus-shell .crossword-clue-input button {
+  background: linear-gradient(145deg, var(--wine-500), var(--wine-700));
+}
+
+.focus-shell .listening-ear-play {
+  background: linear-gradient(145deg, var(--violet-500, var(--violet)), var(--navy-900, var(--navy)));
+  box-shadow: 0 12px 26px rgba(139, 108, 246, 0.28);
+}
+
+.focus-shell .beat-clock-timer {
+  background: var(--gold-soft);
+}
+
+.focus-shell .beat-clock-timer i {
+  background: linear-gradient(90deg, var(--gold-500, var(--gold)), var(--wine-500, var(--wine)));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-shell .topic-list .app-card,
+  .focus-shell .vocabulary-list .app-card,
+  .focus-shell .segmented-control button,
+  .focus-shell .answer-options button,
+  .focus-shell .sentence-token,
+  .focus-shell .secret-word-key,
+  .focus-shell .matching-pairs-option,
+  .focus-shell .sorting-station-group,
+  .focus-shell .listening-image-option {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   Sistema padrão de cards — navy border + light-blue glow.
+   Fonte única de verdade para toda superfície card-like do app: Home,
+   Biblioteca, Gramática, Vocabulário, Configuração de sessão, Prática,
+   Flashcards, Progresso, Perfil, Jogos e Resultados.
+
+   Substitui o antigo sistema de bordas/glow multicoloridas por tópico
+   (conic-gradient + nth-of-type, um par de cores por card). Referência
+   aprovada: superfícies brancas/off-white, borda navy fina, glow light-blue
+   suave — uma família visual única, não uma "aura" diferente por card.
+
+   Cores semânticas internas (ícone de Gramática em vinho, ícone de
+   Vocabulário em cyan, Jogos/Revisão em violeta, recompensa/timer em
+   dourado, CTA principal em vinho, sucesso/erro em verde/vermelho)
+   continuam livres — apenas a borda e o glow estruturais dos cards seguem
+   este padrão único.
+   ========================================================================== */
+
+:root {
+  --card-surface: #ffffff;
+  --card-surface-muted: var(--paper, #f7f9ff);
+  --card-border-navy: rgba(15, 23, 56, 0.16);
+  --card-border-navy-strong: rgba(15, 23, 56, 0.42);
+  --card-glow-light-blue: rgba(125, 229, 239, 0.28);
+  --card-glow-light-blue-strong: rgba(54, 198, 217, 0.4);
+  --card-shadow-rest: 0 10px 26px rgba(15, 23, 56, 0.07);
+  --card-shadow-hover: 0 16px 34px rgba(15, 23, 56, 0.11);
+  --card-radius: var(--radius-lg, 18px);
+}
+
+/* Base compartilhada — aplicada a toda superfície classificável como card.
+   Um card recebe o padrão simplesmente por pertencer a um destes seletores;
+   nenhuma página precisa redeclarar borda/glow por conta própria. */
+.topic-card,
+.focus-shell .topic-list .app-card,
+.focus-shell .vocabulary-list .app-card,
+.app-card,
+.quick-game-card,
+.game-card,
+.section-card,
+.daily-card,
+.map-card,
+.league-card,
+.metric-card,
+.achievement,
+.settings-card,
+.setting-row,
+.score-panel,
+.question-card,
+.dialog-panel,
+.flashcard-face:not(.flashcard-back) {
+  background-color: var(--card-surface);
+  border: 1px solid var(--card-border-navy) !important;
+  box-shadow: var(--card-shadow-rest), 0 0 12px -4px var(--card-glow-light-blue);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+/* Interativo/disponível: glow um pouco mais perceptível, leve elevação */
+.topic-card.available,
+.focus-shell .topic-list .available-topic,
+.focus-shell .vocabulary-list .app-card:not(.locked-card),
+.app-card:not(.locked-card),
+.quick-game-card:not([aria-disabled="true"]),
+.map-card,
+.setting-row:not(.static) {
+  box-shadow: var(--card-shadow-rest), 0 0 14px -4px var(--card-glow-light-blue-strong);
+  cursor: pointer;
+}
+
+.topic-card.available:hover,
+.topic-card.available:focus-visible,
+.focus-shell .topic-list .available-topic:hover,
+.focus-shell .topic-list .available-topic:focus-visible,
+.focus-shell .vocabulary-list .app-card:not(.locked-card):hover,
+.focus-shell .vocabulary-list .app-card:not(.locked-card):focus-visible,
+.app-card:not(.locked-card):hover,
+.app-card:not(.locked-card):focus-visible,
+.quick-game-card:not([aria-disabled="true"]):hover,
+.quick-game-card:not([aria-disabled="true"]):focus-visible,
+.map-card:hover,
+.setting-row:not(.static):hover {
+  border-color: var(--card-border-navy-strong) !important;
+  box-shadow: var(--card-shadow-hover), 0 0 16px -3px var(--card-glow-light-blue-strong);
+  transform: translateY(-2px);
+}
+
+/* Cards bloqueados (Em breve): mesma família, intensidade bem menor —
+   nunca parecem disponíveis, mesmo no hover */
+.topic-card:not(.available),
+.focus-shell .locked-card,
+.locked-card,
+.quick-game-card[aria-disabled="true"],
+.game-card[aria-disabled="true"] {
+  background-color: var(--card-surface-muted);
+  border-color: var(--card-border-navy) !important;
+  box-shadow: none;
+  filter: saturate(0.85);
+}
+
+.topic-card:not(.available):hover,
+.focus-shell .locked-card:hover,
+.locked-card:hover,
+.quick-game-card[aria-disabled="true"]:hover,
+.game-card[aria-disabled="true"]:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+/* Selecionado: borda navy mais forte + glow mais forte; o indicador de
+   seleção (check, radio, marca interna) continua sendo o próprio conteúdo
+   do card — a cor da borda nunca é o único sinal de seleção. */
+.focus-shell .segmented-control button.selected,
+.answer-options button.selected {
+  border-color: var(--card-border-navy-strong) !important;
+  box-shadow: var(--card-shadow-rest), 0 0 0 1px var(--card-border-navy-strong),
+    0 0 16px -3px var(--card-glow-light-blue-strong);
+}
+
+.focus-shell .session-summary {
+  box-shadow: var(--card-shadow-rest), 0 0 12px -4px var(--card-glow-light-blue);
+}
+
+/* Correto/incorreto sobrescrevem a borda base temporariamente; fora desse
+   estado, os cards de resposta voltam ao padrão navy + light-blue acima. */
+.answer-options button.correct,
+.answer-options button.wrong {
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topic-card.available:hover,
+  .focus-shell .topic-list .available-topic:hover,
+  .focus-shell .vocabulary-list .app-card:not(.locked-card):hover,
+  .app-card:not(.locked-card):hover,
+  .quick-game-card:not([aria-disabled="true"]):hover,
+  .map-card:hover,
+  .setting-row:not(.static):hover {
+    transform: none;
   }
 }

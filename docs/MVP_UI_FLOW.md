@@ -19,7 +19,7 @@ Home
 -> easy ou medium
 -> 10, 20 ou 30 questões
 -> Sessão
--> Acerto automático em 3s ou erro com avanço manual
+-> Acerto automático em 2s ou erro com avanço manual
 -> Resultado
 -> Jogar novamente, trocar configuração ou voltar à Home
 ```
@@ -69,7 +69,7 @@ Acerto:
 
 - bloqueia alternativas;
 - mostra `Correto!`;
-- mantém barra linear de 3 segundos;
+- mantém barra linear de 2 segundos;
 - avança automaticamente uma única vez.
 
 Erro:
@@ -112,4 +112,4 @@ Erro:
 - 1440x900;
 - 1920x1080.
 
-Também cobre navegação, ausência de overflow, feedback, timer de 3 segundos, flashcards, áudio, swipe, teclado, progresso, engajamento, ranking simulado, perfil local e `browserErrors: 0`.
+Também cobre navegação, ausência de overflow, feedback, timer de 2 segundos, flashcards, áudio, swipe, teclado, progresso, engajamento, ranking simulado, perfil local e `browserErrors: 0`.

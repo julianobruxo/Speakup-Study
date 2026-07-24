@@ -40,7 +40,7 @@ import {
   recordGrammarSessionEngagement,
 } from "../services/progress/engagement";
 
-const CORRECT_TRANSITION_MS = 3000;
+const CORRECT_TRANSITION_MS = 2000;
 
 export default function PracticeSessionPage() {
   const navigate = useNavigate();
@@ -460,7 +460,7 @@ export default function PracticeSessionPage() {
               {isCorrect && (
                 <motion.div
                   animate={{ opacity: 1, y: 0 }}
-                  aria-label="Resposta correta. Próxima questão em 3 segundos."
+                  aria-label="Resposta correta. Próxima questão em 2 segundos."
                   aria-live="polite"
                   className="answer-feedback correct correct-transition"
                   initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
@@ -475,10 +475,10 @@ export default function PracticeSessionPage() {
                   <div className="correct-transition-copy">
                     <strong>Correto!</strong>
                     <div
-                      aria-label="Avanço automático em 3 segundos"
+                      aria-label="Avanço automático em 2 segundos"
                       aria-valuemax={100}
                       aria-valuemin={0}
-                      aria-valuetext="Próxima questão em 3 segundos"
+                      aria-valuetext="Próxima questão em 2 segundos"
                       className="correct-transition-bar"
                       role="progressbar"
                     >

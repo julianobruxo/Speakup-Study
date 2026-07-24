@@ -12,11 +12,11 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 
 - Home game-like com missão diária, meta semanal, caminho de aprendizagem, Liga Safira local e jogos bloqueados.
 - Estudar como biblioteca com Gramática, Vocabulário e revisão de erros.
-- Gramática funcional apenas em Present TO BE.
+- Gramática funcional apenas em Present TO BE, com avanço automático em 2 segundos após acerto.
 - Vocabulário funcional apenas em Partes do corpo.
 - Progresso com atividade semanal, conquistas, revisão e métricas locais.
 - Perfil local editável, preferências e reset local confirmado.
-- Jogos visíveis, mas bloqueados como `Em breve`.
+- Jogos: os nove jogos do catálogo oficial funcionais com `present_tobe` + `body`.
 
 ## Conteúdo
 
@@ -39,10 +39,10 @@ Planejado: Past TO BE, Simple Present, Present Continuous, Be Going To, Simple P
 
 ## Engajamento e Persistência
 
-- IndexedDB nativo, banco `practice-progress`, versão 2.
-- Stores preservadas: `questions` e `sessions`.
+- IndexedDB nativo, banco `practice-progress`, versão 3.
+- Stores preservadas: `questions`, `sessions` e `engagement`; nova store `gameSessions`.
 - Store de engajamento com perfil local, XP, níveis, títulos, sequência, missão, meta semanal, conquistas e liga.
-- Eventos de XP idempotentes para evitar duplicação por reload ou rerender.
+- Eventos de XP idempotentes (gramática, flashcards e jogos) para evitar duplicação por reload ou rerender.
 - `localStorage` somente para preferências pequenas.
 - Sem sincronização e sem backend.
 
@@ -50,7 +50,7 @@ A Liga Safira é uma experiência local. Os demais participantes são simulados 
 
 ## Jogos
 
-Nenhum jogo está funcional nesta fase. Catálogo planejado atualizado:
+Os nove jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramática) e `body` (Vocabulário):
 
 - Monte a frase;
 - Caça ao erro;
@@ -60,7 +60,7 @@ Nenhum jogo está funcional nesta fase. Catálogo planejado atualizado:
 - Conectando;
 - Cruzando palavras;
 - Par perfeito;
-- Ouvido afiado — fase posterior.
+- Ouvido afiado.
 
 `Conectando` é o nome aprovado para associação entre palavra em inglês e imagem.
 
@@ -74,7 +74,8 @@ Nenhum jogo está funcional nesta fase. Catálogo planejado atualizado:
 - `/vocabulario`: categorias.
 - `/vocabulario/:categoryId`: prévia da categoria.
 - `/vocabulario/body/flashcards`: flashcards de Partes do corpo.
-- `/jogos`: jogos bloqueados.
+- `/jogos`: catálogo de nove jogos.
+- `/jogos/monte-a-frase`, `/jogos/caca-ao-erro`, `/jogos/contra-o-relogio`, `/jogos/cada-coisa-no-seu-lugar`, `/jogos/palavra-secreta`, `/jogos/conectando`, `/jogos/cruzando-palavras`, `/jogos/par-perfeito`, `/jogos/ouvido-afiado`: jogos individuais.
 - `/progresso`: progresso local.
 - `/perfil`: perfil local.
 

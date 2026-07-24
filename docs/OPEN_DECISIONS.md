@@ -52,19 +52,23 @@ Atualizado em: 2026-07-24
 
    A branch principal é `main` e rastreia `origin/main` em `https://github.com/julianobruxo/Speakup-Study.git`. O remoto não deve ser renomeado nesta fase.
 
+10. Jogos funcionais
+
+    Os nove jogos do catálogo oficial estão implementados sobre uma fundação compartilhada (`src/games`), usando `present_tobe` e `body`. Nenhum banco de conteúdo foi duplicado; cada jogo consome os bancos canônicos via adapters.
+
 ## Abertas
 
 1. Próximo tópico gramatical
 
-   Past TO BE, Simple Present, Present Continuous, Be Going To, Simple Past, There TO BE e Prepositions ainda precisam de migração e revisão pedagógica.
+   Past TO BE, Simple Present, Present Continuous, Be Going To, Simple Past, There TO BE e Prepositions ainda precisam de migração e revisão pedagógica antes de entrar em `ROLLOUT_CONTENT`.
 
 2. Expansão de vocabulário
 
-   As demais categorias de vocabulário ainda precisam de conteúdo, assets e validação.
+   As demais categorias de vocabulário ainda precisam de conteúdo, assets e validação antes de entrar em `ROLLOUT_CONTENT`.
 
-3. Jogos funcionais
+3. Smoke test completo pendente
 
-   Os jogos seguem bloqueados. A implementação deve reutilizar conteúdo e progresso compartilhados, sem duplicar bancos.
+   O smoke visual (`node scripts/smokeUi.mjs`) não pôde ser executado até o fim nesta sessão por um bloqueio de rede do sandbox (Edge headless não alcança o Vite local). Juliano precisa rodá-lo localmente para validar os nove jogos nos nove viewports.
 
 4. Testes automatizados adicionais
 

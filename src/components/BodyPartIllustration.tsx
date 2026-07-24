@@ -1,6 +1,7 @@
 interface BodyPartIllustrationProps {
   label: string;
   part: string;
+  className?: string;
 }
 
 type Highlight = {
@@ -51,6 +52,7 @@ function variantFor(part: string) {
 export function BodyPartIllustration({
   label,
   part,
+  className,
 }: BodyPartIllustrationProps) {
   const highlight = HIGHLIGHTS[part] ?? HIGHLIGHTS.head;
   const variant = variantFor(part);
@@ -58,7 +60,7 @@ export function BodyPartIllustration({
   return (
     <svg
       aria-label={`Ilustração destacando ${label}.`}
-      className="body-part-illustration"
+      className={["body-part-illustration", className].filter(Boolean).join(" ")}
       data-part={part}
       role="img"
       viewBox="0 0 320 280"

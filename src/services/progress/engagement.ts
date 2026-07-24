@@ -1,5 +1,6 @@
 import {
   ENGAGEMENT_STORE,
+  GAME_SESSION_STORE,
   getProgressDatabase,
   getProgressSnapshot,
   PROGRESS_UPDATED_EVENT,
@@ -20,6 +21,9 @@ export interface DailyMission {
   grammarAnswers: number;
   grammarSessionCompleted: boolean;
   vocabularyCardsRevealed: string[];
+  gameGrammarCompleted: boolean;
+  gameVocabularyCompleted: boolean;
+  gameValidChallengesResolved: number;
   completed: boolean;
   bonusGranted: boolean;
 }
@@ -143,6 +147,9 @@ function newMission(date = localDate()): DailyMission {
     grammarAnswers: 0,
     grammarSessionCompleted: false,
     vocabularyCardsRevealed: [],
+    gameGrammarCompleted: false,
+    gameVocabularyCompleted: false,
+    gameValidChallengesResolved: 0,
     completed: false,
     bonusGranted: false,
   };
@@ -190,6 +197,9 @@ function normalizeRecord(record: EngagementRecord, now = new Date()): Engagement
   const weekKey = getWeekKey(now);
   const state = record.state;
   if (state.dailyMission.date !== today) state.dailyMission = newMission(today);
+  state.dailyMission.gameGrammarCompleted ??= false;
+  state.dailyMission.gameVocabularyCompleted ??= false;
+  state.dailyMission.gameValidChallengesResolved ??= 0;
   if (state.league.weekKey !== weekKey) {
     state.weeklyXp = 0;
     state.league = { weekKey, simulatedParticipants: PARTICIPANTS };
@@ -250,10 +260,13 @@ function grantXp(state: EngagementState, amount: number, date: string) {
 
 function completeMissionIfReady(state: EngagementState, date: string) {
   const mission = state.dailyMission;
-  mission.completed =
-    mission.grammarAnswers >= 5 &&
-    mission.grammarSessionCompleted &&
-    mission.vocabularyCardsRevealed.length >= 5;
+  const challengesDone = mission.gameValidChallengesResolved >= 10;
+  const grammarDone =
+    (mission.grammarAnswers >= 5 && mission.grammarSessionCompleted) ||
+    mission.gameGrammarCompleted;
+  const vocabularyDone =
+    mission.vocabularyCardsRevealed.length >= 5 || mission.gameVocabularyCompleted;
+  mission.completed = challengesDone && grammarDone && vocabularyDone;
   if (mission.completed && !mission.bonusGranted) {
     mission.bonusGranted = true;
     grantXp(state, 80, date);
@@ -460,6 +473,34 @@ export async function recordFlashcardCompletion(
   });
 }
 
+/**
+ * Grants game XP and updates the daily mission/streak only when the round
+ * is finalized. Idempotent via `sessionId`: replay, refresh, or repeated
+ * persistence of the same completed round never grants XP twice.
+ */
+export async function recordGameRoundEngagement(
+  sessionId: string,
+  contentDomain: "grammar" | "vocabulary",
+  xpEarned: number,
+  totalChallenges: number,
+  completedAt = new Date(),
+): Promise<EngagementSnapshot> {
+  return mutate((record) => {
+    const state = record.state;
+    const eventId = `game-round:${sessionId}`;
+    if (state.processedEvents[eventId]) return;
+    state.processedEvents[eventId] = true;
+    const date = localDate(completedAt);
+    if (state.dailyMission.date !== date) state.dailyMission = newMission(date);
+    grantXp(state, xpEarned, date);
+    state.dailyMission.gameValidChallengesResolved += totalChallenges;
+    if (contentDomain === "grammar") state.dailyMission.gameGrammarCompleted = true;
+    if (contentDomain === "vocabulary") state.dailyMission.gameVocabularyCompleted = true;
+    if (totalChallenges >= 5) recordActiveDay(state, date);
+    completeMissionIfReady(state, date);
+  });
+}
+
 export function getLevelSummary(totalXp: number): LevelSummary {
   const level = Math.floor(totalXp / 250) + 1;
   const title =
@@ -545,12 +586,13 @@ export function getWeekRemaining(now = new Date()): string {
 export async function resetAllLocalData(): Promise<void> {
   const database = await getProgressDatabase();
   const transaction = database.transaction(
-    ["questions", "sessions", ENGAGEMENT_STORE],
+    ["questions", "sessions", ENGAGEMENT_STORE, GAME_SESSION_STORE],
     "readwrite",
   );
   transaction.objectStore("questions").clear();
   transaction.objectStore("sessions").clear();
   transaction.objectStore(ENGAGEMENT_STORE).clear();
+  transaction.objectStore(GAME_SESSION_STORE).clear();
   await transactionDone(transaction);
   window.dispatchEvent(new CustomEvent(ENGAGEMENT_UPDATED_EVENT));
   window.dispatchEvent(new CustomEvent(PROGRESS_UPDATED_EVENT));

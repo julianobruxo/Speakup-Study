@@ -22,7 +22,7 @@ O revamp anterior não é mais o estado final. A direção atual usa shell navy,
 
 ## Jogos
 
-Os jogos permanecem em desenvolvimento e bloqueados como `Em breve`. O catálogo planejado atualizado é:
+Os nove jogos do catálogo oficial estão funcionais, usando uma fundação compartilhada (catálogo, matriz de compatibilidade, adapters, engine de sessão, XP/missão/streak idempotentes) sobre `present_tobe` + `body`:
 
 - Monte a frase;
 - Caça ao erro;
@@ -32,7 +32,7 @@ Os jogos permanecem em desenvolvimento e bloqueados como `Em breve`. O catálogo
 - Conectando;
 - Cruzando palavras;
 - Par perfeito;
-- Ouvido afiado — fase posterior.
+- Ouvido afiado.
 
 `Conectando` é o nome aprovado para o jogo de associação entre palavra em inglês e imagem.
 
@@ -43,8 +43,7 @@ Os jogos permanecem em desenvolvimento e bloqueados como `Em breve`. O catálogo
 - Sem sincronização.
 - Sem deploy nesta fase.
 - Sem PR, tag ou release.
-- Sem jogos funcionais.
-- Outros tópicos gramaticais e categorias de vocabulário ainda em desenvolvimento.
+- Outros tópicos gramaticais e categorias de vocabulário ainda em desenvolvimento (jogos já preparados para recebê-los via `ROLLOUT_CONTENT`).
 
 ## Validação Esperada
 

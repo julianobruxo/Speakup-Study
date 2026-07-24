@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 const vocabularyCalls = parseDataCalls(
   "src/content/data/vocabulary.ts",
@@ -73,6 +73,8 @@ assertUnique(
   routineVerbs.map(([, , term]) => term.toLowerCase()),
   "Routine Verb terms",
 );
+
+validateBodyPhotoManifest(bodyParts.map(([, , , , visualKey]) => visualKey));
 
 const questions = questionCalls.map(
   ([id, difficulty, question, options, correctAnswer, feedback]) => ({
@@ -261,6 +263,68 @@ function splitArgs(call) {
   }
 
   return args.map((arg) => Function(`return (${arg})`)());
+}
+
+function validateBodyPhotoManifest(bodyVisualKeys) {
+  assert(bodyVisualKeys.length === 24, `Expected 24 body visualKeys, got ${bodyVisualKeys.length}`);
+  assertUnique(bodyVisualKeys, "body visualKey values");
+
+  const manifestSource = readFileSync(
+    "src/games/assets/bodyPhotoAssetManifest.ts",
+    "utf8",
+  );
+
+  assert(
+    !/^\s*import\s+.*review-board/m.test(manifestSource),
+    "bodyPhotoAssetManifest.ts must not import review-board.webp",
+  );
+
+  const manifestObjectMatch = manifestSource.match(
+    /BODY_PHOTO_ASSET_MANIFEST:\s*Record<BodyPhotoVisualKey,\s*string>\s*=\s*\{([\s\S]*?)\n\};/,
+  );
+  assert(manifestObjectMatch, "Could not locate BODY_PHOTO_ASSET_MANIFEST object literal");
+  const manifestObjectKeys = [...manifestObjectMatch[1].matchAll(/^\s*([a-z]+),$/gm)].map(
+    (match) => match[1],
+  );
+  assertUnique(manifestObjectKeys, "bodyPhotoAssetManifest declared keys");
+
+  for (const visualKey of bodyVisualKeys) {
+    assert(
+      manifestSource.includes(`import ${visualKey} from`),
+      `bodyPhotoAssetManifest.ts is missing an import for visualKey "${visualKey}"`,
+    );
+    assert(
+      manifestObjectKeys.includes(visualKey),
+      `bodyPhotoAssetManifest.ts does not expose "${visualKey}" in BODY_PHOTO_ASSET_MANIFEST`,
+    );
+  }
+  assert(
+    manifestObjectKeys.length === 24,
+    `Expected exactly 24 keys in BODY_PHOTO_ASSET_MANIFEST, found ${manifestObjectKeys.length}`,
+  );
+
+  const assetDir = "src/assets/body-parts-photo-flashcards";
+  const files = readdirSync(assetDir);
+  const bodyPhotoFiles = files.filter((file) => file !== "review-board.webp");
+
+  assert(
+    files.includes("review-board.webp"),
+    "review-board.webp must remain in the asset folder as comparison-only material",
+  );
+  assert(
+    bodyPhotoFiles.length === 24,
+    `Expected exactly 24 body photo files (excluding review-board.webp), found ${bodyPhotoFiles.length}`,
+  );
+  assert(
+    bodyPhotoFiles.every((file) => file.endsWith(".webp")),
+    "All body photo assets must use the .webp extension",
+  );
+
+  const expectedFileNames = bodyVisualKeys.map((visualKey) => `${visualKey}.webp`).sort();
+  assert(
+    JSON.stringify([...bodyPhotoFiles].sort()) === JSON.stringify(expectedFileNames),
+    "Body photo file names must match the 24 visualKey values exactly",
+  );
 }
 
 function normalizeQuestion(question) {

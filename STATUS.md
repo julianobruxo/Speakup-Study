@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-07-24
+Atualizado em: 2026-07-24 (rollout dos 9 jogos)
 
 ## Estado Atual
 
@@ -12,31 +12,35 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 
 - Present TO BE funcional com 130 questões: 50 easy e 80 medium.
 - Sessões de 10, 20 e 30 perguntas, com seleção inteligente e sem repetição na sessão.
-- Feedback correto com avanço automático em 3 segundos.
+- Feedback correto com avanço automático em 2 segundos.
 - Feedback incorreto com explicação, avanço manual e `Estudar esse tópico`.
 - Progresso local com revisão de erros e métricas por questão/sessão.
 - 24 flashcards de Partes do corpo com ilustrações, pronúncia automática, swipe, teclado e som.
 - Perfil local editável.
 - XP, níveis, títulos, sequência diária, missão diária, meta semanal, atividade semanal e conquistas.
 - Liga Safira local com ranking determinístico e dez participantes simulados.
-- IndexedDB versão 2 com migração idempotente, preservando `questions` e `sessions` e adicionando engajamento.
+- IndexedDB versão 3 com migração idempotente, preservando `questions`, `sessions` e `engagement`, e adicionando `gameSessions`.
 - Package name `ingles-em-jogo` e metadata atualizada.
+- Fundação compartilhada de jogos: catálogo central, matriz de compatibilidade, seleção determinística de conteúdo, engine de sessão, XP/missão/streak idempotentes, adapters de Gramática (`present_tobe`) e Vocabulário (`body`).
+- Os nove jogos oficiais funcionais com o escopo `present_tobe` + `body`.
 
 ## Jogos
 
-Jogos continuam bloqueados como `Em breve`; nenhum jogo está funcional nesta fase. Catálogo planejado atualizado:
+Os nove jogos do catálogo oficial estão funcionais nesta fase, usando exclusivamente `present_tobe` (Gramática) e `body` (Vocabulário) como conteúdo:
 
-- Monte a frase;
-- Caça ao erro;
-- Contra o relógio;
-- Cada coisa no seu lugar;
-- Palavra secreta;
-- Conectando;
-- Cruzando palavras;
-- Par perfeito;
-- Ouvido afiado — fase posterior.
+- Monte a frase — reordenar tokens da frase correta (117 questões elegíveis de 130).
+- Caça ao erro — tocar no token corrompido por um distrator revisado (114 elegíveis).
+- Contra o relógio — mistura das quatro mecânicas com timers individuais (10s/20s/10s/20s).
+- Cada coisa no seu lugar — arrastar/tocar item para um dos 3 grupos anatômicos revisados.
+- Palavra secreta — Hangman tradicional, pista em português, 5 erros, teclado físico e virtual.
+- Conectando — associação de palavra em inglês à imagem.
+- Cruzando palavras — tabuleiro gerado deterministicamente (até 8 palavras, usa menos quando necessário).
+- Par perfeito — jogo da memória com cartas de palavra e imagem.
+- Ouvido afiado — três modos: ouvir e selecionar imagem, ouvir e digitar, ouvir e montar frase.
 
 `Conectando` é o nome aprovado para associação entre palavra em inglês e imagem.
+
+Extensão para novos tópicos gramaticais/categorias de vocabulário requer apenas um novo adapter e a atualização de `ROLLOUT_CONTENT` em `src/games/core/catalog.ts` — nenhum jogo precisa ser reescrito.
 
 ## Conteúdo
 
@@ -94,3 +98,9 @@ Planejado:
 - `node scripts/smokeUi.mjs`
 
 O smoke deve cobrir 360x800, 390x844, 412x915, 768x1024, 1000x800, 1024x768, 1366x768, 1440x900 e 1920x1080, com `browserErrors: 0`.
+
+## Smoke test: bloqueio resolvido
+
+O bloqueio anterior (`node scripts/smokeUi.mjs` não alcançava `127.0.0.1:5173`) tinha causa raiz confirmada: o script assumia um servidor Vite externo já rodando, mas processos iniciados em invocações de terminal separadas não eram acessíveis entre si neste ambiente. `scripts/smokeUi.mjs` agora inicia e gerencia seu próprio servidor Vite (reaproveitando um já ativo em `127.0.0.1:5173` quando existir) e encerra apenas o servidor que ele mesmo criou. O Edge headless também passou a rodar com `--disable-extensions` para eliminar ruído de uma extensão do perfil do sistema que gerava exceções não relacionadas ao produto.
+
+O smoke agora cobre fluxo funcional completo dos nove jogos, timers individuais do Contra o relógio, persistência/XP/missão/streak idempotentes e checagens estruturais de acessibilidade, além dos fluxos já existentes. Passou em execuções consecutivas com `browserErrors: 0`.

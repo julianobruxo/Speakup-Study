@@ -29,6 +29,12 @@ src/
     audio/
     progress/
     sessions/
+  games/
+    core/
+    adapters/
+    mechanics/
+    components/
+    assets/
   shared/
     types/
 scripts/
@@ -61,15 +67,16 @@ Correct answers show a short success state and advance automatically after 3 sec
 
 ## Local Persistence
 
-The app uses native IndexedDB database `practice-progress`, currently schema version 2.
+The app uses native IndexedDB database `practice-progress`, currently schema version 3.
 
 Stores:
 
 - `questions`: aggregate progress by `questionId`;
-- `sessions`: completed sessions by `sessionId`;
-- `engagement`: local profile, XP, levels, titles, streak, daily mission, weekly goal, achievements and league state.
+- `sessions`: completed grammar sessions by `sessionId`;
+- `engagement`: local profile, XP, levels, titles, streak, daily mission, weekly goal, achievements and league state;
+- `gameSessions`: completed game rounds by `sessionId` (game id, content domain, challenge count, XP, score).
 
-The version 2 migration preserves existing question/session data and derives compatible engagement state from local history. Event IDs make XP updates idempotent.
+The version 2 migration preserves existing question/session data and derives compatible engagement state from local history. The version 3 migration only adds the `gameSessions` store. Event IDs make XP updates idempotent across grammar answers, sessions, flashcards, and game rounds.
 
 `localStorage` is restricted to small preferences such as sound, animations and the last practice configuration.
 
@@ -79,19 +86,23 @@ XP, levels, titles, streak, mission, weekly goal, achievements and activity are 
 
 ## Games
 
-Functional games are not implemented. The planned catalog is:
+All nine games in the official catalog are functional, built on a shared foundation in `src/games`:
 
-- Monte a frase;
-- Caça ao erro;
-- Contra o relógio;
-- Cada coisa no seu lugar;
-- Palavra secreta;
-- Conectando;
-- Cruzando palavras;
-- Par perfeito;
-- Ouvido afiado — fase posterior.
+- `core/catalog.ts`: the nine-game catalog, compatibility matrix, and rollout content scope (`present_tobe` + `body`);
+- `core/roundConfig.ts`: central round sizes, Beat the Clock timers, and game XP rules;
+- `core/challengeTypes.ts`: discriminated challenge payload contracts per mechanic;
+- `core/sessionEngine.ts`: deterministic round state, outcome recording, and XP calculation;
+- `core/shuffle.ts` / `core/selectChallenges.ts`: deterministic, no-repeat challenge selection;
+- `core/useGameCompletion.ts`: idempotent persistence + XP/mission/streak integration on round completion;
+- `adapters/presentTobeAdapter.ts`: materializes canonical sentences, builds Sentence Builder and Error Hunt challenges, and safely excludes short-answer fragments and token-count mismatches;
+- `adapters/bodyVocabularyAdapter.ts`: reviewed anatomical grouping and challenge builders for the vocabulary games;
+- `adapters/listeningAdapter.ts` / `adapters/beatTheClockAdapter.ts`: compose the shared adapters into Ouvido afiado's three modes and Beat the Clock's four challenge types;
+- `assets/visualResolver.tsx`: central `visualKey` resolution — no game hardcodes an asset path;
+- `mechanics/*`: one component per game (Monte a frase, Caça ao erro, Contra o relógio, Cada coisa no seu lugar, Palavra secreta, Conectando, Cruzando palavras, Par perfeito, Ouvido afiado).
 
 `Conectando` is the approved name for matching an English word to an image.
+
+Extending to a new grammar topic or vocabulary category only requires a new adapter and an entry in `ROLLOUT_CONTENT` — no game component needs to change.
 
 ## External Services
 

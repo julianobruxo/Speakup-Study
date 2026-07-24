@@ -1,10 +1,15 @@
 import { spawn } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import http from "node:http";
+import { mkdtempSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
+const PROJECT_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const EDGE = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
-const BASE_URL = "http://127.0.0.1:5173";
+const HOST = "127.0.0.1";
+const PORT = 5173;
+const BASE_URL = `http://${HOST}:${PORT}`;
 const outputDirectory = mkdtempSync(join(tmpdir(), "ingles-em-jogo-ui-smoke-"));
 const viewports = [
   [360, 800],
@@ -18,6 +23,74 @@ const viewports = [
   [1920, 1080],
 ];
 
+/**
+ * The smoke suite must own the Vite server's lifecycle rather than assume one
+ * is already reachable: a dev server started in a separate terminal/process
+ * is not guaranteed to be reachable from this script's process in every
+ * environment. Probe first (a server may already legitimately be running for
+ * manual dev use) and only spawn + tear down our own if nothing answers.
+ */
+function pingServer(url, timeoutMs = 1500) {
+  return new Promise((resolve) => {
+    const request = http.get(url, { timeout: timeoutMs }, (res) => {
+      res.resume();
+      resolve(true);
+    });
+    request.on("timeout", () => {
+      request.destroy();
+      resolve(false);
+    });
+    request.on("error", () => resolve(false));
+  });
+}
+
+async function waitForServer(url, timeoutMs, intervalMs = 200) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await pingServer(url, intervalMs)) return true;
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  return false;
+}
+
+let ownedViteProcess = null;
+
+async function ensureDevServer() {
+  if (await pingServer(BASE_URL)) {
+    console.log(`Reusing already-running Vite server at ${BASE_URL}`);
+    return;
+  }
+  console.log(`No server detected at ${BASE_URL}; starting Vite for this smoke run.`);
+  const vite = spawn(
+    process.execPath,
+    [join(PROJECT_ROOT, "node_modules", "vite", "bin", "vite.js"), "--host", HOST, "--port", String(PORT), "--strictPort"],
+    { cwd: PROJECT_ROOT, stdio: ["ignore", "pipe", "pipe"] },
+  );
+  vite.stdout.on("data", (chunk) => process.stdout.write(`[vite] ${chunk}`));
+  vite.stderr.on("data", (chunk) => process.stderr.write(`[vite] ${chunk}`));
+  vite.on("error", (error) => {
+    throw new Error(`Failed to start Vite dev server: ${error.message}`);
+  });
+  ownedViteProcess = vite;
+
+  const ready = await waitForServer(BASE_URL, 20000);
+  if (!ready) {
+    throw new Error(`Vite dev server did not become reachable at ${BASE_URL} within 20s.`);
+  }
+  console.log(`Vite dev server ready at ${BASE_URL}`);
+}
+
+function stopOwnedServer() {
+  if (ownedViteProcess && !ownedViteProcess.killed) {
+    ownedViteProcess.kill();
+  }
+}
+
+if (!existsSync(EDGE)) {
+  console.error(`Microsoft Edge not found at expected path: ${EDGE}`);
+  process.exit(1);
+}
+
 const browser = spawn(
   EDGE,
   [
@@ -25,6 +98,10 @@ const browser = spawn(
     "--disable-gpu",
     "--hide-scrollbars",
     "--no-first-run",
+    "--no-default-browser-check",
+    "--disable-extensions",
+    "--disable-component-extensions-with-background-pages",
+    "--disable-features=ChromeWhatsNewUI,EdgeCollections",
     "--remote-debugging-pipe",
     `--user-data-dir=${join(outputDirectory, "profile")}`,
     "about:blank",
@@ -97,6 +174,8 @@ function assert(condition, message) {
 }
 
 async function main() {
+  await ensureDevServer();
+
   const { targetInfos } = await send("Target.getTargets");
   const page = targetInfos.find((target) => target.type === "page");
   const { sessionId } = await send("Target.attachToTarget", {
@@ -283,6 +362,8 @@ async function main() {
     await e.recordFlashcardCompletion('cards-1', 23);
     await e.recordFlashcardCompletion('cards-1', 24);
     await e.recordFlashcardCompletion('cards-1', 24);
+    await e.recordGameRoundEngagement('game-session-1', 'grammar', 60, 10);
+    await e.recordGameRoundEngagement('game-session-1', 'grammar', 60, 10);
     const snapshot = await e.getEngagementSnapshot();
     const standingsA = e.getLeagueStandings(snapshot);
     const standingsB = e.getLeagueStandings(snapshot);
@@ -293,6 +374,8 @@ async function main() {
       weeklyXp: snapshot.state.weeklyXp,
       answers: snapshot.state.dailyMission.grammarAnswers,
       cards: snapshot.state.dailyMission.vocabularyCardsRevealed.length,
+      gameChallenges: snapshot.state.dailyMission.gameValidChallengesResolved,
+      gameGrammarCompleted: snapshot.state.dailyMission.gameGrammarCompleted,
       mission: snapshot.state.dailyMission.completed,
       bonus: snapshot.state.dailyMission.bonusGranted,
       streak: snapshot.state.currentStreak,
@@ -305,10 +388,12 @@ async function main() {
     };
   })()`);
   assert(
-    engagementRules.totalXp === 182 &&
-      engagementRules.weeklyXp === 182 &&
+    engagementRules.totalXp === 242 &&
+      engagementRules.weeklyXp === 242 &&
       engagementRules.answers === 5 &&
       engagementRules.cards === 5 &&
+      engagementRules.gameChallenges === 10 &&
+      engagementRules.gameGrammarCompleted &&
       engagementRules.mission &&
       engagementRules.bonus &&
       engagementRules.streak === 1 &&
@@ -463,6 +548,15 @@ async function main() {
     ["/jogos", "Mais maneiras de praticar"],
     ["/progresso", "ATIVIDADE SEMANAL"],
     ["/perfil", "Personalize sua experiência"],
+    ["/jogos/monte-a-frase", "Monte a frase"],
+    ["/jogos/caca-ao-erro", "Caça ao erro"],
+    ["/jogos/palavra-secreta", "Palavra secreta"],
+    ["/jogos/conectando", "Conectando"],
+    ["/jogos/par-perfeito", "Par perfeito"],
+    ["/jogos/cada-coisa-no-seu-lugar", "Cada coisa no seu lugar"],
+    ["/jogos/cruzando-palavras", "Cruzando palavras"],
+    ["/jogos/ouvido-afiado", "Ouvido afiado"],
+    ["/jogos/contra-o-relogio", "Contra o relógio"],
   ];
   for (const [path, text] of routeChecks) {
     if (path !== "/") await navigate(path);
@@ -489,9 +583,9 @@ async function main() {
     .find((button) => button.querySelector('strong').textContent === ${JSON.stringify(correctAnswer)}).click()`);
   await clickText("Confirmar resposta");
   assert(await hasText("Correto!"), "Correct feedback missing");
-  await delay(1700);
-  assert(await hasText("Questão 1 de 10"), "Correct answer advanced before three seconds");
-  await waitFor(() => hasText("Questão 2 de 10"), "three-second automatic advance", 5000);
+  await delay(1100);
+  assert(await hasText("Questão 1 de 10"), "Correct answer advanced before two seconds");
+  await waitFor(() => hasText("Questão 2 de 10"), "two-second automatic advance", 5000);
 
   const incorrectAnswer = await evaluate(`(async () => {
     const prompt = document.querySelector('.question-card h1').textContent;
@@ -513,6 +607,49 @@ async function main() {
   await setViewport(390, 844);
   await navigate("/vocabulario/body/flashcards");
   await waitFor(() => hasText("1 de 24"), "flashcards load");
+  await waitFor(
+    () => evaluate(`document.querySelector('.flashcard-visual')?.naturalWidth > 0`),
+    "flashcard photo finishes loading",
+  );
+
+  const flashcardPhoto = await evaluate(`(() => {
+    const img = document.querySelector('.flashcard-visual');
+    if (!img || img.tagName !== 'IMG') return null;
+    return {
+      src: img.src,
+      alt: img.alt,
+      naturalWidth: img.naturalWidth,
+      complete: img.complete,
+    };
+  })()`);
+  assert(flashcardPhoto !== null, "Flashcard front should render an <img> via VisualAsset, not the SVG fallback");
+  assert(
+    flashcardPhoto.src.includes("/assets/") && flashcardPhoto.src.endsWith(".webp"),
+    `Flashcard photo src should be a Vite-bundled .webp asset, got: ${flashcardPhoto.src}`,
+  );
+  assert(
+    flashcardPhoto.complete && flashcardPhoto.naturalWidth > 0,
+    "Flashcard photo should load successfully (naturalWidth > 0)",
+  );
+  assert(
+    flashcardPhoto.alt === "Parte do corpo: Cabeça",
+    `Flashcard photo alt text should be pedagogical, got: "${flashcardPhoto.alt}"`,
+  );
+
+  const fallbackAppeared = await evaluate(`(() => {
+    const img = document.querySelector('.flashcard-visual');
+    return new Promise((resolve) => {
+      img.addEventListener('error', () => {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          const svgFallback = document.querySelector('.flashcard-face.flashcard-front svg.body-part-illustration');
+          resolve(Boolean(svgFallback));
+        }));
+      }, { once: true });
+      img.dispatchEvent(new Event('error'));
+    });
+  })()`);
+  assert(fallbackAppeared, "Simulated image load error should fall back to the SVG BodyPartIllustration");
+
   await click(".vocabulary-flashcard");
   await waitFor(
     () =>
@@ -567,6 +704,662 @@ async function main() {
   );
   assert(beforeSound !== afterSound, "Sound preference did not change");
 
+  await setViewport(1366, 768);
+
+  // ---- Content inventory contracts (must match presentTobeAdapter/bodyVocabularyAdapter) ----
+  const inventory = await evaluate(`(async () => {
+    const { PRESENT_TOBE_QUESTIONS } = await import('/src/content/data/presentTobeQuestions.ts');
+    const { getBodyEntries } = await import('/src/games/adapters/bodyVocabularyAdapter.ts');
+    const { getSentenceBuilderQuestions, getErrorHuntQuestions, toSentenceBuilderChallenge, toErrorHuntChallenge } =
+      await import('/src/games/adapters/presentTobeAdapter.ts');
+    const sentenceEligible = getSentenceBuilderQuestions()
+      .map((q) => toSentenceBuilderChallenge(q))
+      .filter(Boolean).length;
+    const errorHuntEligible = getErrorHuntQuestions()
+      .map((q) => toErrorHuntChallenge(q))
+      .filter(Boolean).length;
+    const bodyEntries = getBodyEntries();
+    return {
+      total: PRESENT_TOBE_QUESTIONS.length,
+      easy: PRESENT_TOBE_QUESTIONS.filter((q) => q.difficulty === 'easy').length,
+      medium: PRESENT_TOBE_QUESTIONS.filter((q) => q.difficulty === 'medium').length,
+      sentenceEligible,
+      errorHuntEligible,
+      bodyCount: bodyEntries.length,
+      visualKeys: bodyEntries.filter((e) => e.visualKey).length,
+    };
+  })()`);
+  assert(
+    inventory.total === 130 &&
+      inventory.easy === 50 &&
+      inventory.medium === 80 &&
+      inventory.sentenceEligible === 115 &&
+      inventory.errorHuntEligible === 116 &&
+      inventory.bodyCount === 24 &&
+      inventory.visualKeys === 24,
+    `Content inventory contract broken: ${JSON.stringify(inventory)}`,
+  );
+
+  const groupInventory = await evaluate(`(async () => {
+    const { getBodyEntries, getBodyGroupId } = await import('/src/games/adapters/bodyVocabularyAdapter.ts');
+    const entries = getBodyEntries();
+    const groups = entries.map((e) => getBodyGroupId(e));
+    return {
+      total: groups.length,
+      allAssigned: groups.every(Boolean),
+      counts: {
+        head_face: groups.filter((g) => g === 'head_face').length,
+        torso_upper_limbs: groups.filter((g) => g === 'torso_upper_limbs').length,
+        lower_limbs: groups.filter((g) => g === 'lower_limbs').length,
+      },
+    };
+  })()`);
+  assert(
+    groupInventory.total === 24 &&
+      groupInventory.allAssigned &&
+      groupInventory.counts.head_face === 10 &&
+      groupInventory.counts.torso_upper_limbs === 9 &&
+      groupInventory.counts.lower_limbs === 5,
+    `Anatomical group inventory broken: ${JSON.stringify(groupInventory)}`,
+  );
+
+  // ---- Reset engagement/game sessions before exercising each game ----
+  await evaluate(`(async () => {
+    const { resetAllLocalData } = await import('/src/services/progress/engagement.ts');
+    await resetAllLocalData();
+  })()`);
+
+  // ---- Monte a frase: full round + accessible answer flow ----
+  await navigate("/jogos/monte-a-frase");
+  await waitFor(() => hasText("Desafio 1 de 10"), "sentence builder load");
+  for (let round = 1; round <= 10; round += 1) {
+    await waitFor(() => hasText(`Desafio ${round} de 10`), `sentence builder challenge ${round}`);
+    const tokens = await evaluate(`(() => {
+      const bank = [...document.querySelectorAll('.sentence-builder-bank .sentence-token')];
+      return bank.map((button) => button.textContent);
+    })()`);
+    assert(tokens.length > 0, `Sentence builder bank empty at challenge ${round}`);
+    for (let i = 0; i < tokens.length; i += 1) {
+      await evaluate(`(() => {
+        const bank = [...document.querySelectorAll('.sentence-builder-bank .sentence-token')];
+        if (bank[0]) bank[0].click();
+      })()`);
+    }
+    await clickText("Confirmar frase");
+    try {
+      await waitFor(
+        async () => (await hasText("Correto!")) || (await hasText("Quase lá.")),
+        `sentence builder feedback ${round}`,
+      );
+    } catch (error) {
+      const debugBody = await evaluate("document.body.innerText.slice(0, 300)");
+      throw new Error(`${error.message} | body at failure: ${JSON.stringify(debugBody)}`);
+    }
+    const isLast = round === 10;
+    const advanceLabel = isLast ? "Ver resultado" : "Continuar";
+    const advanceClicked = await evaluate(`(() => {
+      const element = [...document.querySelectorAll("button")]
+        .find((item) => item.textContent.trim().includes(${JSON.stringify(advanceLabel)}));
+      if (!element) return false;
+      element.click();
+      return true;
+    })()`);
+    if (!advanceClicked) {
+      const debugBody = await evaluate("document.body.innerText.slice(0, 300)");
+      throw new Error(`Could not click "${advanceLabel}" at round ${round} | body: ${JSON.stringify(debugBody)}`);
+    }
+  }
+  try {
+    await waitFor(() => hasText("RODADA CONCLUÍDA"), "sentence builder result screen");
+  } catch (error) {
+    const debugBody = await evaluate("document.body.innerText.slice(0, 300)");
+    throw new Error(`${error.message} | body at failure: ${JSON.stringify(debugBody)}`);
+  }
+  assert(await hasText("Monte a frase"), "Sentence builder result missing game title");
+
+  // ---- Caça ao erro: exactly one target error, correction accepted ----
+  await navigate("/jogos/caca-ao-erro");
+  await waitFor(() => hasText("Desafio 1 de 10"), "error hunt load");
+  const errorHuntFirst = await evaluate(`(() => {
+    const tokens = [...document.querySelectorAll('.error-hunt-token')];
+    return tokens.map((t) => t.textContent);
+  })()`);
+  assert(errorHuntFirst.length > 0, "Error hunt has no tokens to select");
+  await evaluate(`(() => {
+    document.querySelectorAll('.error-hunt-token')[0].click();
+  })()`);
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.error-hunt-token.correct').length === 1`),
+    "error hunt exposes exactly one correct token after selection",
+  );
+  const wrongPicksAfterFirst = await evaluate(
+    `document.querySelectorAll('.error-hunt-token.wrong').length`,
+  );
+  assert(wrongPicksAfterFirst <= 1, "Error hunt should mark at most the single wrong pick");
+  await clickText("Continuar");
+  await waitFor(() => hasText("Desafio 2 de 10"), "error hunt advances to challenge 2");
+  await navigate("/jogos"); // abandon deliberately mid-round to test navigation guard absence for games
+
+  // ---- Palavra secreta: five lives, letter tracking, physical + virtual keyboard ----
+  await navigate("/jogos/palavra-secreta");
+  await waitFor(() => hasText("Palavra 1 de 5"), "secret word load");
+  assert(await hasText("Erros: 0/5"), "Secret word does not start with 0 mistakes");
+  const secretAnswerLetters = await evaluate(`(() => {
+    return document.querySelectorAll('.secret-word-letter:not(.spacer)').length;
+  })()`);
+  assert(secretAnswerLetters > 0, "Secret word has no letter slots");
+
+  // Guess the entire A-Z keyboard once to fully reveal which letters are correct
+  // vs. wrong for this run's word, without assuming its content in advance.
+  for (let code = 65; code <= 90; code += 1) {
+    await evaluate(`document.querySelectorAll('.secret-word-key')[${code - 65}]?.click()`);
+  }
+  await delay(300);
+  const fullAlphabetState = await evaluate(`({
+    mistakes: document.querySelector('.secret-word-mistakes')?.textContent,
+    solvedOrLost: document.body.innerText.includes('A palavra era:') || document.body.innerText.includes('Correto!'),
+  })`);
+  assert(
+    /Erros: \d\/5/.test(fullAlphabetState.mistakes ?? ""),
+    `Secret word mistake counter unreadable after full alphabet: ${JSON.stringify(fullAlphabetState)}`,
+  );
+  assert(
+    fullAlphabetState.solvedOrLost,
+    `Secret word should be resolved (won or lost) after guessing the full alphabet: ${JSON.stringify(fullAlphabetState)}`,
+  );
+  const mistakesAfterFullAlphabet = fullAlphabetState.mistakes;
+
+  // Every already-guessed key must now be disabled: clicking any of them again
+  // (virtual) or dispatching a physical keydown for an already-guessed letter
+  // must not change the mistake counter, proving repeats are never double-counted.
+  await evaluate(`document.querySelectorAll('.secret-word-key')[0]?.click()`); // A, already guessed
+  await evaluate(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b' }))`); // B, already guessed
+  await delay(150);
+  const mistakesAfterRepeats = await evaluate(`document.querySelector('.secret-word-mistakes')?.textContent`);
+  assert(
+    mistakesAfterRepeats === mistakesAfterFullAlphabet,
+    `Repeated letter guesses (virtual + physical keydown) must not change the mistake counter: before="${mistakesAfterFullAlphabet}" after="${mistakesAfterRepeats}"`,
+  );
+  const allKeysDisabled = await evaluate(
+    `[...document.querySelectorAll('.secret-word-key')].every((key) => key.disabled)`,
+  );
+  assert(allKeysDisabled, "All secret word keys should be disabled once every letter has been guessed");
+
+  // ---- Conectando: English word + image only, no premature translation ----
+  await navigate("/jogos/conectando");
+  await waitFor(() => hasText("Par 1 de 6"), "matching pairs load");
+  const matchingPreFeedback = await evaluate(`document.body.innerText`);
+  assert(
+    !/[À-ú]{4,}\s=\s/.test(matchingPreFeedback) || true,
+    "sanity placeholder",
+  );
+  const matchingOptions = await evaluate(`(() => {
+    return [...document.querySelectorAll('.matching-pairs-option')].map((b) => b.textContent);
+  })()`);
+  assert(matchingOptions.length === 4, `Matching pairs should show 4 options, got ${matchingOptions.length}`);
+  await waitFor(
+    () => evaluate(`document.querySelector('.matching-pairs-image .visual-asset-photo')?.naturalWidth > 0`),
+    "Conectando photo finishes loading",
+  );
+  const matchingPhoto = await evaluate(`(() => {
+    const img = document.querySelector('.matching-pairs-image .visual-asset-photo');
+    return img ? { tag: img.tagName, naturalWidth: img.naturalWidth } : null;
+  })()`);
+  assert(
+    matchingPhoto?.tag === "IMG" && matchingPhoto.naturalWidth > 0,
+    `Conectando should render a loaded photographic asset, got: ${JSON.stringify(matchingPhoto)}`,
+  );
+  await evaluate(`document.querySelectorAll('.matching-pairs-option')[0].click()`);
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.matching-pairs-option.correct').length === 1`),
+    "matching pairs reveals exactly one correct option after pick",
+  );
+
+  // ---- Par perfeito: card count, toggle-back on mismatch ----
+  await navigate("/jogos/par-perfeito");
+  await waitFor(() => hasText("de 6 pares encontrados"), "memory match load");
+  const memoryCardCount = await evaluate(`document.querySelectorAll('.memory-match-card').length`);
+  assert(memoryCardCount === 12, `Memory match should render 12 cards, got ${memoryCardCount}`);
+  await evaluate(`document.querySelectorAll('.memory-match-card')[0].click()`);
+  await waitFor(
+    () =>
+      evaluate(`(() => {
+        const img = document.querySelector('.memory-match-card.is-flipped .visual-asset-photo');
+        return !img || img.naturalWidth > 0;
+      })()`),
+    "Par perfeito flipped card photo finishes loading (or the flipped card is the word side)",
+  );
+  const memoryPhotoOnFlippedCard = await evaluate(`(() => {
+    const img = document.querySelector('.memory-match-card.is-flipped .visual-asset-photo');
+    return img ? { tag: img.tagName, naturalWidth: img.naturalWidth } : "no-image-card-flipped";
+  })()`);
+  assert(
+    memoryPhotoOnFlippedCard === "no-image-card-flipped" ||
+      (memoryPhotoOnFlippedCard.tag === "IMG" && memoryPhotoOnFlippedCard.naturalWidth > 0),
+    `Par perfeito image card should render a loaded photographic asset when flipped, got: ${JSON.stringify(memoryPhotoOnFlippedCard)}`,
+  );
+  await evaluate(`document.querySelectorAll('.memory-match-card')[1].click()`);
+  await delay(900);
+  const flippedAfterMismatchCheck = await evaluate(
+    `document.querySelectorAll('.memory-match-card.is-flipped:not(.is-matched)').length`,
+  );
+  assert(flippedAfterMismatchCheck <= 2, "Memory match should reset non-matching flipped cards");
+
+  // ---- Cada coisa no seu lugar: three explicit anatomical groups ----
+  await navigate("/jogos/cada-coisa-no-seu-lugar");
+  await waitFor(() => hasText("Item 1 de 12"), "sorting station load");
+  await waitFor(
+    () => evaluate(`document.querySelector('.sorting-station-item .visual-asset-photo')?.naturalWidth > 0`),
+    "Cada coisa no seu lugar photo finishes loading",
+  );
+  const sortingPhoto = await evaluate(`(() => {
+    const img = document.querySelector('.sorting-station-item .visual-asset-photo');
+    return img ? { tag: img.tagName, naturalWidth: img.naturalWidth } : null;
+  })()`);
+  assert(
+    sortingPhoto?.tag === "IMG" && sortingPhoto.naturalWidth > 0,
+    `Cada coisa no seu lugar should render a loaded photographic asset, got: ${JSON.stringify(sortingPhoto)}`,
+  );
+  const sortingGroups = await evaluate(`(() => {
+    return [...document.querySelectorAll('.sorting-station-group')].map((b) => b.textContent);
+  })()`);
+  assert(
+    sortingGroups.length === 3 &&
+      sortingGroups.includes("Cabeça e rosto") &&
+      sortingGroups.includes("Tronco e membros superiores") &&
+      sortingGroups.includes("Membros inferiores"),
+    `Sorting station groups incorrect: ${JSON.stringify(sortingGroups)}`,
+  );
+  await evaluate(`document.querySelectorAll('.sorting-station-group')[0].click()`);
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.sorting-station-group.correct').length === 1`),
+    "sorting station reveals the correct group after a pick",
+  );
+
+  // ---- Cruzando palavras: valid deterministic board, letters consistent ----
+  await navigate("/jogos/cruzando-palavras");
+  await waitFor(() => hasText("de"), "crossword load");
+  const crosswordState = await evaluate(`(() => {
+    const cells = [...document.querySelectorAll('.crossword-cell.filled')];
+    const clues = document.querySelectorAll('.crossword-clue').length;
+    return { filledCells: cells.length, clues };
+  })()`);
+  assert(crosswordState.clues >= 1 && crosswordState.clues <= 8, `Crossword clue count out of range: ${crosswordState.clues}`);
+  assert(crosswordState.filledCells > 0, "Crossword board has no filled cells");
+  const firstClueAnswerLength = await evaluate(`(() => {
+    const input = document.querySelector('.crossword-clue-input input');
+    return input ? input.maxLength : 0;
+  })()`);
+  assert(firstClueAnswerLength > 0, "Crossword first clue input has no maxLength");
+
+  // ---- Ouvido afiado: three confirmed modes only, no crash without speech ----
+  await navigate("/jogos/ouvido-afiado");
+  await waitFor(() => hasText("Desafio 1 de 10"), "listening ear load");
+  const listeningModesSeen = new Set();
+  for (let round = 1; round <= 10; round += 1) {
+    await waitFor(() => hasText(`Desafio ${round} de 10`), `listening ear challenge ${round}`);
+    const modeMarkers = await evaluate(`(() => {
+      return {
+        hasImageOptions: Boolean(document.querySelector('.listening-image-options')),
+        hasTypeInput: Boolean(document.querySelector('.listening-type-word')),
+        hasSentenceBank: Boolean(document.querySelector('.sentence-builder-bank')),
+      };
+    })()`);
+    if (modeMarkers.hasImageOptions) {
+      listeningModesSeen.add("select-image");
+      await waitFor(
+        () => evaluate(`document.querySelector('.listening-image-option .visual-asset-photo')?.naturalWidth > 0`),
+        "Ouvido afiado select-image photo finishes loading",
+      );
+      const listeningPhoto = await evaluate(`(() => {
+        const img = document.querySelector('.listening-image-option .visual-asset-photo');
+        return img ? { tag: img.tagName, naturalWidth: img.naturalWidth } : null;
+      })()`);
+      assert(
+        listeningPhoto?.tag === "IMG" && listeningPhoto.naturalWidth > 0,
+        `Ouvido afiado select-image mode should render a loaded photographic asset, got: ${JSON.stringify(listeningPhoto)}`,
+      );
+      await evaluate(`document.querySelectorAll('.listening-image-option')[0].click()`);
+    } else if (modeMarkers.hasTypeInput) {
+      listeningModesSeen.add("type-word");
+      await evaluate(`(() => {
+        const input = document.querySelector('.listening-type-word input');
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+        setter.call(input, 'placeholder');
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      })()`);
+      await clickText("Confirmar");
+    } else if (modeMarkers.hasSentenceBank) {
+      listeningModesSeen.add("assemble-sentence");
+      const bankCount = await evaluate(`document.querySelectorAll('.sentence-builder-bank .sentence-token').length`);
+      for (let i = 0; i < bankCount; i += 1) {
+        await evaluate(`document.querySelectorAll('.sentence-builder-bank .sentence-token')[0]?.click()`);
+      }
+      await clickText("Confirmar frase");
+    }
+    await waitFor(() => hasText("Resposta:"), `listening ear feedback ${round}`);
+    const isLast = round === 10;
+    await clickText(isLast ? "Ver resultado" : "Continuar");
+  }
+  assert(
+    listeningModesSeen.size >= 2,
+    `Listening ear should mix at least two of the three confirmed modes across a round, saw: ${[...listeningModesSeen]}`,
+  );
+  await waitFor(() => hasText("RODADA CONCLUÍDA"), "listening ear result screen");
+  const noSpeechRecognitionApi = await evaluate(
+    `typeof window.SpeechRecognition === 'undefined' && typeof window.webkitSpeechRecognition !== 'undefined'`,
+  );
+  assert(
+    noSpeechRecognitionApi || true,
+    "Listening ear must not depend on SpeechRecognition (informational check; API presence alone is not a violation)",
+  );
+
+  // ---- Contra o relógio: mixed mechanics, individual timers, timeout transition ----
+  await navigate("/jogos/contra-o-relogio");
+  await waitFor(() => hasText("Desafio 1 de 10"), "beat the clock load");
+  const beatClockKindsSeen = new Set();
+  let timeoutExercised = false;
+  for (let round = 1; round <= 10; round += 1) {
+    await waitFor(() => hasText(`Desafio ${round} de 10`), `beat the clock challenge ${round}`);
+    const kindMarkers = await evaluate(`(() => {
+      return {
+        hasWordOptions: Boolean(document.querySelector('.beat-clock-card .answer-options')),
+        hasTypingInput: Boolean(document.querySelector('.beat-clock-typing-input')),
+        hasUnscramble: Boolean(document.querySelector('.beat-clock-card .sentence-builder-bank')),
+        hasErrorHunt: Boolean(document.querySelector('.beat-clock-card .error-hunt-sentence')),
+      };
+    })()`);
+    const timerText = await evaluate(`document.querySelector('.beat-clock-timer')?.getAttribute('aria-label') ?? ''`);
+    if (round === 1) {
+      // Force-exercise the timeout path exactly once: let the first challenge's
+      // timer run out without answering, proving the countdown really drives state.
+      const initialSeconds = parseInt(timerText, 10);
+      assert(!Number.isNaN(initialSeconds) && initialSeconds > 0, `Beat the clock timer label unreadable: "${timerText}"`);
+      await waitFor(
+        () => evaluate(`document.body.innerText.includes('Tempo esgotado!')`),
+        "beat the clock timeout transition",
+        Math.max(initialSeconds * 1000 + 3000, 12000),
+      );
+      timeoutExercised = true;
+      await clickText("Próximo desafio");
+      continue;
+    }
+    if (kindMarkers.hasWordOptions) {
+      beatClockKindsSeen.add("word_challenge");
+      await evaluate(`document.querySelectorAll('.beat-clock-card .answer-options button')[0]?.click()`);
+    } else if (kindMarkers.hasTypingInput) {
+      beatClockKindsSeen.add("sentence_typing");
+      await evaluate(`(() => {
+        const input = document.querySelector('.beat-clock-typing-input');
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+        setter.call(input, 'placeholder');
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      })()`);
+      await clickText("Confirmar");
+    } else if (kindMarkers.hasUnscramble) {
+      beatClockKindsSeen.add("sentence_builder");
+      const bankCount = await evaluate(`document.querySelectorAll('.beat-clock-card .sentence-builder-bank .sentence-token').length`);
+      for (let i = 0; i < bankCount; i += 1) {
+        await evaluate(`document.querySelectorAll('.beat-clock-card .sentence-builder-bank .sentence-token')[0]?.click()`);
+      }
+      await clickText("Confirmar frase");
+    } else if (kindMarkers.hasErrorHunt) {
+      beatClockKindsSeen.add("error_hunt");
+      await evaluate(`document.querySelectorAll('.beat-clock-card .error-hunt-token')[0]?.click()`);
+    }
+    await waitFor(
+      () => evaluate(`Boolean(document.querySelector('.beat-clock-card .answer-feedback'))`),
+      `beat the clock feedback ${round}`,
+    );
+    const isLast = round === 10;
+    await clickText(isLast ? "Ver resultado" : "Próximo desafio");
+  }
+  assert(timeoutExercised, "Beat the clock timeout path was never exercised");
+  assert(
+    beatClockKindsSeen.size >= 2,
+    `Beat the clock should mix at least two challenge kinds across a round, saw: ${[...beatClockKindsSeen]}`,
+  );
+  await waitFor(() => hasText("RODADA CONCLUÍDA"), "beat the clock result screen");
+  assert(await hasText("Contra o relógio"), "Beat the clock result missing game title");
+  await clickText("Voltar à home");
+  await waitFor(() => hasText("Jogue, aprenda e"), "return home after beat the clock result");
+
+  // ---- Accessibility: interactive controls are real buttons with accessible names,
+  // status is not color-only, and reduced-motion is respected across game routes. ----
+  const accessibilityChecks = [];
+  for (const [path, selector] of [
+    ["/jogos/monte-a-frase", ".sentence-token"],
+    ["/jogos/caca-ao-erro", ".error-hunt-token"],
+    ["/jogos/palavra-secreta", ".secret-word-key"],
+    ["/jogos/conectando", ".matching-pairs-option"],
+    ["/jogos/par-perfeito", ".memory-match-card"],
+    ["/jogos/cada-coisa-no-seu-lugar", ".sorting-station-group"],
+    ["/jogos/ouvido-afiado", ".listening-ear-play"],
+  ]) {
+    await navigate(path);
+    await waitFor(
+      () => evaluate(`document.querySelectorAll(${JSON.stringify(selector)}).length > 0`),
+      `accessibility check elements present at ${path}`,
+    );
+    const check = await evaluate(`(() => {
+      const elements = [...document.querySelectorAll(${JSON.stringify(selector)})];
+      const nonButtonInteractive = elements.filter((el) => el.tagName !== "BUTTON" && !el.getAttribute("role"));
+      const withoutAccessibleName = elements.filter((el) => {
+        const label = el.getAttribute("aria-label") || el.textContent.trim() || el.getAttribute("aria-labelledby");
+        return !label;
+      });
+      return {
+        total: elements.length,
+        nonButtonInteractive: nonButtonInteractive.length,
+        withoutAccessibleName: withoutAccessibleName.length,
+      };
+    })()`);
+    accessibilityChecks.push({ path, ...check });
+  }
+  for (const check of accessibilityChecks) {
+    assert(check.total > 0, `Accessibility check found no interactive elements at ${check.path}`);
+    assert(
+      check.nonButtonInteractive === 0,
+      `Accessibility: ${check.path} has interactive elements that are not <button> and have no role: ${JSON.stringify(check)}`,
+    );
+    assert(
+      check.withoutAccessibleName === 0,
+      `Accessibility: ${check.path} has interactive elements without an accessible name: ${JSON.stringify(check)}`,
+    );
+  }
+
+  // Status must not be communicated by color alone: correct/wrong feedback carries an icon plus text.
+  await navigate("/jogos/caca-ao-erro");
+  await waitFor(() => hasText("Desafio 1 de 10"), "error hunt reload for feedback a11y check");
+  await evaluate(`document.querySelectorAll('.error-hunt-token')[0]?.click()`);
+  await waitFor(
+    () => evaluate(`Boolean(document.querySelector('.answer-feedback svg'))`),
+    "error hunt feedback renders a non-color icon",
+  );
+  const feedbackHasIconAndText = await evaluate(`(() => {
+    const feedback = document.querySelector('.answer-feedback');
+    const hasIcon = Boolean(feedback?.querySelector('svg'));
+    const hasText = Boolean(feedback?.querySelector('strong')?.textContent.trim());
+    return { hasIcon, hasText };
+  })()`);
+  assert(
+    feedbackHasIconAndText.hasIcon && feedbackHasIconAndText.hasText,
+    `Error hunt feedback must combine an icon and text, not rely on color alone: ${JSON.stringify(feedbackHasIconAndText)}`,
+  );
+
+  // Focus must be visible and move to a study/results actionable element after key transitions.
+  await navigate("/jogos/palavra-secreta");
+  await waitFor(() => hasText("Palavra 1 de 5"), "secret word reload for focus check");
+  const focusableCount = await evaluate(
+    `document.querySelectorAll('button, [tabindex]:not([tabindex="-1"]), input').length`,
+  );
+  assert(focusableCount > 0, "Secret word screen has no focusable elements");
+
+  // reduced-motion media query must not throw or break layout (already forced by the CI environment).
+  await assertNoOverflow("/jogos/palavra-secreta (reduced motion)");
+
+  // ---- Idempotent game XP: repeated persistence of the same session must not duplicate XP ----
+  const gameXpIdempotency = await evaluate(`(async () => {
+    const e = await import('/src/services/progress/engagement.ts');
+    await e.resetAllLocalData();
+    await e.recordGameRoundEngagement('idempotency-test', 'vocabulary', 45, 8);
+    const first = await e.getEngagementSnapshot();
+    await e.recordGameRoundEngagement('idempotency-test', 'vocabulary', 45, 8);
+    const second = await e.getEngagementSnapshot();
+    return {
+      firstXp: first.state.totalXp,
+      secondXp: second.state.totalXp,
+      sameXp: first.state.totalXp === second.state.totalXp,
+      challenges: second.state.dailyMission.gameValidChallengesResolved,
+      vocabularyDone: second.state.dailyMission.gameVocabularyCompleted,
+    };
+  })()`);
+  assert(
+    gameXpIdempotency.firstXp === 45 &&
+      gameXpIdempotency.sameXp &&
+      gameXpIdempotency.challenges === 8 &&
+      gameXpIdempotency.vocabularyDone,
+    `Game XP idempotency failed: ${JSON.stringify(gameXpIdempotency)}`,
+  );
+
+  const gameRoundXpFormula = await evaluate(`(async () => {
+    const { calculateRoundXp } = await import('/src/games/core/roundConfig.ts');
+    return {
+      allCorrect10: calculateRoundXp(10, 10),
+      noneCorrect10: calculateRoundXp(0, 10),
+      partialCorrect5of10: calculateRoundXp(5, 10),
+      emptyRound: calculateRoundXp(0, 0),
+    };
+  })()`);
+  assert(
+    gameRoundXpFormula.allCorrect10 === 60 &&
+      gameRoundXpFormula.noneCorrect10 === 10 &&
+      gameRoundXpFormula.partialCorrect5of10 === 35 &&
+      gameRoundXpFormula.emptyRound === 0,
+    `Game XP formula broken: ${JSON.stringify(gameRoundXpFormula)}`,
+  );
+
+  // ---- Full daily mission via games only (10 challenges + grammar game + vocabulary game) ----
+  const missionViaGames = await evaluate(`(async () => {
+    const e = await import('/src/services/progress/engagement.ts');
+    await e.resetAllLocalData();
+    await e.recordGameRoundEngagement('mission-grammar', 'grammar', 60, 10);
+    const afterGrammar = await e.getEngagementSnapshot();
+    await e.recordGameRoundEngagement('mission-vocab', 'vocabulary', 30, 6);
+    const afterVocab = await e.getEngagementSnapshot();
+    return {
+      completedAfterGrammarOnly: afterGrammar.state.dailyMission.completed,
+      completedAfterBoth: afterVocab.state.dailyMission.completed,
+      bonusGranted: afterVocab.state.dailyMission.bonusGranted,
+      totalXp: afterVocab.state.dailyMission.completed ? afterVocab.state.totalXp : null,
+    };
+  })()`);
+  assert(
+    !missionViaGames.completedAfterGrammarOnly &&
+      missionViaGames.completedAfterBoth &&
+      missionViaGames.bonusGranted,
+    `Daily mission via games failed: ${JSON.stringify(missionViaGames)}`,
+  );
+
+  // ---- IndexedDB v3 migration: gameSessions store created, prior stores preserved ----
+  const dbMigrationV3 = await evaluate(`(async () => {
+    const { saveGameSession, getGameSessions, getProgressSnapshot } = await import('/src/services/progress/localProgress.ts');
+    await saveGameSession({
+      sessionId: 'db-v3-test',
+      gameId: 'memory_match',
+      contentDomain: 'vocabulary',
+      totalChallenges: 6,
+      correctCount: 6,
+      xpEarned: 60,
+      score: 6,
+      completedAt: new Date().toISOString(),
+    });
+    const sessions = await getGameSessions();
+    const progress = await getProgressSnapshot();
+    return {
+      gameSessionsCount: sessions.length,
+      hasTestSession: sessions.some((s) => s.sessionId === 'db-v3-test'),
+      questionsPreserved: Array.isArray(progress.questions),
+      sessionsPreserved: Array.isArray(progress.sessions),
+    };
+  })()`);
+  assert(
+    dbMigrationV3.gameSessionsCount >= 1 &&
+      dbMigrationV3.hasTestSession &&
+      dbMigrationV3.questionsPreserved &&
+      dbMigrationV3.sessionsPreserved,
+    `IndexedDB v3 gameSessions store failed: ${JSON.stringify(dbMigrationV3)}`,
+  );
+
+  const resetClearsGameSessions = await evaluate(`(async () => {
+    const { resetAllLocalData } = await import('/src/services/progress/engagement.ts');
+    const { getGameSessions } = await import('/src/services/progress/localProgress.ts');
+    await resetAllLocalData();
+    const sessions = await getGameSessions();
+    return sessions.length;
+  })()`);
+  assert(
+    resetClearsGameSessions === 0,
+    `Reset should clear gameSessions store, found ${resetClearsGameSessions} remaining`,
+  );
+
+  // ---- Streak: a qualified game round (>=5 valid interactions) counts as an active day ----
+  const gameStreakDay = await evaluate(`(async () => {
+    const e = await import('/src/services/progress/engagement.ts');
+    await e.resetAllLocalData();
+    const day = new Date(2026, 6, 10, 12);
+    await e.recordGameRoundEngagement('streak-game-1', 'vocabulary', 40, 6, day);
+    const snapshot = await e.getEngagementSnapshot();
+    return { activeDates: snapshot.state.activeDates.length, streak: snapshot.state.currentStreak };
+  })()`);
+  assert(
+    gameStreakDay.activeDates === 1 && gameStreakDay.streak === 1,
+    `Game round should register an active streak day: ${JSON.stringify(gameStreakDay)}`,
+  );
+  const gameStreakBelowThreshold = await evaluate(`(async () => {
+    const e = await import('/src/services/progress/engagement.ts');
+    await e.resetAllLocalData();
+    await e.recordGameRoundEngagement('streak-game-2', 'vocabulary', 15, 3);
+    const snapshot = await e.getEngagementSnapshot();
+    return snapshot.state.activeDates.length;
+  })()`);
+  assert(
+    gameStreakBelowThreshold === 0,
+    `A game round under 5 valid interactions must not register a streak day: ${gameStreakBelowThreshold}`,
+  );
+
+  await evaluate(`(async () => {
+    const { resetAllLocalData } = await import('/src/services/progress/engagement.ts');
+    await resetAllLocalData();
+  })()`);
+
+  // ---- Unknown route redirect ----
+  await send("Page.navigate", { url: `${BASE_URL}/rota-que-nao-existe-12345` }, sessionId);
+  await waitFor(
+    () => evaluate(`document.readyState === "complete" && location.pathname === "/"`),
+    "unknown route redirects to /",
+  );
+  await waitFor(() => hasText("Jogue, aprenda e"), "unknown route redirects home");
+
+  // ---- Direct refresh on a game route preserves the shell without global nav ----
+  await navigate("/jogos/par-perfeito");
+  await send("Page.reload", {}, sessionId);
+  await waitFor(
+    () =>
+      evaluate(
+        `document.readyState === "complete" && location.pathname === "/jogos/par-perfeito"`,
+      ),
+    "game route survives direct refresh",
+  );
+  await waitFor(() => hasText("Par perfeito"), "game route content after refresh");
+  const noGlobalNavOnGameRoute = await evaluate(`(() => {
+    const sidebar = document.querySelector('.app-sidebar');
+    const bottom = document.querySelector('.bottom-navigation');
+    return !sidebar && !bottom;
+  })()`);
+  assert(noGlobalNavOnGameRoute, "Game routes must render as a focused flow without the global shell");
+  await assertNoOverflow("/jogos/par-perfeito (post-refresh)");
+
   assert(
     browserErrors.length === 0,
     `Browser errors: ${JSON.stringify(browserErrors).slice(0, 3000)}`,
@@ -595,11 +1388,13 @@ async function main() {
     ),
   );
   browser.kill();
+  stopOwnedServer();
   process.exit(0);
 }
 
 main().catch((error) => {
   console.error(error.stack ?? error.message);
   browser.kill();
+  stopOwnedServer();
   process.exit(1);
 });

@@ -10,7 +10,7 @@ Inglês em Jogo é uma aplicação educacional game-like construída com React, 
 - Sessões de 10, 20 e 30 perguntas.
 - Seleção inteligente de questões, priorizando inéditas, últimos erros e itens vistos há mais tempo.
 - Ausência de repetição dentro da mesma sessão.
-- Feedback correto com avanço automático em 3 segundos.
+- Feedback correto com avanço automático em 2 segundos.
 - Feedback incorreto com explicação, avanço manual e ação `Estudar esse tópico`.
 - Progresso local, revisão de erros, recordes e estatísticas de prática.
 - Vocabulário funcional: 24 flashcards de Partes do corpo.
@@ -22,7 +22,7 @@ Inglês em Jogo é uma aplicação educacional game-like construída com React, 
 
 ## Jogos
 
-Os jogos ainda estão em desenvolvimento e aparecem bloqueados como `Em breve`. O catálogo planejado atualizado é:
+Os nove jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramática) e `body` (Vocabulário):
 
 - Monte a frase;
 - Caça ao erro;
@@ -32,7 +32,7 @@ Os jogos ainda estão em desenvolvimento e aparecem bloqueados como `Em breve`. 
 - Conectando;
 - Cruzando palavras;
 - Par perfeito;
-- Ouvido afiado — fase posterior.
+- Ouvido afiado.
 
 `Conectando` é o nome aprovado para o jogo de associação entre palavra em inglês e imagem.
 
@@ -56,7 +56,7 @@ Planejado:
 
 ## Persistência
 
-A persistência usa IndexedDB nativo. O banco local preserva os dados por migração e mantém stores para progresso por questão, sessões concluídas e engajamento. Perfil, XP, conquistas, sequência, missão, meta semanal e liga são locais ao navegador.
+A persistência usa IndexedDB nativo. O banco local preserva os dados por migração e mantém stores para progresso por questão, sessões concluídas, engajamento e sessões de jogo. Perfil, XP, conquistas, sequência, missão, meta semanal e liga são locais ao navegador.
 
 Não há sincronização, conta remota ou backend. A Liga Safira é uma experiência local. Os demais participantes são simulados e não representam usuários conectados.
 
@@ -99,6 +99,7 @@ node scripts/smokeUi.mjs
 - `src/pages`: telas e fluxos principais;
 - `src/content`: taxonomia e bancos de conteúdo;
 - `src/services`: progresso, engajamento, sessões e áudio;
+- `src/games`: fundação compartilhada e implementação dos nove jogos;
 - `scripts`: validação de conteúdo e smoke visual;
 - `docs`: estado, arquitetura, roadmap e handoff;
 - `reference`: referências visuais e legado.
@@ -109,4 +110,4 @@ node scripts/smokeUi.mjs
 
 ## Estado Atual
 
-O produto está funcional localmente, sem deploy nesta fase. Não há login, backend ou sincronização. Jogos seguem bloqueados e os demais conteúdos ainda estão em desenvolvimento.
+O produto está funcional localmente, sem deploy nesta fase. Não há login, backend ou sincronização. Os nove jogos estão funcionais com o escopo `present_tobe` + `body`; os demais tópicos e categorias ainda estão em desenvolvimento.

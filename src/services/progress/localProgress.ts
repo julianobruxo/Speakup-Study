@@ -7,10 +7,11 @@ import type {
 } from "./progress";
 
 const DATABASE_NAME = "practice-progress";
-const DATABASE_VERSION = 2;
+const DATABASE_VERSION = 3;
 const QUESTION_STORE = "questions";
 const SESSION_STORE = "sessions";
 export const ENGAGEMENT_STORE = "engagement";
+export const GAME_SESSION_STORE = "gameSessions";
 
 export const PROGRESS_UPDATED_EVENT = "practice-progress-updated";
 
@@ -51,6 +52,10 @@ function openDatabase(): Promise<IDBDatabase> {
 
         if (!database.objectStoreNames.contains(ENGAGEMENT_STORE)) {
           database.createObjectStore(ENGAGEMENT_STORE, { keyPath: "key" });
+        }
+
+        if (!database.objectStoreNames.contains(GAME_SESSION_STORE)) {
+          database.createObjectStore(GAME_SESSION_STORE, { keyPath: "sessionId" });
         }
       };
 
@@ -112,6 +117,35 @@ export async function saveCompletedSession(
   announceProgressUpdate();
 }
 
+export interface GameSessionRecord {
+  sessionId: string;
+  gameId: string;
+  contentDomain: "grammar" | "vocabulary";
+  totalChallenges: number;
+  correctCount: number;
+  xpEarned: number;
+  score: number;
+  completedAt: string;
+}
+
+export async function saveGameSession(session: GameSessionRecord): Promise<void> {
+  const database = await openDatabase();
+  const transaction = database.transaction(GAME_SESSION_STORE, "readwrite");
+  transaction.objectStore(GAME_SESSION_STORE).put(session);
+  await transactionDone(transaction);
+  announceProgressUpdate();
+}
+
+export async function getGameSessions(): Promise<GameSessionRecord[]> {
+  const database = await openDatabase();
+  const transaction = database.transaction(GAME_SESSION_STORE, "readonly");
+  const result = (await requestResult(
+    transaction.objectStore(GAME_SESSION_STORE).getAll(),
+  )) as GameSessionRecord[];
+  await transactionDone(transaction);
+  return result;
+}
+
 export async function getProgressSnapshot(): Promise<ProgressSnapshot> {
   const database = await openDatabase();
   const transaction = database.transaction([QUESTION_STORE, SESSION_STORE], "readonly");
@@ -171,9 +205,13 @@ export async function getProgressSummary(): Promise<ProgressSummary> {
 
 export async function clearLocalProgress(): Promise<void> {
   const database = await openDatabase();
-  const transaction = database.transaction([QUESTION_STORE, SESSION_STORE], "readwrite");
+  const transaction = database.transaction(
+    [QUESTION_STORE, SESSION_STORE, GAME_SESSION_STORE],
+    "readwrite",
+  );
   transaction.objectStore(QUESTION_STORE).clear();
   transaction.objectStore(SESSION_STORE).clear();
+  transaction.objectStore(GAME_SESSION_STORE).clear();
   await transactionDone(transaction);
   announceProgressUpdate();
 }

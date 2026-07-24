@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppIcon from "../components/AppIcon";
 import { AppShell, PageHeader, PrimaryButton } from "../components/AppShell";
-import { BodyPartIllustration } from "../components/BodyPartIllustration";
 import { getVocabularyEntriesByCategory } from "../content/data/vocabulary";
+import { VisualAsset } from "../games/assets/visualResolver";
 import {
   cancelPronunciation,
   isPronunciationAvailable,
@@ -304,9 +304,10 @@ export default function VocabularyFlashcardPage() {
               aria-hidden={flipped}
               className="flashcard-face flashcard-front"
             >
-              <BodyPartIllustration
+              <VisualAsset
+                className="flashcard-visual"
                 label={entry.translation}
-                part={entry.visualKey ?? entry.id}
+                visualKey={entry.visualKey ?? entry.id}
               />
               <div className="flashcard-word">
                 <h2>{entry.translation}</h2>
