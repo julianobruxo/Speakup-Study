@@ -10,18 +10,6 @@ import { ACTIVE_VOCABULARY_CATEGORIES } from "../content/taxonomy";
 import { getVocabularyEntriesByCategory } from "../content/data/vocabulary";
 import { IRREGULAR_VERBS } from "../content/data/irregularVerbs";
 
-const categoryDescriptions: Record<string, string> = {
-  body: "Partes do corpo e cuidados pessoais",
-  clothes: "Roupas e acessórios do dia a dia",
-  furniture: "Móveis e objetos da casa",
-  animals: "Animais comuns e natureza",
-  jobs: "Profissões e locais de trabalho",
-  places: "Lugares da cidade",
-  action_verbs: "Ações simples e frequentes",
-  routine_verbs: "Expressões da rotina diária",
-  irregular_verbs: "Base, passado e particípio",
-};
-
 export default function VocabularyPage() {
   const navigate = useNavigate();
   return (
@@ -41,7 +29,7 @@ export default function VocabularyPage() {
           if (category.id !== "body") {
             return (
               <LockedCard
-                description={categoryDescriptions[category.id]}
+                description={category.description}
                 key={category.id}
                 onClick={() => undefined}
                 title={category.title}
@@ -50,7 +38,7 @@ export default function VocabularyPage() {
           }
           return (
             <AppCard
-              description={categoryDescriptions[category.id]}
+              description={category.description}
               icon={<AppIcon name="grid" size={20} />}
               key={category.id}
               onClick={() => navigate(`/vocabulario/${category.id}`)}

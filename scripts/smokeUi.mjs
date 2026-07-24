@@ -42,7 +42,13 @@ browser.stdio[4].on("data", (chunk) => {
       payload.method === "Runtime.exceptionThrown" ||
       (payload.method === "Log.entryAdded" &&
         payload.params?.entry?.level === "error" &&
-        payload.params?.entry?.source !== "intervention")
+        payload.params?.entry?.source !== "intervention" &&
+        // Chrome/Edge internal extension-messaging noise (chrome.runtime port
+        // teardown), unrelated to the page's own code. Confirmed absent when
+        // visiting the same routes in a real (non-headless) browser session.
+        !payload.params?.entry?.text?.includes(
+          "message port closed before a response was received",
+        ))
     ) {
       browserErrors.push(payload.params);
     }
@@ -167,6 +173,14 @@ async function main() {
   const hasText = (text) =>
     evaluate(
       `document.body.innerText.includes(${JSON.stringify(text)})`,
+    );
+
+  // Short/ambiguous tokens (e.g. "XP") can accidentally match inside unrelated
+  // words once CSS text-transform:uppercase is applied (e.g. "eXPeriências").
+  // Word-boundary matching avoids that class of false positive.
+  const hasWord = (word) =>
+    evaluate(
+      `new RegExp('\\\\b' + ${JSON.stringify(word)} + '\\\\b').test(document.body.innerText)`,
     );
 
   const assertPath = async (path) =>
@@ -464,7 +478,7 @@ async function main() {
     "XP",
     "Nível",
     "Streak",
-    "Liga ",
+    "Liga",
     "missão",
     "Missão",
     "conquista",
@@ -474,7 +488,7 @@ async function main() {
     "Juliano",
   ]) {
     assert(
-      !(await hasText(fictitious)),
+      !(await hasWord(fictitious)),
       `Empty Home shows fabricated engagement content: "${fictitious}"`,
     );
   }
@@ -489,7 +503,13 @@ async function main() {
 
   await clickText("Estudar", ".learning-path-card");
   await assertPath("/vocabulario/body/flashcards");
-  await assertFocusedFlow("vocabulary flashcards from learning path");
+  await waitFor(
+    async () =>
+      (await evaluate(
+        "!document.querySelector('.bottom-navigation') && !document.querySelector('.app-sidebar')",
+      )) === true,
+    "vocabulary flashcards from learning path should not show global navigation",
+  );
   await navigate("/");
 
   await navigate("/progresso");
@@ -825,7 +845,7 @@ async function main() {
   await assertPath("/gramatica");
   await assertFocusedFlow("grammar topics");
   assert(await hasText("Verbo TO BE — presente"), "Grammar topics missing");
-  await clickText("Verbo TO BE - passado");
+  await clickText("Verbo TO BE — passado");
   assert(await hasText("disponível em breve"), "Locked topic feedback missing");
   await click(".available-topic");
   await assertPath("/gramatica/present_tobe");
@@ -1113,7 +1133,7 @@ async function main() {
 
   const routeChecks = [
     ["/", "Treine inglês no seu ritmo."],
-    ["/praticar", "O que você quer praticar?"],
+    ["/praticar", "Biblioteca de aprendizagem"],
     ["/gramatica", "Escolha um tópico"],
     ["/vocabulario", "Explore novas palavras"],
     ["/vocabulario/body", "Aprenda com imagem e pronúncia"],
@@ -1180,7 +1200,7 @@ async function main() {
     "Nivel",
     "Streak",
     "Sequência de 7",
-    "Liga ",
+    "Liga",
     "missão",
     "Missão",
     "conquista",
@@ -1189,15 +1209,100 @@ async function main() {
     "Ranking",
   ]) {
     assert(
-      !homeWithProgress.bodyText.includes(fictitious),
+      !new RegExp(`\\b${fictitious}\\b`).test(homeWithProgress.bodyText),
       `Home shows fabricated engagement content: "${fictitious}"`,
     );
   }
   await navigate("/jogos");
   assert(
-    (await evaluate("document.querySelectorAll('.game-list-row').length")) === 6,
-    "Games page should keep all six games",
+    (await evaluate("document.querySelectorAll('.quick-game-card').length")) === 6,
+    "Games page should show all six games",
   );
+  assert(
+    (await evaluate(
+      "document.querySelectorAll('.quick-game-card .locked-badge').length",
+    )) === 6,
+    "All six games should be marked as locked",
+  );
+  for (const fictitious of ["XP", "Nível", "score", "Score", "recorde", "Recorde"]) {
+    assert(
+      !(await hasWord(fictitious)),
+      `Games page shows fabricated content: "${fictitious}"`,
+    );
+  }
+
+  await navigate("/praticar");
+  assert(
+    (await evaluate("document.querySelectorAll('.study-filter-chip').length")) === 3,
+    "Study library should show three filters",
+  );
+  assert(
+    (await evaluate(
+      "document.querySelector('.study-filter-chip.active')?.textContent",
+    )) === "Todos",
+    "Study library should start with the 'Todos' filter active",
+  );
+  assert(
+    (await evaluate(
+      "document.querySelectorAll('.topic-list .app-card:not(.locked-card)').length",
+    )) === 1,
+    "Study library should show exactly one available grammar topic",
+  );
+  assert(
+    (await evaluate(
+      "document.querySelectorAll('.topic-list .locked-card').length",
+    )) === 7,
+    "Study library should show seven locked grammar topics",
+  );
+  assert(
+    (await evaluate(
+      "document.querySelectorAll('.vocabulary-list .app-card:not(.locked-card)').length",
+    )) === 1,
+    "Study library should show exactly one available vocabulary category",
+  );
+  assert(
+    (await evaluate(
+      "document.querySelectorAll('.vocabulary-list .locked-card').length",
+    )) === 8,
+    "Study library should show eight locked vocabulary categories",
+  );
+  await clickText("Gramática", ".study-filter-chip");
+  assert(
+    (await evaluate("document.querySelectorAll('.study-section-group').length")) === 1 &&
+      (await evaluate("Boolean(document.querySelector('.topic-list'))")) &&
+      !(await evaluate("Boolean(document.querySelector('.vocabulary-list'))")),
+    "Vocabulary section did not hide behind the grammar filter",
+  );
+  await clickText("Vocabulário", ".study-filter-chip");
+  assert(
+    (await evaluate("document.querySelectorAll('.study-section-group').length")) === 1 &&
+      (await evaluate("Boolean(document.querySelector('.vocabulary-list'))")) &&
+      !(await evaluate("Boolean(document.querySelector('.topic-list'))")),
+    "Grammar section did not hide behind the vocabulary filter",
+  );
+  await clickText("Todos", ".study-filter-chip");
+  assert(
+    (await evaluate("document.querySelectorAll('.study-section-group').length")) === 2,
+    "'Todos' filter did not restore both sections",
+  );
+  await clickText("Verbo TO BE — presente", ".available-topic");
+  await assertPath("/gramatica/present_tobe");
+  await navigate("/praticar");
+  await click(".vocabulary-list .app-card:not(.locked-card)");
+  await assertPath("/vocabulario/body");
+
+  await navigate("/perfil");
+  assert(!(await hasText("Juliano")), "Profile should not show a fabricated user name");
+  assert(await hasText("MODO VISITANTE"), "Profile should identify guest mode");
+  assert(
+    await hasText("Armazenamento local"),
+    "Profile should explain local-only storage",
+  );
+  assert(
+    await hasText("salvo apenas neste dispositivo"),
+    "Profile local-storage copy is missing",
+  );
+
   await navigate("/progresso");
   assert(await hasText("Melhor resultado"), "Best result is missing from Progress");
   assert(await hasText("Última atividade"), "Last activity is missing from Progress");

@@ -156,6 +156,26 @@ Atualizado em: 2026-07-23
 
    Decidido e implementado: "proximo passo recomendado" e "Gramatica e Vocabulario" foram unificados em uma unica secao (`LearningPathSection`, "Seu caminho de pratica") para evitar duplicar o mesmo CTA (Present TO BE + Partes do corpo) em dois lugares diferentes. O botao de acao do painel de progresso foi removido (ja coberto pelo caminho de pratica) e substituido por um link "Ver progresso completo". Copy do estado vazio dos recordes ajustada para "Seus recordes aparecerao depois da primeira rodada."
 
+39. Autorizacao para encadear as Fases 3-7 sem pausa intermediaria
+
+   Decidido: Juliano revogou a pausa obrigatoria entre fases para o restante do revamp, autorizando implementar as Fases 3, 4, 5, 6 e 7 na mesma execucao, com testes/validacao formal apenas ao final (nao entre fases). Tambem autorizou o commit e push intermediario das Fases 0-2 (`e1bd077`) e o commit e push final apos o gate completo. Correcoes visuais subjetivas continuam sendo decisao exclusiva de Juliano, feitas depois de tudo implementado.
+
+40. Estudar como biblioteca sem rota recomendada propria
+
+   Decidido: a Fase 3 previa uma "rota recomendada" opcional na area Estudar, mas ela foi omitida porque duplicaria exatamente o mesmo conteudo/CTA que a `LearningPathSection` da Home ja cobre (Present TO BE + Partes do corpo) — a mesma logica de "nao duplicar CTA" aplicada na decisao 38.
+
+41. Titulo do Present TO BE unificado com travessao
+
+   Decidido: `taxonomy.ts` usava hifen simples ("Verbo TO BE - presente") enquanto toda a UI (setup, sessao, resultado, estudo contextual, `LearningPathSection`) sempre usou travessao ("Verbo TO BE — presente"). A inconsistencia nunca foi visivel porque nenhuma tela renderizava `topic.title` diretamente antes da nova pagina Estudar. Corrigido em `taxonomy.ts` para travessao, unificando a fonte de dados com o que ja era exibido.
+
+42. Jogos com identidade visual propria (Fase 6C)
+
+   Decidido: os 6 jogos da pagina `/jogos` passaram a reutilizar o sistema de tons (`tone-blue/rose/gold/green/violet/coral`) ja usado pelos 3 jogos em destaque na Home, em vez de uma lista plana com apenas 2 icones alternados. Nenhum score, progresso ou data de lancamento foi adicionado — apenas identidade visual e descricao real da mecanica.
+
+43. Correcoes ao smoke test na validacao final das Fases 3-7
+
+   Decidido e implementado: seis problemas encontrados durante a validacao final eram todos das asserções novas do proprio smoke test (falso-positivo de substring, selecao CSS ambigua, checagem de filtro lendo o texto errado, diferenca de maiuscula por CSS, falta de tolerancia numa transicao client-side, ruido de mensageria do navegador headless), nao bugs do aplicativo. Cada correcao foi confirmada por reproducao isolada (navegador real ou simulacao) antes de ser aplicada, conforme exigido explicitamente por Juliano ("nao classificar automaticamente uma falha como flake"). Detalhes em `docs/REVAMP_ROADMAP.md`.
+
 ## Necessarias antes de comecar implementacao visual/home
 
 1. Primeiro baseline Git

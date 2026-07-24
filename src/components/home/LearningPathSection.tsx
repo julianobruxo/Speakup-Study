@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import AppIcon from "../AppIcon";
 import type { ProgressSummary } from "../../services/progress/progress";
@@ -25,9 +26,11 @@ export default function LearningPathSection({
         </div>
       </div>
       <div className="learning-path-grid">
-        <button
+        <motion.button
           className="learning-path-card"
           onClick={() => navigate("/gramatica/present_tobe")}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.985 }}
         >
           <span className="learning-path-icon grammar">
             <AppIcon name="book" size={22} />
@@ -63,11 +66,13 @@ export default function LearningPathSection({
             {hasStarted ? "Continuar" : "Começar agora"}
             <AppIcon name="chevron-right" size={17} />
           </span>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
           className="learning-path-card"
           onClick={() => navigate("/vocabulario/body/flashcards")}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.985 }}
         >
           <span className="learning-path-icon vocabulary">
             <AppIcon name="grid" size={22} />
@@ -81,7 +86,7 @@ export default function LearningPathSection({
             Estudar
             <AppIcon name="chevron-right" size={17} />
           </span>
-        </button>
+        </motion.button>
       </div>
     </section>
   );

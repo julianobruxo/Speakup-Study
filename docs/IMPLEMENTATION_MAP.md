@@ -4,6 +4,24 @@ Atualizado em: 2026-07-23
 
 Este mapa assume uma abordagem hibrida: evolucao incremental da base Vite/React existente, com refatoracao progressiva da arquitetura e reconstrucao parcial das telas/fluxos que conflitam com o `CLAUDE.md`. A base atual e pequena demais para justificar uma reescrita completa, mas tambem e placeholder demais para ser apenas "preenchida" sem criar fundamentos de dominio.
 
+## Revamp visual - FASES 3-7 - 2026-07-23
+
+Roteiro completo em `docs/REVAMP_ROADMAP.md`. Juliano autorizou encadear todas as fases restantes sem pausa para revisao visual intermediaria, com validacao formal apenas ao final. Estado das Fases 0-2 foi commitado e enviado ao GitHub antes de iniciar a Fase 3.
+
+Entregue:
+
+- **Fase 3**: `src/pages/PracticeLandingPage.tsx` reescrita como biblioteca filtravel (Todos/Gramatica/Vocabulario) com os 8 topicos e 9 categorias reais, cada um disponivel ou bloqueado conforme o catalogo real (`ACTIVE_GRAMMAR_TOPICS`/`ACTIVE_VOCABULARY_CATEGORIES`). Cards bloqueados sao `aria-disabled`, sem toast repetitivo por clique.
+- **Fase 4 e 5**: confirmadas por inspecao manual em navegador real; o fluxo de Gramatica (configuracao/sessao/feedback/estudo/resultado) e de Vocabulario/flashcards ja atendiam ao sistema visual novo antes desta sessao. Nenhum arquivo alterado.
+- **Fase 6A (Progresso)**: confirmada sem alteracoes (ja usava dados reais e estados vazios honestos).
+- **Fase 6B (Perfil)**: `src/pages/ProfilePage.tsx` ganhou uma linha "Armazenamento local" explicando que o progresso e local ao dispositivo/navegador.
+- **Fase 6C (Jogos)**: `src/pages/GamesPage.tsx` redesenhada de lista plana (`game-list-row`) para grade de 6 cards com identidade visual propria (reaproveitando o sistema de tons `tone-blue/rose/gold/green/violet/coral` ja usado pelos 3 jogos da Home), com descricao real da mecanica e badge "Em breve".
+- **Fase 7**: `LearningPathSection.tsx` ganhou `whileHover`/`whileTap` (Framer Motion) para paridade com `AppCard`; classe CSS `games-page-grid` sem uso removida.
+- `src/content/taxonomy.ts`: `description` real adicionada a cada topico de gramatica e categoria de vocabulario (elimina duplicacao de texto entre `GrammarTopicsPage.tsx`, `VocabularyPage.tsx` e a nova `PracticeLandingPage.tsx`); titulo "Verbo TO BE" corrigido de hifen simples para travessao "—", consistente com o restante do app.
+
+Correcoes ao smoke test (`scripts/smokeUi.mjs`) feitas durante a validacao final, documentadas em detalhe em `docs/REVAMP_ROADMAP.md`: falso-positivo de substring "XP", selecao `.app-card` sem excluir `.locked-card`, checagem de filtro ambigua com o texto do botao, diferenca de maiuscula por CSS `text-transform`, falta de tolerancia numa transicao client-side, e exclusao documentada de um ruido de mensageria interna do Edge headless. Nenhuma corrigiu um bug real do aplicativo.
+
+Gate final aprovado: `validateContent`, `tsc`, `lint`, `build`, `smoke` completo em 9 viewports, `browserErrors: 0`.
+
 ## Revamp visual - fechamento FASE 1 e FASE 2 - 2026-07-23
 
 Roteiro completo em `docs/REVAMP_ROADMAP.md`. Escopo autorizado nesta execucao: fechar e validar a FASE 1 (bloqueada por um bug de navegacao) e, somente apos o gate aprovado, implementar e validar a FASE 2 (Home). FASE 3 em diante permanecem bloqueadas.

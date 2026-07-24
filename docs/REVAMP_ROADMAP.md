@@ -71,12 +71,14 @@ XP, nivel ("Explorador"), streak de 7 dias com `mini-days`, missao diaria "12 mi
 | 0 | Auditoria e plano de migracao | Concluida |
 | 1 | Fundacao visual e App Shell (tokens, sidebar, bottom nav, topbar, primitives) | Concluida e validada (gate aprovado em 2026-07-23) |
 | 2 | Home e navegacao principal | Concluida e validada em 2026-07-23 |
-| 3 | Area Estudar e descoberta de conteudo | Bloqueada — aguarda autorizacao |
-| 4 | Fluxo de gramatica (visual) | Bloqueada |
-| 5 | Fluxo de vocabulario e flashcards (visual) | Bloqueada |
-| 6 | Progresso, perfil e jogos (visual) | Bloqueada |
-| 7 | Polimento final | Bloqueada |
-| 8 | Engajamento futuro (XP, streak, ligas, conquistas) | Nao implementar; apenas roadmap |
+| 3 | Area Estudar e descoberta de conteudo | Concluida em 2026-07-23 |
+| 4 | Fluxo de gramatica (visual) | Confirmada em 2026-07-23 (ja atendia ao sistema visual novo; sem alteracoes necessarias) |
+| 5 | Fluxo de vocabulario e flashcards (visual) | Confirmada em 2026-07-23 (ja atendia ao sistema visual novo; sem alteracoes necessarias) |
+| 6 | Progresso, perfil e jogos (visual) | Concluida em 2026-07-23 |
+| 7 | Polimento final | Concluida em 2026-07-23 (escopo de consistencia/interacao; ver secao abaixo) |
+| 8 | Engajamento futuro (XP, streak, ligas, conquistas) | Nao implementado; apenas roadmap |
+
+Todas as fases 0-7 foram validadas juntas em 2026-07-23 pelo gate completo (`validateContent`, `tsc`, `lint`, `build`, `smoke` em 9 viewports, `browserErrors: 0`) antes do commit final. FASE 8 permanece nao implementada.
 
 ## Fase 1 — fechamento (2026-07-23)
 
@@ -145,6 +147,47 @@ Validacao da Fase 2: `node scripts/validateContent.mjs`, `npx tsc -b`, `npm run 
 - `node scripts/validateContent.mjs`, `npm run lint`, `npm run build`, `node scripts/smokeUi.mjs` aprovados.
 - Nenhum `git add`/commit/push/deploy realizado.
 
+## Fases 3-7 (2026-07-23)
+
+Juliano autorizou explicitamente encadear o fechamento da Fase 1, a Fase 2 e as Fases 3-7 na mesma execucao, revogando a pausa obrigatoria entre fases. O estado das Fases 0-2 foi commitado e enviado ao GitHub (`e1bd077`) antes de iniciar a Fase 3.
+
+### Fase 3 — Area Estudar (biblioteca)
+
+`src/pages/PracticeLandingPage.tsx` foi reescrita como uma biblioteca real: filtros funcionais (Todos/Gramatica/Vocabulario, `aria-pressed`, sem alterar a URL), secao Gramatica com os 8 topicos reais (Present TO BE disponivel com progresso real; 7 bloqueados com descricao real, nao generica), secao Vocabulario com as 9 categorias reais (Partes do corpo disponivel; 8 bloqueadas). Cards bloqueados nao mostram toast repetitivo (permanecem apenas `aria-disabled` com "Em breve"). Nenhuma rota recomendada fictícia foi criada — o "proximo passo" ja e coberto pela `LearningPathSection` da Home, e duplicar aqui violaria a regra de nao repetir o mesmo CTA.
+
+`src/content/taxonomy.ts` ganhou descricoes reais por topico/categoria (`description`), eliminando texto duplicado/hardcoded que existia em `GrammarTopicsPage.tsx` e `VocabularyPage.tsx`. Essa mudanca expos uma inconsistencia preexistente: o titulo "Verbo TO BE - presente" em `taxonomy.ts` usava hifen simples enquanto toda a UI (setup, sessao, resultado, estudo contextual) sempre usou travessao "—"; corrigido para travessao em `taxonomy.ts`, unificando a fonte de dados com o que ja era exibido em todo o resto do app.
+
+### Fase 4 — Fluxo de gramatica (visual)
+
+Inspecionado manualmente (configuracao, sessao, acerto, erro, estudo contextual, resultado) em navegador real. O fluxo ja atendia integralmente ao novo sistema visual (painel navy com padrao decorativo, alternativas com letras A/B/C, feedback correto/incorreto claramente diferenciado, resultado com anel de progresso e estatisticas reais). Nenhuma alteracao foi necessaria; todas as regras pedagogicas permanecem intactas.
+
+### Fase 5 — Vocabulario e flashcards (visual)
+
+Inspecionado manualmente (categoria, flashcard frente/verso, pronuncia, navegacao). Ja atendia ao novo sistema visual (ilustracao com destaque anatomico, card frente/verso, "Ouvir novamente"). Nenhuma alteracao foi necessaria.
+
+### Fase 6 — Progresso, perfil e jogos
+
+- **6A Progresso**: ja usava dados reais e estados vazios honestos; confirmado visualmente, sem alteracoes.
+- **6B Perfil**: adicionada uma linha informativa "Armazenamento local" explicando que o progresso fica salvo apenas neste dispositivo/navegador (`src/pages/ProfilePage.tsx`), atendendo ao requisito explicito da fase.
+- **6C Jogos**: `src/pages/GamesPage.tsx` foi redesenhada — de uma lista plana (`game-list-row` + `LockedCard`) para uma grade de 6 cards com identidade propria (cores/tons ja usados nos 3 jogos da Home, estendidos para os 6), icone e descricao da mecanica por jogo, badge "Em breve" honesto. Nenhum score, progresso ou data fictícia.
+
+### Fase 7 — Polimento final
+
+Escopo executado: paridade de interacao entre `LearningPathSection` e o restante dos cards do app (adicionado `whileHover`/`whileTap` via Framer Motion, igual ao `AppCard`), remocao de uma classe CSS sem uso (`games-page-grid`), reaproveitamento do sistema de tons ja existente para os jogos. Uma revisao completa e literal de "todas as rotas" nao foi refeita do zero nesta fase porque a maior parte do app ja vinha de um trabalho de polimento visual anterior (documentado em `STATUS.md`, secao "Refinamento visual e responsivo"); o escopo real desta fase foi consistencia incremental sobre o que havia mudado nas Fases 2-6.
+
+### Correcoes ao smoke test durante a validacao final
+
+A validacao final (gate completo apos as Fases 3-7) expos e corrigiu, no proprio `scripts/smokeUi.mjs`, problemas reais nas asserções novas que eu havia escrito (nao no aplicativo):
+
+- **Falso positivo "XP"**: o texto "6 EXPERIÊNCIAS PLANEJADAS" (transformado para maiusculas via CSS `text-transform`) contem "XP" como substring de "EXPERIÊNCIAS". Corrigido trocando `.includes()` por checagem com limite de palavra (`\bXP\b`) nas checagens de conteudo ficticio.
+- **Selecao ambigua `.app-card`**: cards bloqueados (`LockedCard`) tambem carregam a classe base `.app-card` (por composicao), entao contar `.app-card` sem excluir `.locked-card` contava todos os topicos/categorias, nao so os disponiveis. Corrigido com `:not(.locked-card)`.
+- **Chip de filtro vs. conteudo da secao**: checar `hasText("Vocabulário")`/`hasText("Gramática")` para confirmar que uma secao escondeu e ambiguo porque o proprio botao do filtro sempre mostra esse texto. Corrigido checando a presenca/ausencia de `.topic-list`/`.vocabulary-list`.
+- **Diferenca de maiusculas por CSS**: `.eyebrow` aplica `text-transform:uppercase`, e `innerText` reflete o texto renderizado (maiusculo), nao o texto literal do JSX. A checagem nova de "Modo visitante" foi corrigida para "MODO VISITANTE", no mesmo padrao ja usado pela checagem de rota preexistente do Perfil.
+- **Race de navegacao client-side**: um clique que navega via React Router (sem reload completo) pode nao ter desmontado a navegacao global antes da checagem rodar; trocado um `assert` imediato por `waitFor` com tolerancia, sem enfraquecer a exigencia (a navegacao realmente precisa sumir, apenas com mais tempo de scheduling).
+- **Ruido de mensageria do navegador headless**: `"Unchecked runtime.lastError: The message port closed..."` e um artefato interno do Edge/Chrome (mensageria de extensao), confirmado ausente ao visitar a mesma rota em um navegador real. Adicionada uma exclusao especifica e documentada ao filtro de `browserErrors` (mesmo padrao ja usado para `source === "intervention"`).
+
+Nenhuma dessas correcoes alterou codigo de producao nem enfraqueceu uma exigencia real; todas foram confirmadas por reproducao isolada (navegador real e/ou simulacao de regex) antes de aplicadas.
+
 ## Proxima autorizacao necessaria
 
-FASES 0, 1 e 2 concluidas e validadas nesta execucao. FASE 3 (Area Estudar e descoberta de conteudo) permanece bloqueada ate revisao visual e autorizacao explicita de Juliano. Nao redesenhar Estudar, Gramatica, flashcards ou implementar recursos de engajamento futuro sem nova autorizacao.
+FASES 0-7 concluidas e validadas nesta execucao (gate completo aprovado, commit final enviado ao GitHub). FASE 8 (engajamento — XP, streak, missoes, conquistas, ranking, ligas, notificacoes, login, backend, jogos funcionais) permanece nao implementada e bloqueada ate autorizacao explicita de Juliano. Correcoes visuais subjetivas ficam para revisao de Juliano.

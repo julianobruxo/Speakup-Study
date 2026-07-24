@@ -6,7 +6,13 @@ Atualizado em: 2026-07-23
 
 O workspace atual contem um MVP visual navegavel em Vite + React + TypeScript. A home guest-first, as areas principais, o fluxo completo de pratica de `present_tobe` e o primeiro template de flashcards de vocabulario estao implementados. Os demais topicos, categorias e jogos aparecem em estado final de "Em breve", sem simular funcionalidades inexistentes.
 
-Fase atual: MVP jogavel de `present_tobe` consolidado e template de 24 flashcards de Partes do corpo concluido no working tree, sem persistencia de vocabulario. Em paralelo, FASE 0 (auditoria), FASE 1 (fundacao visual e App Shell) e FASE 2 (Home e navegacao principal) do revamp descrito em `docs/REVAMP_ROADMAP.md` foram executadas e validadas nesta sessao, sem alterar conteudo, regras pedagogicas ou persistencia.
+Fase atual: MVP jogavel de `present_tobe` consolidado e template de 24 flashcards de Partes do corpo concluido no working tree, sem persistencia de vocabulario. O revamp visual completo (FASES 0-7, descrito em `docs/REVAMP_ROADMAP.md`) foi executado e validado nesta sessao e enviado ao GitHub, sem alterar conteudo, regras pedagogicas ou persistencia. FASE 8 (engajamento) nao foi implementada.
+
+## Revamp - FASES 3-7 (2026-07-23)
+
+Apos autorizacao explicita de Juliano para encadear todas as fases sem pausa intermediaria: Estudar virou uma biblioteca real e filtravel (`PracticeLandingPage.tsx`); Gramatica e Vocabulario/flashcards foram inspecionados e confirmados como ja alinhados ao novo sistema visual (sem alteracoes necessarias); Perfil ganhou uma linha explicando o armazenamento local; Jogos foi redesenhada com 6 cards com identidade visual propria (cores/tons); pequenos ajustes de consistencia (motion nos cards do caminho de pratica). `taxonomy.ts` ganhou descricoes reais por topico/categoria e corrigiu uma inconsistencia de travessao no titulo do Present TO BE. Nenhum dado ficticio foi introduzido em nenhuma tela.
+
+A validacao final (apos todas as fases) encontrou e corrigiu problemas reais nas **asserções novas do smoke test** (nao no aplicativo): um falso-positivo por substring ("XP" dentro de "EXPERIÊNCIAS" maiusculizado via CSS), uma selecao CSS ambigua (`.locked-card` tambem carrega `.app-card`), uma checagem que confundia o texto do botao de filtro com o conteudo da secao, uma diferenca de maiusculas por `text-transform` CSS, uma race de navegacao client-side sem tolerancia, e um ruido de mensageria interna do navegador headless (confirmado ausente em navegador real). Todas corrigidas com evidencia (reproducao isolada ou verificacao em navegador real) antes de prosseguir. Gate completo final aprovado: `validateContent`, `tsc`, `lint`, `build`, `smoke` em 9 viewports (360x800, 390x844, 412x915, 768x1024, 1000x800, 1024x768, 1366x768, 1440x900, 1920x1080), `browserErrors: 0`.
 
 ## Revamp - FASE 1 fechamento e FASE 2 (2026-07-23)
 

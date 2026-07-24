@@ -43,7 +43,7 @@ export default function GrammarTopicsPage() {
           topic.id === "present_tobe" ? (
             <AppCard
               className="available-topic"
-              description="Afirmações, negativas, perguntas e respostas curtas."
+              description={topic.description}
               eyebrow="Disponível agora"
               icon={<span className="topic-number">01</span>}
               key={topic.id}
@@ -53,7 +53,7 @@ export default function GrammarTopicsPage() {
             />
           ) : (
             <LockedCard
-              description="Conteúdo em preparação."
+              description={topic.description}
               key={topic.id}
               onClick={() => showLocked(topic.title)}
               title={topic.title}

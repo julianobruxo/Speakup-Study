@@ -64,6 +64,19 @@ export default function ProfilePage() {
           </span>
           <span className="status-pill">Em breve</span>
         </div>
+        <div className="setting-row static">
+          <span className="setting-icon">
+            <AppIcon name="chart" />
+          </span>
+          <span>
+            <strong>Armazenamento local</strong>
+            <small>
+              Seu progresso é salvo apenas neste dispositivo e navegador. Ao
+              trocar de aparelho ou limpar os dados do navegador, o histórico
+              é perdido.
+            </small>
+          </span>
+        </div>
       </section>
     </AppShell>
   );

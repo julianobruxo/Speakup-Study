@@ -619,6 +619,43 @@ dialog:focus-visible {
   gap: 10px;
 }
 
+.study-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 2px 22px;
+}
+
+.study-filter-chip {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+  min-height: 38px;
+  padding: 8px 16px;
+}
+
+.study-filter-chip.active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+.study-section-group {
+  margin-bottom: 30px;
+}
+
+.study-section-group:last-of-type {
+  margin-bottom: 4px;
+}
+
+.study-section-group .section-heading {
+  margin-top: 0;
+}
+
 .status-pill,
 .count-pill {
   border-radius: 999px;

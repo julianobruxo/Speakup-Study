@@ -18,14 +18,54 @@ const MVP_GRAMMAR_TARGETS = {
 } as const;
 
 export const ACTIVE_GRAMMAR_TOPICS: GrammarTopic[] = [
-  grammarTopic("present_tobe", "Verbo TO BE - presente", 1),
-  grammarTopic("past_tobe", "Verbo TO BE - passado", 2),
-  grammarTopic("simple_present", "Simple Present", 3),
-  grammarTopic("present_continuous", "Present Continuous", 4),
-  grammarTopic("be_going_to", "Be Going To", 5),
-  grammarTopic("simple_past", "Simple Past", 6),
-  grammarTopic("there_tobe", "There Is / There Are", 7),
-  grammarTopic("prepositions", "In / On / At", 8),
+  grammarTopic(
+    "present_tobe",
+    "Verbo TO BE — presente",
+    1,
+    "Afirmações, negativas, perguntas e respostas curtas.",
+  ),
+  grammarTopic(
+    "past_tobe",
+    "Verbo TO BE — passado",
+    2,
+    "Was, were, negativas e perguntas no passado.",
+  ),
+  grammarTopic(
+    "simple_present",
+    "Simple Present",
+    3,
+    "Rotinas, hábitos e fatos gerais.",
+  ),
+  grammarTopic(
+    "present_continuous",
+    "Present Continuous",
+    4,
+    "Ações acontecendo agora ou planos próximos.",
+  ),
+  grammarTopic(
+    "be_going_to",
+    "Be Going To",
+    5,
+    "Planos e intenções para o futuro.",
+  ),
+  grammarTopic(
+    "simple_past",
+    "Simple Past",
+    6,
+    "Ações e fatos concluídos no passado.",
+  ),
+  grammarTopic(
+    "there_tobe",
+    "There Is / There Are",
+    7,
+    "Existência e quantidade de coisas e lugares.",
+  ),
+  grammarTopic(
+    "prepositions",
+    "In / On / At",
+    8,
+    "Preposições de tempo e lugar.",
+  ),
 ];
 
 export const ACTIVE_VOCABULARY_GROUPS: VocabularyGroup[] = [
@@ -44,15 +84,69 @@ export const ACTIVE_VOCABULARY_GROUPS: VocabularyGroup[] = [
 ];
 
 export const ACTIVE_VOCABULARY_CATEGORIES: VocabularyCategory[] = [
-  category("body", "mvp_vocabulary", "Corpo", "available"),
-  category("clothes", "mvp_vocabulary", "Roupas", "available"),
-  category("furniture", "mvp_vocabulary", "Moveis", "available"),
-  category("animals", "mvp_vocabulary", "Animais", "available"),
-  category("jobs", "mvp_vocabulary", "Profissoes", "available"),
-  category("places", "mvp_vocabulary", "Lugares", "available"),
-  category("action_verbs", "mvp_verbs", "Action Verbs", "available"),
-  category("routine_verbs", "mvp_verbs", "Routine Verbs", "available"),
-  category("irregular_verbs", "mvp_verbs", "Irregular Verbs", "available"),
+  category(
+    "body",
+    "mvp_vocabulary",
+    "Corpo",
+    "available",
+    "Partes do corpo e cuidados pessoais",
+  ),
+  category(
+    "clothes",
+    "mvp_vocabulary",
+    "Roupas",
+    "available",
+    "Roupas e acessórios do dia a dia",
+  ),
+  category(
+    "furniture",
+    "mvp_vocabulary",
+    "Moveis",
+    "available",
+    "Móveis e objetos da casa",
+  ),
+  category(
+    "animals",
+    "mvp_vocabulary",
+    "Animais",
+    "available",
+    "Animais comuns e natureza",
+  ),
+  category(
+    "jobs",
+    "mvp_vocabulary",
+    "Profissoes",
+    "available",
+    "Profissões e locais de trabalho",
+  ),
+  category(
+    "places",
+    "mvp_vocabulary",
+    "Lugares",
+    "available",
+    "Lugares da cidade",
+  ),
+  category(
+    "action_verbs",
+    "mvp_verbs",
+    "Action Verbs",
+    "available",
+    "Ações simples e frequentes",
+  ),
+  category(
+    "routine_verbs",
+    "mvp_verbs",
+    "Routine Verbs",
+    "available",
+    "Expressões da rotina diária",
+  ),
+  category(
+    "irregular_verbs",
+    "mvp_verbs",
+    "Irregular Verbs",
+    "available",
+    "Base, passado e particípio",
+  ),
 ];
 
 export function getGrammarTopicById(
@@ -79,6 +173,7 @@ function grammarTopic(
   id: GrammarTopicId,
   title: string,
   sequence: number,
+  description: string,
 ): GrammarTopic {
   return {
     id,
@@ -88,6 +183,7 @@ function grammarTopic(
     availableDifficulties: [...MVP_GRAMMAR_DIFFICULTIES],
     questionTargets: { ...MVP_GRAMMAR_TARGETS },
     availabilityStatus: "planned",
+    description,
   };
 }
 
@@ -96,11 +192,13 @@ function category(
   groupId: VocabularyGroupId,
   title: string,
   availabilityStatus: AvailabilityStatus = "planned",
+  description?: string,
 ): VocabularyCategory {
   return {
     id,
     groupId,
     title,
     availabilityStatus,
+    description,
   };
 }
