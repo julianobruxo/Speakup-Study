@@ -1,10 +1,18 @@
-const SOUND_KEY = "speakup-sound-enabled";
-export const SOUND_PREFERENCE_EVENT = "speakup-sound-change";
+const SOUND_KEY = "ingles-em-jogo-sound-enabled";
+const LEGACY_SOUND_KEY = "speakup-sound-enabled";
+export const SOUND_PREFERENCE_EVENT = "ingles-em-jogo-sound-change";
 
 export type SoundKind = "select" | "correct" | "wrong" | "complete";
 
 export function isSoundEnabled(): boolean {
-  return localStorage.getItem(SOUND_KEY) !== "false";
+  const current = localStorage.getItem(SOUND_KEY);
+  if (current !== null) return current !== "false";
+  const legacy = localStorage.getItem(LEGACY_SOUND_KEY);
+  if (legacy !== null) {
+    localStorage.setItem(SOUND_KEY, legacy);
+    return legacy !== "false";
+  }
+  return true;
 }
 
 export function setSoundEnabled(enabled: boolean) {

@@ -15,6 +15,10 @@ import {
   setSoundEnabled,
   SOUND_PREFERENCE_EVENT,
 } from "../services/audio/sound";
+import {
+  recordFlashcardCompletion,
+  recordFlashcardReveal,
+} from "../services/progress/engagement";
 
 const BODY_PARTS = getVocabularyEntriesByCategory("body");
 const SWIPE_THRESHOLD = 70;
@@ -29,6 +33,9 @@ export default function VocabularyFlashcardPage() {
   const [speechAvailable] = useState(isPronunciationAvailable);
   const [announcement, setAnnouncement] = useState("");
   const draggedRef = useRef(false);
+  const completionIdRef = useRef(crypto.randomUUID());
+  const revealedRunRef = useRef(new Set<string>());
+  const [completionXp, setCompletionXp] = useState(false);
   const entry = BODY_PARTS[currentIndex];
 
   const goToCard = useCallback(
@@ -50,6 +57,12 @@ export default function VocabularyFlashcardPage() {
     cancelPronunciation();
     setFlipped(false);
     setCompleted(true);
+    const validCompletion = revealedRunRef.current.size === BODY_PARTS.length;
+    setCompletionXp(validCompletion);
+    void recordFlashcardCompletion(
+      completionIdRef.current,
+      revealedRunRef.current.size,
+    );
     setAnnouncement("Sessão de flashcards concluída.");
   }, []);
 
@@ -103,6 +116,8 @@ export default function VocabularyFlashcardPage() {
     }
 
     setFlipped(true);
+    revealedRunRef.current.add(entry.id);
+    void recordFlashcardReveal(entry.id);
     const spoken = speakEnglish(entry.term);
     if (spoken) {
       setAnnouncement(`${entry.term}. Pronúncia reproduzida.`);
@@ -153,6 +168,9 @@ export default function VocabularyFlashcardPage() {
     setCurrentIndex(0);
     setFlipped(false);
     setCompleted(false);
+    completionIdRef.current = crypto.randomUUID();
+    revealedRunRef.current = new Set();
+    setCompletionXp(false);
     setAnnouncement("Revisão iniciada. Flashcard 1 de 24.");
   }
 
@@ -170,6 +188,11 @@ export default function VocabularyFlashcardPage() {
           <span className="eyebrow">Sessão concluída</span>
           <h2>Você concluiu Partes do corpo</h2>
           <p className="completion-count">24 palavras estudadas</p>
+          <p className="completion-xp">
+            {completionXp
+              ? "+25 XP de conclusão"
+              : "Revele os 24 cards para ganhar o bônus de conclusão."}
+          </p>
           <p>Os jogos de vocabulário chegam em breve.</p>
           <div className="completion-actions">
             <PrimaryButton

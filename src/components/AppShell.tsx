@@ -1,11 +1,16 @@
 import type { PropsWithChildren, ReactNode } from "react";
 import { motion, type HTMLMotionProps } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
-import logo from "../assets/speakup-logo.png";
+import {
+  getLevelSummary,
+  getWeekKey,
+  type EngagementSnapshot,
+} from "../services/progress/engagement";
+import { useEngagement } from "../services/progress/useEngagement";
 import AppIcon from "./AppIcon";
 
 interface AppShellProps {
-  activeNav?: "home" | "study" | "progress" | "profile";
+  activeNav?: "home" | "study" | "progress" | "profile" | "games";
   className?: string;
   hideNavigation?: boolean;
   dialogOpen?: boolean;
@@ -19,6 +24,7 @@ export function AppShell({
   dialogOpen = false,
 }: PropsWithChildren<AppShellProps>) {
   const showGlobalNavigation = Boolean(activeNav) && !hideNavigation;
+  const { snapshot } = useEngagement();
 
   return (
     <div className="app-viewport">
@@ -27,11 +33,19 @@ export function AppShell({
           showGlobalNavigation ? "main-shell" : "focus-shell"
         }`}
       >
-        {showGlobalNavigation && <GlobalHeader />}
         {showGlobalNavigation && (
-          <DesktopSidebar active={activeNav} hidden={dialogOpen} />
+          <DesktopSidebar
+            active={activeNav}
+            hidden={dialogOpen}
+            snapshot={snapshot}
+          />
         )}
-        <main className={`app-content ${className}`}>{children}</main>
+        <div className="shell-main">
+          {showGlobalNavigation && (
+            <GlobalHeader active={activeNav} snapshot={snapshot} />
+          )}
+          <main className={`app-content ${className}`}>{children}</main>
+        </div>
         {showGlobalNavigation && (
           <BottomNavigation active={activeNav} hidden={dialogOpen} />
         )}
@@ -40,7 +54,7 @@ export function AppShell({
   );
 }
 
-type NavId = "home" | "study" | "progress" | "profile";
+type NavId = "home" | "study" | "progress" | "profile" | "games";
 
 const NAV_ITEMS: {
   id: NavId;
@@ -53,6 +67,14 @@ const NAV_ITEMS: {
   { id: "progress", label: "Progresso", icon: "chart", to: "/progresso" },
   { id: "profile", label: "Perfil", icon: "user", to: "/perfil" },
 ];
+
+const PAGE_COPY: Record<NavId, { kicker: string; title: string }> = {
+  home: { kicker: "Sua jornada", title: "Olá" },
+  study: { kicker: "Biblioteca", title: "O que você quer aprender?" },
+  progress: { kicker: "Seu desempenho", title: "Progresso e conquistas" },
+  profile: { kicker: "Seu perfil", title: "Perfil e preferências" },
+  games: { kicker: "Desafios", title: "Jogos rápidos" },
+};
 
 function isItemActive(
   itemId: NavId,
@@ -67,52 +89,100 @@ function isItemActive(
   );
 }
 
-function GlobalHeader() {
+function GlobalHeader({
+  active = "home",
+  snapshot,
+}: {
+  active?: NavId;
+  snapshot: EngagementSnapshot | null;
+}) {
   const navigate = useNavigate();
+  const profile = snapshot?.profile ?? {
+    displayName: "Jogador",
+    avatarInitial: "J",
+    avatarTone: "cyan",
+  };
+  const level = getLevelSummary(snapshot?.state.totalXp ?? 0);
+  const copy = PAGE_COPY[active];
+  const title =
+    active === "home" ? `${greeting()}, ${profile.displayName}` : copy.title;
+
   return (
-    <header className="global-header">
-      <button
-        aria-label="Ir para o início"
-        className="brand-button"
-        onClick={() => navigate("/")}
-      >
-        <img alt="Speak UP English School" src={logo} />
-      </button>
+    <header className="global-header topbar">
+      <div>
+        <div className="page-kicker">{copy.kicker}</div>
+        <div className="page-title">{title}</div>
+      </div>
       <button
         aria-label="Abrir perfil"
-        className="avatar-button"
+        className="profile-button"
         onClick={() => navigate("/perfil")}
       >
-        <AppIcon name="user" size={18} />
+        <span className={`avatar avatar-${profile.avatarTone}`}>
+          {profile.avatarInitial}
+        </span>
+        <span className="profile-copy">
+          <strong>{profile.displayName}</strong>
+          <span>
+            Nível {level.level} · {level.title}
+          </span>
+        </span>
       </button>
     </header>
   );
 }
 
+function greeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
 function DesktopSidebar({
   active,
   hidden = false,
+  snapshot,
 }: {
   active?: NavId;
   hidden?: boolean;
+  snapshot: EngagementSnapshot | null;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const streak = snapshot?.state.currentStreak ?? 0;
+  const currentWeek = getWeekKey();
+  const activeDays = new Set(
+    (snapshot?.state.activeDates ?? []).filter(
+      (date) => getWeekKey(new Date(`${date}T12:00:00`)) === currentWeek,
+    ),
+  );
+  const monday = new Date(`${currentWeek}T12:00:00`);
+  const weekDates = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(monday);
+    date.setDate(date.getDate() + index);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  });
 
   return (
     <aside
       aria-hidden={hidden || undefined}
       aria-label="Navegação principal"
-      className={`app-sidebar ${hidden ? "nav-hidden" : ""}`}
+      className={`app-sidebar sidebar ${hidden ? "nav-hidden" : ""}`}
     >
-      <button
-        aria-label="Ir para o início"
-        className="sidebar-brand"
-        onClick={() => navigate("/")}
-      >
-        <img alt="Speak UP English School" src={logo} />
+      <button className="brand sidebar-brand" onClick={() => navigate("/")}>
+        <span className="brand-mark" aria-hidden="true" />
+        <span className="brand-copy">
+          <strong>Inglês<br />em Jogo</strong>
+          <small>Speak UP!</small>
+        </span>
       </button>
-      <nav className="sidebar-nav" aria-label="Áreas principais">
+
+      <div className="nav-label">Principal</div>
+      <nav className="sidebar-nav nav-list" aria-label="Áreas principais">
         {NAV_ITEMS.map((item) => {
           const isActive = isItemActive(
             item.id,
@@ -123,21 +193,54 @@ function DesktopSidebar({
           return (
             <button
               aria-current={isActive ? "page" : undefined}
-              className={isActive ? "active" : ""}
+              className={`nav-button ${isActive ? "active" : ""}`}
               key={item.id}
               onClick={() => navigate(item.to)}
             >
-              <AppIcon name={item.icon} size={20} />
+              <span className="nav-icon">
+                <AppIcon name={item.icon} size={21} />
+              </span>
               <span className="sidebar-nav-label">{item.label}</span>
+              {item.id === "study" && (
+                <b className="nav-badge sidebar-nav-label">8</b>
+              )}
             </button>
           );
         })}
       </nav>
-      <div className="sidebar-secondary">
-        <button onClick={() => navigate("/jogos")}>
-          <AppIcon name="game" size={20} />
+
+      <div className="nav-label challenges-label">Desafios</div>
+      <div className="sidebar-secondary nav-list">
+        <button
+          className={`nav-button ${active === "games" ? "active" : ""}`}
+          onClick={() => navigate("/jogos")}
+        >
+          <span className="nav-icon"><AppIcon name="game" size={21} /></span>
           <span className="sidebar-nav-label">Jogos</span>
+          <b className="nav-badge sidebar-nav-label">Em breve</b>
         </button>
+      </div>
+
+      <div className="sidebar-footer">
+        <div className="streak-panel">
+          <div className="streak-top">
+            <span>🔥 Sequência</span>
+            <strong className="streak-value">{streak}</strong>
+          </div>
+          <p>
+            {streak
+              ? `${streak} ${streak === 1 ? "dia ativo" : "dias ativos"} em sequência.`
+              : "Comece hoje. Sua primeira prática inicia a sequência."}
+          </p>
+          <div className="mini-days" aria-label="Dias ativos nesta semana">
+            {weekDates.map((date) => (
+              <i
+                className={`mini-day ${activeDays.has(date) ? "done" : ""}`}
+                key={date}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </aside>
   );
@@ -274,7 +377,7 @@ function BottomNavigation({
     <nav
       aria-hidden={hidden || undefined}
       aria-label="Navegação principal"
-      className={`bottom-navigation ${hidden ? "nav-hidden" : ""}`}
+      className={`bottom-navigation mobile-nav ${hidden ? "nav-hidden" : ""}`}
     >
       {NAV_ITEMS.map((item) => {
         const isActive = isItemActive(
@@ -290,7 +393,9 @@ function BottomNavigation({
             key={item.id}
             onClick={() => navigate(item.to)}
           >
-            <AppIcon name={item.icon} size={21} />
+            <span className="nav-icon">
+              <AppIcon name={item.icon} size={20} />
+            </span>
             <span>{item.label}</span>
           </button>
         );

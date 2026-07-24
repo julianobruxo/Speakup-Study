@@ -5,20 +5,20 @@ import AppIcon from "../AppIcon";
 const quickGames = [
   {
     icon: "clock" as const,
-    title: "Contra o tempo",
-    copy: "Responda antes do relógio zerar.",
+    title: "Contra o relógio",
+    copy: "Responda antes do tempo acabar.",
     tone: "blue",
   },
   {
     icon: "grid" as const,
-    title: "Memória",
-    copy: "Encontre os pares de palavras.",
+    title: "Conectando",
+    copy: "Associe palavra em inglês e imagem.",
     tone: "rose",
   },
   {
     icon: "game" as const,
-    title: "Palavras embaralhadas",
-    copy: "Coloque cada palavra na ordem certa.",
+    title: "Monte a frase",
+    copy: "Organize as palavras na ordem certa.",
     tone: "gold",
   },
 ];

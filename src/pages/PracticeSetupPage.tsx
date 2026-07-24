@@ -133,9 +133,7 @@ export default function PracticeSetupPage() {
               <strong>
                 {count} questões · {difficulty === "easy" ? "Fácil" : "Médio"}
               </strong>
-              <small>
-                Cerca de {Math.max(3, Math.round(count * 0.4))} minutos
-              </small>
+              <small>Rodada personalizada, sem limite de tempo</small>
             </span>
           </div>
 

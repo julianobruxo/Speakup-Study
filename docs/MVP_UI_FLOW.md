@@ -1,152 +1,115 @@
 # MVP UI Flow
 
-Atualizado em: 2026-07-23
+Atualizado em: 2026-07-24
 
-## Fonte de verdade
+## Fonte de Verdade
 
-- `reference/home-approved.html`: identidade visual, home, cards, navegacao inferior e bottom sheet.
-- `reference/speakup-english-challenge.html`: ordem das escolhas, ritmo do quiz, feedback, progresso e resultado.
+- `reference/ingles-em-jogo-product-vision.html`: especificação visual canônica.
+- `src/content`: conteúdo funcional.
+- `src/services/progress`: progresso e engajamento local.
+- `reference/speakup-english-challenge.html`: legado técnico, sem definir a direção atual.
 
-## Fluxo principal
+## Fluxo Principal
 
 ```text
 Home
 -> Bora praticar
 -> Gramática
--> Verbo TO BE - presente
--> Fácil ou Médio
+-> Present TO BE
+-> easy ou medium
 -> 10, 20 ou 30 questões
 -> Sessão
 -> Acerto automático em 3s ou erro com avanço manual
 -> Resultado
--> Jogar novamente, trocar configuração ou voltar à home
+-> Jogar novamente, trocar configuração ou voltar à Home
 ```
 
-## Áreas principais e navegação
+## Áreas Principais
 
-```text
-Home
-|-- Bora praticar -> bottom sheet/dialog -> Gramática ou Vocabulário
-|-- Progresso local -> configuração de Present TO BE
-|-- 3 Jogos rápidos -> Jogos com os 6 itens (Em breve)
-|-- Início
-|-- Estudar -> seleção de Gramática ou Vocabulário
-|-- Progresso -> estado vazio inicial ou métricas locais reais
-`-- Perfil -> preferências locais
-```
+- Home: missão diária, meta semanal, caminho de aprendizagem, Liga Safira local e jogos bloqueados.
+- Estudar: biblioteca com Gramática, Vocabulário e revisão de erros.
+- Gramática: Present TO BE funcional e demais tópicos planejados.
+- Vocabulário: Partes do corpo funcional e demais categorias planejadas.
+- Progresso: atividade semanal, conquistas, revisão e métricas locais.
+- Perfil: dados locais editáveis, preferências e reset.
+- Jogos: catálogo bloqueado como `Em breve`.
 
-## Conteúdo disponível
+## Conteúdo Disponível
 
-- Jogável: `present_tobe`, dificuldades `easy` e `medium`, sessões de 10, 20 ou 30 questões.
-- Bloqueado com feedback `Em breve`: outros sete tópicos gramaticais, todos os jogos e prática de vocabulário.
-- Vocabulário: categorias e amostras podem ser consultadas, sem flashcards ou prática funcional.
+- Gramática funcional: Present TO BE, 130 questões, 50 easy, 80 medium.
+- Sessões: 10, 20 e 30 perguntas, sem repetição dentro da sessão.
+- Vocabulário funcional: 24 flashcards de Partes do corpo.
+- Planejado: Past TO BE, Simple Present, Present Continuous, Be Going To, Simple Past, There TO BE, Prepositions e demais categorias de Vocabulário.
 
-## Navegação e saída
+## Jogos
 
-- Toda tela interna possui ação de voltar no topo.
-- Início, Estudar, Progresso e Perfil usam navegação inferior em mobile/tablet e horizontal no desktop.
-- Tópicos, vocabulário interno, jogos, configuração, sessão, feedback e resultado removem a navegação global para preservar foco.
-- O conteúdo mobile rola em uma região separada da navegação, sem cards ou textos cobertos.
-- Sair de uma sessão iniciada exige confirmação; respostas confirmadas ficam salvas, mas a rodada abandonada não entra no histórico de sessões.
-- Rotas legadas são redirecionadas para uma tela final equivalente, sem placeholders.
+Jogos ainda estão em desenvolvimento. Catálogo planejado:
 
-## Rotas implementadas
+- Monte a frase;
+- Caça ao erro;
+- Contra o relógio;
+- Cada coisa no seu lugar;
+- Palavra secreta;
+- Conectando;
+- Cruzando palavras;
+- Par perfeito;
+- Ouvido afiado — fase posterior.
 
-| Rota | Função |
-| --- | --- |
-| `/` | Home guest-first |
-| `/praticar` | Escolha de área |
-| `/gramatica` | Tópicos do MVP |
-| `/gramatica/present_tobe` | Dificuldade e quantidade |
-| `/praticar/present_tobe/sessao` | Questões, feedback e resultado |
-| `/vocabulario` | Categorias |
-| `/vocabulario/:categoryId` | Prévia da categoria |
-| `/vocabulario/body/flashcards` | 24 flashcards de Partes do corpo |
-| `/jogos` | Jogos bloqueados |
-| `/progresso` | Estado vazio inicial ou progresso real |
-| `/perfil` | Visitante e som |
+## Navegação
 
-## Componentes e comportamento
+- Mobile usa navegação inferior.
+- Desktop usa sidebar completa.
+- Tablet usa rail.
+- Fluxos focados, como sessão, flashcards e dialogs, removem navegação global quando necessário.
+- Sair de sessão iniciada exige confirmação.
 
-- `AppShell`: shell adaptativo; mobile com regiões reais de header/conteúdo/navegação e desktop com largura útil de até 1200 px.
-- `PageHeader`: voltar consistente em toda tela interna.
-- `GlobalNavigation`: Início, Estudar, Progresso e Perfil com `aria-current`, em barra inferior ou cabeçalho horizontal.
-- `AppDialog`: bottom sheet no mobile, dialog central no desktop, overlay leve, foco nativo e Escape.
-- `LockedCard`: aparência final, cadeado, `aria-disabled` e feedback "Em breve".
-- `selectPracticeQuestions`: filtra por dificuldade, seleciona sem repetição e prioriza inéditas, último erro e as vistas há mais tempo.
-- `shuffleOptions`: muda a posição visual das alternativas sem alterar `correctAnswer`.
-- `localProgress`: salva respostas e sessões concluídas em IndexedDB nativo.
-- `practicePreferences`: salva somente a última configuração em `localStorage`.
+## Feedback
 
-## Métricas e persistência
+Acerto:
 
-- `Questões praticadas`: IDs únicos com ao menos uma resposta confirmada.
-- `Precisão`: acertos acumulados divididos por todas as respostas confirmadas, inclusive repetições.
-- `Para revisar`: questões cujo resultado mais recente foi incorreto.
-- `Melhor resultado` e `melhor sequência`: recordes de sessões concluídas.
-- O resultado mostra quantas das 130 questões únicas já foram praticadas.
-- O progresso sobrevive a reload no mesmo navegador/dispositivo e não possui sync.
-- Falha de IndexedDB gera aviso discreto e não bloqueia a rodada.
+- bloqueia alternativas;
+- mostra `Correto!`;
+- mantém barra linear de 3 segundos;
+- avança automaticamente uma única vez.
 
-## Resposta e feedback
+Erro:
 
-### Acerto
+- destaca alternativa escolhida e resposta correta;
+- mostra feedback pedagógico;
+- não possui timer;
+- avança por `Continuar` ou clique/toque no card de explicação;
+- oferece `Estudar esse tópico`.
 
-- Confirmar bloqueia todas as alternativas e identifica a correta.
-- O feedback mostra somente `Correto!` e uma barra verde integrada.
-- A barra preenche linearmente em 3 segundos, inclusive com reduced motion.
-- Clique, toque, Enter e Espaço não antecipam a espera.
-- A próxima questão ou o resultado abre automaticamente uma única vez.
+## Flashcards
 
-### Erro
+- `/vocabulario/body/flashcards` mostra os 24 cards de Partes do corpo.
+- Frente: português, ilustração e destaque visual.
+- Verso: inglês e ação de ouvir novamente.
+- Pronúncia usa Web Speech API.
+- Navegação por botões, setas e swipe.
+- Conclusão não cria score competitivo.
 
-- A alternativa escolhida e a correta permanecem destacadas.
-- O feedback pedagógico armazenado aparece somente no erro.
-- Não existe timer ou avanço automático.
-- O aluno avança por `Continuar` ou por clique/toque no card da explicação.
-- `Estudar esse tópico` abre o guia sem propagar o clique para o card.
+## Persistência e Métricas
 
-### Guia Present TO BE
+- Progresso, perfil e engajamento são locais.
+- IndexedDB preserva questões, sessões e engajamento.
+- Revisão é baseada no último resultado incorreto.
+- Precisão considera todas as respostas confirmadas.
+- Liga Safira e ranking são locais e simulados.
+- Não há sincronização.
 
-- Abre pelo erro atual com sujeito aparente, resposta correta, escolha incorreta, regra relacionada e exemplos diferentes.
-- Inclui am/is/are, afirmativas, negativas, perguntas, respostas curtas, contrações, concordância e erros comuns.
-- Mobile usa painel alto com cabeçalho e rodapé fixos; desktop usa dialog central amplo em duas colunas.
-- X, Escape, overlay e `Voltar ao jogo` fecham o dialog e restauram foco ao gatilho.
-- Questão, resposta, score, sequência e posição são preservados.
+## Smoke Test
 
-## Flashcards de Partes do corpo
+`node scripts/smokeUi.mjs` deve cobrir:
 
-1. Em `/vocabulario`, Partes do corpo e a unica categoria disponivel; as outras oito exibem `Em breve`.
-2. A categoria oferece `Estudar com flashcards`; `Praticar` permanece bloqueado.
-3. A frente mostra ilustracao SVG local, destaque anatomico, portugues e `Toque para revelar`.
-4. Clique, toque, Enter ou Espaco revelam o ingles e disparam uma unica pronuncia quando som/API estao disponiveis.
-5. O verso oferece `Ouvir novamente`, sem pronuncia escrita.
-6. Botoes, setas e swipe navegam; todo novo card inicia pela frente e cancela fala anterior.
-7. O ultimo card conclui a sessao sem criar um item 25.
-8. A conclusao oferece revisar, outro tema e inicio, sem score ou persistencia.
+- 360x800;
+- 390x844;
+- 412x915;
+- 768x1024;
+- 1000x800;
+- 1024x768;
+- 1366x768;
+- 1440x900;
+- 1920x1080.
 
-## Smoke test
-
-Executado com `node scripts/smokeUi.mjs`, sem dependências adicionais:
-
-- viewports 360x800, 390x844, 412x915, 768x1024, 1366x768 e 1440x900;
-- ausência de overflow horizontal;
-- navegação adaptativa, largura desktop, safe area e ausência de sobreposição;
-- ausência de navegação global em configuração, sessão, resultado e dialogs;
-- rotas principais e reload;
-- bottom sheet, bottom navigation e voltar;
-- tópico bloqueado;
-- `easy`, `medium`, 10, 20 e 30 questões;
-- rodada completa com 30 enunciados únicos;
-- acerto com barra, espera de 3 segundos, bloqueio de atalhos e avanço automático único;
-- erro sem timer, avanço por botão/card e última questão manual;
-- guia contextual/completo, fechamento por X/Escape/botão e retorno de foco;
-- feedback, saída e confirmação;
-- resultado, replay e retorno;
-- persistência após reload, contagem única, revisão e prioridade da próxima sessão;
-- modal de estudo sem gravação duplicada e falha simulada de IndexedDB sem bloqueio;
-- três jogos na Home e seis em `/jogos`;
-- toggle de som;
-- 24 entradas e ilustracoes em ordem, flip, fala unica, repetir, mute, fallback, teclado, swipe e conclusao;
-- vocabulario sem alteracao do progresso gramatical;
-- zero erro de browser.
+Também cobre navegação, ausência de overflow, feedback, timer de 3 segundos, flashcards, áudio, swipe, teclado, progresso, engajamento, ranking simulado, perfil local e `browserErrors: 0`.

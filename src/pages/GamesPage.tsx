@@ -1,44 +1,44 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import AppIcon from "../components/AppIcon";
-import { AppShell, PageHeader } from "../components/AppShell";
+import { AppShell } from "../components/AppShell";
 import Toast from "../components/Toast";
 
 const games = [
   {
-    icon: "clock" as const,
-    title: "Contra o tempo",
-    copy: "Responda o máximo de questões antes do relógio zerar.",
+    icon: "book" as const,
+    title: "Monte a frase",
+    copy: "Organize palavras para formar frases corretas em inglês.",
     tone: "blue",
   },
   {
-    icon: "grid" as const,
-    title: "Memória",
-    copy: "Encontre os pares entre a palavra em inglês e em português.",
+    icon: "check" as const,
+    title: "Caça ao erro",
+    copy: "Encontre rapidamente o ponto incorreto da frase.",
     tone: "rose",
   },
   {
-    icon: "game" as const,
-    title: "Palavras embaralhadas",
-    copy: "Reconstrua cada palavra colocando as letras na ordem certa.",
+    icon: "clock" as const,
+    title: "Contra o relógio",
+    copy: "Responda o máximo de questões antes do tempo acabar.",
     tone: "gold",
   },
   {
-    icon: "check" as const,
-    title: "Verdadeiro ou falso",
-    copy: "Decida rapidamente se a afirmação em inglês está correta.",
+    icon: "grid" as const,
+    title: "Cada coisa no seu lugar",
+    copy: "Coloque palavras, imagens e sentidos nos lugares certos.",
     tone: "green",
   },
   {
     icon: "sparkles" as const,
-    title: "Descubra a palavra",
-    copy: "Use a tradução e as letras reveladas para adivinhar a palavra.",
+    title: "Palavra secreta",
+    copy: "Use pistas para descobrir a palavra antes de revelar tudo.",
     tone: "violet",
   },
   {
-    icon: "book" as const,
-    title: "Soletrando",
-    copy: "Escute a palavra e escreva a soletração correta, sem ajuda.",
+    icon: "game" as const,
+    title: "Conectando",
+    copy: "Associe palavra em inglês e imagem para fixar vocabulário.",
     tone: "coral",
   },
 ];
@@ -51,10 +51,9 @@ export default function GamesPage() {
   }
 
   return (
-    <AppShell className="standard-page">
-      <PageHeader backTo="/" title="Jogos" />
+    <AppShell activeNav="games" className="standard-page games-page">
       <section className="page-lead compact">
-        <span className="eyebrow">6 experiências planejadas</span>
+        <span className="eyebrow">Primeiras experiências planejadas</span>
         <h2>Mais maneiras de praticar</h2>
         <p>Conheça os desafios que vão trazer novos ritmos para a prática.</p>
       </section>

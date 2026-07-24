@@ -4,7 +4,7 @@ import GlowButton from "../components/GlowButton";
 import GradientText from "../components/GradientText";
 
 // TODO: trocar pelo login Google de verdade (decisão já tomada, falta
-// implementar — ver /areas/speakup-english-challenge.md na memória).
+// implementar — ver anotações do legado speakup-english-challenge.
 export default function LoginPage() {
   const navigate = useNavigate();
 
@@ -21,7 +21,7 @@ export default function LoginPage() {
           SU
         </div>
         <GradientText as="h1" className="text-3xl">
-          Speak UP Study
+          Inglês em Jogo
         </GradientText>
         <p className="text-cream/70 max-w-xs">
           Estude e pratique inglês no seu ritmo, feito para os alunos da

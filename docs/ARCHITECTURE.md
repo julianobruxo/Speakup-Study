@@ -1,302 +1,105 @@
 # Architecture
 
-Updated: 2026-07-23
+Updated: 2026-07-24
 
 ## Goal
 
-The current architecture is intentionally small. This app is a simple English practice game, not an LMS, ERP, generic framework, or integration platform.
+Inglês em Jogo is a small local-first English practice app for Speak UP!. It is not an LMS, ERP, integration platform or backend-driven course system.
 
-The current architecture includes the real MVP taxonomy, the Present TO BE practice flow, local guest-first progress, and one vocabulary flashcard template. It uses native browser capabilities without adding dependencies, backend, login, sync, analytics, ranking, PWA, or monetization.
+The current architecture supports a game-like product shell, Present TO BE practice, body-part flashcards, local progress and local engagement mechanics without requiring login or a server.
 
-## Directories Created
+## Source of Truth
+
+- Visual specification: `reference/ingles-em-jogo-product-vision.html`.
+- Current content: `src/content`.
+- Current local persistence: `src/services/progress`.
+- Legacy reference only: `reference/speakup-english-challenge.html`.
+
+## Main Directories
 
 ```text
 src/
-  shared/
-    types/
-      domain.ts
+  components/
   content/
     data/
-      irregularVerbs.ts
-      presentTobeQuestions.ts
-      vocabulary.ts
     model/
-      content.ts
     taxonomy.ts
+  pages/
   services/
     audio/
-      pronunciation.ts
-      sound.ts
-    sessions/
-      practiceSession.ts
     progress/
-      progress.ts
-      localProgress.ts
-      practicePreferences.ts
-      useProgressSummary.ts
+    sessions/
+  shared/
+    types/
+scripts/
+docs/
+reference/
 ```
 
-## Responsibilities
+## Content Model
 
-`src/shared/types`
+`src/content/taxonomy.ts` defines the visible catalog and availability. The active grammar catalog has eight topics:
 
-Defines small shared primitives: stable IDs, ISO timestamp strings, curriculum level, practice difficulty, learning status, session state, and practice mode.
+1. Present TO BE;
+2. Past TO BE;
+3. Simple Present;
+4. Present Continuous;
+5. Be Going To;
+6. Simple Past;
+7. There TO BE;
+8. Prepositions.
 
-`src/content/model`
+Only Present TO BE has a functional question bank. It contains 130 questions: 50 easy and 80 medium.
 
-Defines simple content shapes for:
+Vocabulary currently has Partes do corpo as the only functional category, with 24 flashcards. Other vocabulary categories remain planned or blocked.
 
-- active grammar topics;
-- future grammar questions;
-- vocabulary groups and categories;
-- regular vocabulary entries;
-- Irregular Verb entries;
-- approved Irregular Verb practice modes.
+## Practice Flow
 
-`src/content/taxonomy.ts`
+The grammar session planner selects questions by difficulty and requested size. It avoids repetition within the session and prioritizes unseen questions, latest mistakes and older seen items.
 
-Defines static arrays for the MVP active catalog:
+Correct answers show a short success state and advance automatically after 3 seconds. Incorrect answers show the stored pedagogical feedback, keep manual advance, and expose `Estudar esse tópico`.
 
-- `ACTIVE_GRAMMAR_TOPICS`;
-- `ACTIVE_VOCABULARY_GROUPS`;
-- `ACTIVE_VOCABULARY_CATEGORIES`.
+## Local Persistence
 
-It also exposes small lookup helpers by ID. There are no repositories, adapters, providers, factories, generated banks, or real item lists in this taxonomy.
+The app uses native IndexedDB database `practice-progress`, currently schema version 2.
 
-`src/content/data`
+Stores:
 
-Defines simple data files for content that has already been normalized:
+- `questions`: aggregate progress by `questionId`;
+- `sessions`: completed sessions by `sessionId`;
+- `engagement`: local profile, XP, levels, titles, streak, daily mission, weekly goal, achievements and league state.
 
-- `vocabulary.ts`: 94 vocabulary pairs across 8 populated categories, including 24 ordered body-part entries;
-- `irregularVerbs.ts`: 50 Irregular Verb entries and approved practice mode strings;
-- `presentTobeQuestions.ts`: 130 pilot grammar questions for `present_tobe`.
+The version 2 migration preserves existing question/session data and derives compatible engagement state from local history. Event IDs make XP updates idempotent.
 
-`src/services/sessions`
+`localStorage` is restricted to small preferences such as sound, animations and the last practice configuration.
 
-Defines the shape of future practice sessions: selected questions, answers, result summaries, and the `SessionPlanner` contract.
+## Engagement
 
-`src/services/progress`
+XP, levels, titles, streak, mission, weekly goal, achievements and activity are local-only. The Liga Safira ranking is deterministic and simulated; it does not represent connected users.
 
-Defines local progress contracts, native IndexedDB access, the last small practice preference, and a React summary hook. Components do not access IndexedDB directly.
+## Games
 
-## MVP Grammar Catalog
+Functional games are not implemented. The planned catalog is:
 
-The active MVP grammar catalog has exactly eight topics:
+- Monte a frase;
+- Caça ao erro;
+- Contra o relógio;
+- Cada coisa no seu lugar;
+- Palavra secreta;
+- Conectando;
+- Cruzando palavras;
+- Par perfeito;
+- Ouvido afiado — fase posterior.
 
-1. Verbo TO BE - presente
-2. Verbo TO BE - passado
-3. Simple Present
-4. Present Continuous
-5. Be Going To
-6. Simple Past
-7. There Is / There Are
-8. In / On / At
+`Conectando` is the approved name for matching an English word to an image.
 
-Rules:
+## External Services
 
-- each topic has `entryLevel: "beginner"`;
-- each topic has only `easy` and `medium` in `availableDifficulties`;
-- `challenge` is not active in the MVP catalog;
-- each topic records question targets of `easy: 50` and `medium: 80`;
-- the target total per topic is 130 unique questions;
-- no grammar questions are generated in this phase.
+There is no backend, login, sync, analytics, payment provider, PWA service worker or remote ranking in the current product.
 
-Future grammar topics remain roadmap documentation only until real content is approved.
+## Risks
 
-## MVP Vocabulary Catalog
-
-The active MVP vocabulary catalog has exactly nine categories:
-
-1. Corpo
-2. Roupas
-3. Moveis
-4. Animais
-5. Profissoes
-6. Lugares
-7. Action Verbs
-8. Routine Verbs
-9. Irregular Verbs
-
-`Action Verbs` and `Routine Verbs` are vocabulary categories, not grammar topics.
-
-The grouping is intentionally shallow:
-
-- `mvp_vocabulary`;
-- `mvp_verbs`.
-
-## Irregular Verbs
-
-Irregular Verbs use a dedicated simple entry shape:
-
-```ts
-{
-  id: "irregular_go",
-  baseForm: "go",
-  simplePast: "went",
-  pastParticiple: "gone",
-  translation: "ir",
-}
-```
-
-Each entry contains only:
-
-- ID;
-- base form;
-- Simple Past;
-- Past Participle;
-- Portuguese translation.
-
-No example sentence, example translation, explanation, image, or grammar rule is included.
-
-The current Irregular Verbs list has exactly 50 entries.
-
-## Present TO BE Pilot Bank
-
-The first grammar bank is `present_tobe`.
-
-Current counts:
-
-- 50 `easy` questions;
-- 80 `medium` questions;
-- 130 total unique questions;
-- no `challenge` questions.
-
-The question shape is intentionally minimal:
-
-```ts
-{
-  id: "present_tobe_easy_001",
-  topicId: "present_tobe",
-  difficulty: "easy",
-  question: "My sister ___ at school.",
-  options: ["is", "are", "am"],
-  correctAnswer: "is",
-  feedback: "My sister equivale a she, por isso usamos is.",
-}
-```
-
-The Present TO BE session flow consumes this bank with seeded option shuffling, no repeated question within a session, and progress-aware selection.
-
-Approved future practice modes:
-
-- `base-to-past`;
-- `base-to-participle`;
-- `past-to-base`;
-- `participle-to-base`;
-- `verb-to-translation`;
-- `translation-to-verb`;
-- `mixed`.
-
-These modes are modeled only as data/types. No interface or game logic is implemented in this phase.
-
-## Stable IDs
-
-Defined IDs:
-
-- `GrammarTopicId`
-- `VocabularyGroupId`
-- `VocabularyCategoryId`
-- `QuestionId`
-- `VocabularyEntryId`
-- `PracticeSessionId`
-- `ProfileId`
-
-Expected formats:
-
-- grammar topic: `simple_present`
-- vocabulary group: `mvp_verbs`
-- vocabulary category: `irregular_verbs`
-- irregular verb: `irregular_go`
-- question: `present_tobe_easy_0037`
-- practice session: generated stable session ID
-- profile: local guest profile ID first, optionally linked to account later
-
-Do not include the public product name in IDs, schemas, storage keys, or contracts.
-
-## Local-First and Guest-First
-
-The architecture uses `ProfileId`, not a remote-only `UserId`, so the future flow can stay:
-
-```text
-local visitor
--> local progress
--> optional login
--> later synchronization
-```
-
-Login must not be required for practice.
-
-## Legacy Content Status
-
-Two reference files are now available in `reference/`:
-
-- `home-approved.html`: approved visual reference, standalone/offline, embedded logo, white background, navy `#17234b`, burgundy `#8d1d30`, "Bora praticar", quick games, and bottom navigation.
-- `speakup-english-challenge.html`: legacy functional HTML with 10 topics, 3 legacy difficulties, 20 questions per topic/difficulty, 600 total grammar questions, session sizes 10/20/30, 6 vocabulary categories with 10 items each, and 7 games.
-
-Legacy promotional/business mechanics are not part of the new MVP: Multitec, leads, ranking, wheel/roleta, CSV export, prizes, and the 75% gate.
-
-Current state:
-
-- visual and functional references are no longer missing blockers;
-- official separated logo/assets are still pending if the embedded reference logo must become reusable project assets;
-- grammar questions were inventoried; only `present_tobe` has a pilot bank;
-- games were not migrated;
-- Action Verbs and Routine Verbs now have 10 simple seed entries each;
-- 94 vocabulary pairs, 50 Irregular Verbs, and 130 Present TO BE questions are normalized in data files.
-
-## Local Progress
-
-The native IndexedDB database uses a generic product-independent name, schema version 1, and two object stores:
-
-- `questions`, keyed by `questionId`;
-- `sessions`, keyed by `sessionId`.
-
-Question records aggregate times seen, correct/wrong counts, last seen timestamp, and last result. Session records are written only after completion and use a stable ID so repeated effects overwrite instead of duplicating.
-
-Selection order is:
-
-1. unseen questions;
-2. questions whose latest result is wrong;
-3. correctly answered questions ordered by oldest `lastSeenAt`.
-
-`localStorage` is restricted to small preferences: sound and the last valid practice configuration. Storage failures are handled at the service boundary and never block active practice.
-
-## Vocabulary Flashcards
-
-`VocabularyFlashcardPage` reads the canonical `body` entries directly from `vocabulary.ts`. It does not duplicate vocabulary data or persist vocabulary progress.
-
-`BodyPartIllustration` is a local reusable SVG component. A small set of anatomical compositions is selected by the optional `visualKey` field, with a specific highlight and callout for every body entry.
-
-`pronunciation.ts` wraps the native Web Speech API for English playback. It reuses the global sound preference from `sound.ts`, cancels the session's previous utterance before navigation/repetition, and returns a capability result so the UI can expose a non-blocking fallback.
-
-Metric definitions:
-
-- practiced questions are unique question IDs;
-- accuracy is correct answers divided by all confirmed answers;
-- review count is the number whose latest result is wrong;
-- records are derived only from completed sessions.
-
-## Not Implemented
-
-This phase does not implement:
-
-- grammar question banks for the other seven MVP topics;
-- complete Action Verbs/Routine Verbs banks beyond the 10-item seeds;
-- flashcards for categories other than Partes do corpo;
-- functional games;
-- storage migration beyond schema version 1;
-- visible progress reset/export;
-- login;
-- sync;
-- analytics;
-- PWA;
-- monetization;
-- external services.
-
-## Known Risks
-
-- No test framework is configured yet.
-- The current smoke suite is custom browser automation rather than a unit/integration test framework.
-- Additional official brand asset variants and a dedicated favicon remain pending.
-- Faithful content migration still requires gradual extraction and pedagogical review.
-- Irregular Verbs should receive human/pedagogical review before being treated as final teaching content.
+- No unit/integration test framework is configured.
+- The browser smoke suite is custom automation.
+- Future content migration still needs pedagogical review.
+- Future sync/login must preserve existing local progress.

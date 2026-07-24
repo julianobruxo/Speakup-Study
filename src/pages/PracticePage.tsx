@@ -1,10 +1,8 @@
 import { useParams } from "react-router-dom";
 import GlassCard from "../components/GlassCard";
 
-// TODO: migrar a state machine dos 7 jogos (English Challenge, Beat the
-// Clock, Memória, Palavras Embaralhadas, Verdadeiro ou Falso, Revelação,
-// Soletrando) do HTML antigo pra cá. Gate de 75%/roleta NÃO entra mais
-// (mecânica de feira, descartada). Sorteio sem repetição continua valendo.
+// TODO: implementar o catálogo planejado de jogos sem migrar mecânicas
+// promocionais antigas. Gate de 75%/roleta NÃO entra mais.
 export default function PracticePage() {
   const { topic } = useParams();
 

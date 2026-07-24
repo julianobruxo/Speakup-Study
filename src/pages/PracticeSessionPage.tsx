@@ -35,6 +35,10 @@ import {
   saveCompletedSession,
 } from "../services/progress/localProgress";
 import type { GrammarPracticeQuestion } from "../content/model/content";
+import {
+  recordGrammarAnswerEngagement,
+  recordGrammarSessionEngagement,
+} from "../services/progress/engagement";
 
 const CORRECT_TRANSITION_MS = 3000;
 
@@ -197,7 +201,14 @@ export default function PracticeSessionPage() {
           bestStreak,
           completedAt: new Date().toISOString(),
         });
-        setSavedQuestionCount((await getProgressSummary()).uniqueQuestions);
+        const progressSummary = await getProgressSummary();
+        await recordGrammarSessionEngagement(
+          sessionIdRef.current,
+          Math.round((correctCount / questions.length) * 100),
+          bestStreak,
+          progressSummary.uniqueQuestions,
+        );
+        setSavedQuestionCount(progressSummary.uniqueQuestions);
       } catch {
         setStorageWarning(
           "Não foi possível salvar todo o progresso desta rodada. Seus resultados continuam disponíveis nesta tela.",
@@ -232,11 +243,19 @@ export default function PracticeSessionPage() {
         difficulty: currentQuestion.difficulty,
         correct,
         answeredAt: new Date().toISOString(),
-      }).catch(() => {
+      })
+        .then(() =>
+          recordGrammarAnswerEngagement(
+            `grammar-answer:${sessionIdRef.current}:${currentQuestion.id}`,
+            correct,
+          ),
+        )
+        .then(() => undefined)
+        .catch(() => {
         setStorageWarning(
           "Esta resposta não pôde ser salva no dispositivo. A rodada continua normalmente.",
         );
-      });
+        });
       answerWritesRef.current.push(write);
     }
   }
@@ -338,6 +357,10 @@ export default function PracticeSessionPage() {
         reduceMotion={Boolean(reduceMotion)}
         savedQuestionCount={savedQuestionCount}
         storageWarning={storageWarning}
+        xpEarned={answers.reduce(
+          (total, answer) => total + (answer ? 10 : 2),
+          20,
+        )}
       />
     );
   }
@@ -579,6 +602,7 @@ function ResultScreen({
   reduceMotion,
   savedQuestionCount,
   storageWarning,
+  xpEarned,
 }: {
   answers: boolean[];
   bestStreak: number;
@@ -590,6 +614,7 @@ function ResultScreen({
   reduceMotion: boolean;
   savedQuestionCount: number | null;
   storageWarning: string;
+  xpEarned: number;
 }) {
   const correct = answers.filter(Boolean).length;
   const wrong = count - correct;
@@ -664,6 +689,10 @@ function ResultScreen({
               <div>
                 <strong>{bestStreak}</strong>
                 <span>Melhor sequência</span>
+              </div>
+              <div>
+                <strong>+{xpEarned}</strong>
+                <span>XP na rodada</span>
               </div>
             </div>
           </section>

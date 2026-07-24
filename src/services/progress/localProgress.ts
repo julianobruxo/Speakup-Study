@@ -7,9 +7,10 @@ import type {
 } from "./progress";
 
 const DATABASE_NAME = "practice-progress";
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 const QUESTION_STORE = "questions";
 const SESSION_STORE = "sessions";
+export const ENGAGEMENT_STORE = "engagement";
 
 export const PROGRESS_UPDATED_EVENT = "practice-progress-updated";
 
@@ -47,6 +48,10 @@ function openDatabase(): Promise<IDBDatabase> {
         if (!database.objectStoreNames.contains(SESSION_STORE)) {
           database.createObjectStore(SESSION_STORE, { keyPath: "sessionId" });
         }
+
+        if (!database.objectStoreNames.contains(ENGAGEMENT_STORE)) {
+          database.createObjectStore(ENGAGEMENT_STORE, { keyPath: "key" });
+        }
       };
 
       request.onsuccess = () => {
@@ -63,6 +68,10 @@ function openDatabase(): Promise<IDBDatabase> {
   }
 
   return databasePromise!;
+}
+
+export async function getProgressDatabase(): Promise<IDBDatabase> {
+  return openDatabase();
 }
 
 function announceProgressUpdate() {
