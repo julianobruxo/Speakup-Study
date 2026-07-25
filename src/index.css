@@ -720,9 +720,7 @@ dialog:focus-visible {
   color: var(--navy);
 }
 
-.available-topic {
-  border-color: rgba(141, 29, 48, 0.2);
-}
+/* .available-topic border now handled by the consolidated card system */
 
 .topic-number {
   background: var(--wine);
@@ -3283,7 +3281,6 @@ dialog:focus-visible {
 }
 
 .quick-game-card {
-  border: 1px solid transparent;
   border-radius: 14px;
   min-height: 150px;
   overflow: hidden;
@@ -4260,7 +4257,7 @@ body {
 
 /* Library */
 .learn-layout { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 20px; }
-.learn-hero { background: linear-gradient(140deg,#fff,#f5f8ff); border-radius: var(--radius-xl); padding: 28px; border: 1px solid var(--line); box-shadow: var(--shadow-soft); }
+.learn-hero { background: linear-gradient(140deg,#fff,#f5f8ff); border-radius: var(--radius-xl); padding: 28px; }
 .learn-hero h1 { font-size: 36px; letter-spacing: -.05em; margin: 10px 0 12px; }
 .learn-hero > p { color: var(--muted); line-height: 1.65; max-width: 620px; }
 .filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0; }
@@ -4292,12 +4289,12 @@ body {
 
 /* Progress */
 .metric-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
-.metric-card { background: #fff; border-radius: 20px; padding: 18px; border: 1px solid var(--line); box-shadow: var(--shadow-soft); }
+.metric-card { border-radius: 20px; padding: 18px; }
 .metric-card > span { font-size: 10px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 850; }
 .metric-card strong { display: block; font-size: 28px; margin-top: 9px; letter-spacing: -.05em; }
 .metric-card small { display: block; color: var(--green-600); font-size: 10px; margin-top: 6px; font-weight: 800; }
 .progress-layout { display: grid; grid-template-columns: minmax(0,1fr) 340px; gap: 20px; }
-.chart-card { background: #fff; border-radius: var(--radius-xl); padding: 25px; border: 1px solid var(--line); box-shadow: var(--shadow-soft); }
+.chart-card { border-radius: var(--radius-xl); padding: 25px; }
 .chart-bars { height: 240px; display: flex; align-items: flex-end; gap: 13px; padding: 25px 4px 10px; border-bottom: 1px solid var(--line); position: relative; }
 .chart-bars::before, .chart-bars::after { content: ""; position: absolute; left: 0; right: 0; border-top: 1px dashed #e8ebf3; }
 .chart-bars::before { top: 85px; } .chart-bars::after { top: 155px; }
@@ -5082,20 +5079,8 @@ html[data-animations="off"] *::after {
   padding-top: 16px;
 }
 
-.focus-shell .topic-list .app-card,
-.focus-shell .vocabulary-list .app-card {
-  background: var(--white, #fff);
-  border-color: var(--line);
-  box-shadow: var(--shadow-soft);
-  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
-}
-
-.focus-shell .topic-list .app-card:hover,
-.focus-shell .vocabulary-list .app-card:hover {
-  border-color: #d8deec;
-  box-shadow: 0 16px 34px rgba(16, 25, 60, 0.1);
-  transform: translateY(-2px);
-}
+/* Border, shadow and hover for .focus-shell topic/vocabulary cards are now
+   handled by the consolidated card system (navy border + light-blue glow). */
 
 /* Fundo e borda tingidos por tópico foram removidos — toda superfície de
    card usa o mesmo par navy border + light-blue glow (ver sistema
@@ -5444,6 +5429,8 @@ html[data-animations="off"] *::after {
 .score-panel,
 .question-card,
 .dialog-panel,
+.chart-card,
+.learn-hero,
 .flashcard-face:not(.flashcard-back) {
   background-color: var(--card-surface);
   border: 1px solid var(--card-border-navy) !important;
