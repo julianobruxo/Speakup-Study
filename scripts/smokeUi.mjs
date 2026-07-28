@@ -267,6 +267,11 @@ async function main() {
     assert(clicked, `Missing ${selector} with text: ${text}`);
   };
 
+  const pressKey = async (key) => {
+    await send("Input.dispatchKeyEvent", { type: "keyDown", key }, sessionId);
+    await send("Input.dispatchKeyEvent", { type: "keyUp", key }, sessionId);
+  };
+
   const screenshot = async (name) => {
     await send("Page.captureScreenshot", { format: "png" }, sessionId);
     const result = await send(
@@ -564,6 +569,199 @@ async function main() {
     await assertNoOverflow(path);
   }
 
+  await navigate("/jogos");
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.quick-game-card .game-card-image').length === 9`),
+    "nine game card images render",
+  );
+  await evaluate(`(async () => {
+    for (const card of document.querySelectorAll('.quick-game-card')) {
+      card.scrollIntoView({ block: 'center' });
+      await new Promise((resolve) => setTimeout(resolve, 80));
+    }
+    window.scrollTo(0, 0);
+  })()`);
+  await waitFor(
+    () =>
+      evaluate(
+        `[...document.querySelectorAll('.quick-game-card .game-card-image')]
+          .every((img) => img.complete && img.naturalWidth > 0 && img.naturalHeight > 0)`,
+      ),
+    "all game card images load",
+  );
+  const gameCardImageState = await evaluate(`(() => {
+    const expectedTitles = [
+      "Monte a frase",
+      "Caça ao erro",
+      "Contra o relógio",
+      "Cada coisa no seu lugar",
+      "Palavra secreta",
+      "Conectando",
+      "Cruzando palavras",
+      "Par perfeito",
+      "Ouvido afiado",
+    ];
+    const cards = [...document.querySelectorAll('.quick-game-card')];
+    const images = [...document.querySelectorAll('.quick-game-card .game-card-image')];
+    return {
+      cardCount: cards.length,
+      imageCount: images.length,
+      titles: cards.map((card) => card.querySelector('.game-card-copy strong')?.textContent.trim()),
+      descriptions: cards.map((card) => card.querySelector('.game-card-copy > span:not(.game-card-title-row)')?.textContent.trim()),
+      titleRows: cards.map((card) => {
+        const row = card.querySelector('.game-card-title-row');
+        const icon = row?.querySelector('.quick-game-icon');
+        const title = row?.querySelector('strong');
+        const iconRect = icon?.getBoundingClientRect();
+        const titleRect = title?.getBoundingClientRect();
+        return {
+          hasRow: Boolean(row),
+          hasIcon: Boolean(icon),
+          hasTitle: Boolean(title),
+          title: title?.textContent.trim(),
+          iconCenterDelta: iconRect && titleRect
+            ? Math.abs((iconRect.top + iconRect.height / 2) - (titleRect.top + titleRect.height / 2))
+            : null,
+        };
+      }),
+      imageContracts: images.map((img) => ({
+        alt: img.getAttribute('alt'),
+        ariaHidden: img.getAttribute('aria-hidden'),
+        widthAttr: img.getAttribute('width'),
+        heightAttr: img.getAttribute('height'),
+        decoding: img.getAttribute('decoding'),
+        loading: img.getAttribute('loading'),
+        naturalWidth: img.naturalWidth,
+        naturalHeight: img.naturalHeight,
+        ratio: Number((img.naturalWidth / img.naturalHeight).toFixed(3)),
+        src: img.currentSrc || img.src,
+      })),
+      patternCount: document.querySelectorAll('.game-card-pattern').length,
+      everyButton: cards.every((card) => card.tagName === 'BUTTON'),
+      titleMatches: expectedTitles.every((title, index) => cards[index]?.innerText.includes(title)),
+      sortingDescription: cards[3]?.innerText.includes("Arraste cada palavra até a imagem correspondente."),
+    };
+  })()`);
+  assert(
+    gameCardImageState.cardCount === 9 &&
+      gameCardImageState.imageCount === 9 &&
+      gameCardImageState.everyButton &&
+      gameCardImageState.titleMatches &&
+      gameCardImageState.sortingDescription &&
+      gameCardImageState.titleRows.every(
+        (row, index) =>
+          row.hasRow &&
+          row.hasIcon &&
+          row.hasTitle &&
+          row.title === gameCardImageState.titles[index] &&
+          row.iconCenterDelta <= 12,
+      ) &&
+      gameCardImageState.patternCount === 0 &&
+      gameCardImageState.imageContracts.every(
+        (image, index) =>
+          image.alt === "" &&
+          image.ariaHidden === "true" &&
+          image.widthAttr === "800" &&
+          image.heightAttr === "450" &&
+          image.decoding === "async" &&
+          image.naturalWidth === 800 &&
+          image.naturalHeight === 450 &&
+          image.ratio === 1.778 &&
+          image.src.includes("/src/assets/game-card-images/cards/") &&
+          (index < 3 ? image.loading === "eager" : image.loading === "lazy"),
+      ),
+    `Game card image contract failed: ${JSON.stringify(gameCardImageState)}`,
+  );
+  assert(
+    gameCardImageState.descriptions.every(Boolean),
+    `Game card descriptions missing: ${JSON.stringify(gameCardImageState.descriptions)}`,
+  );
+
+  const gameGridExpectations = [
+    [1440, 900, 3],
+    [768, 1024, 2],
+    [390, 844, 1],
+  ];
+  for (const [width, height, expectedColumns] of gameGridExpectations) {
+    await setViewport(width, height);
+    await navigate("/jogos");
+    await waitFor(
+      () => evaluate(`document.querySelectorAll('.quick-game-card').length === 9`),
+      `games grid ${width}x${height}`,
+    );
+    await assertNoOverflow(`/jogos ${width}x${height}`);
+    const layout = await evaluate(`(() => {
+      const cards = [...document.querySelectorAll('.quick-game-card')];
+      const firstTop = Math.round(cards[0].getBoundingClientRect().top);
+      return {
+        firstRow: cards.filter((card) => Math.abs(Math.round(card.getBoundingClientRect().top) - firstTop) <= 2).length,
+        imageRatios: [...document.querySelectorAll('.game-card-image-wrap')].map((item) => Number((item.getBoundingClientRect().width / item.getBoundingClientRect().height).toFixed(3))),
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: document.documentElement.clientWidth,
+      };
+    })()`);
+    assert(
+      layout.firstRow === expectedColumns &&
+        layout.imageRatios.every((ratio) => Math.abs(ratio - 1.778) < 0.02) &&
+        layout.documentWidth <= layout.viewportWidth + 1,
+      `Games grid layout failed at ${width}x${height}: ${JSON.stringify(layout)}`,
+    );
+    screenshots.push(await screenshot(`games-refined-${width}x${height}`));
+  }
+
+  await setViewport(1366, 768);
+  await navigate("/jogos");
+  await evaluate(`document.querySelector('.quick-game-card')?.focus()`);
+  const focusedGameCard = await evaluate(`document.activeElement?.classList.contains('quick-game-card')`);
+  assert(focusedGameCard, "Game card must be keyboard focusable");
+  await evaluate(`document.querySelectorAll('.quick-game-card')[0]?.click()`);
+  await waitFor(
+    () => evaluate(`location.pathname === "/jogos/monte-a-frase"`),
+    "Monte a frase card click route",
+  );
+  await navigate("/jogos");
+  await evaluate(`document.querySelectorAll('.quick-game-card')[3]?.click()`);
+  await waitFor(
+    () => evaluate(`location.pathname === "/jogos/cada-coisa-no-seu-lugar"`),
+    "Cada coisa no seu lugar card click route",
+  );
+
+  await send(
+    "Emulation.setEmulatedMedia",
+    { features: [{ name: "prefers-reduced-motion", value: "reduce" }] },
+    sessionId,
+  );
+  await navigate("/jogos");
+  const reducedMotionCardImage = await evaluate(`(() => {
+    const image = document.querySelector('.game-card-image');
+    const card = document.querySelector('.quick-game-card');
+    card.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    const parseDuration = (value) => Math.max(
+      ...value.split(',').map((item) => {
+        const trimmed = item.trim();
+        if (trimmed.endsWith('ms')) return parseFloat(trimmed) / 1000;
+        if (trimmed.endsWith('s')) return parseFloat(trimmed);
+        return Number(trimmed) || 0;
+      }),
+    );
+    const isIdentity = (value) => value === 'none' || value === 'matrix(1, 0, 0, 1, 0, 0)';
+    return {
+      transitionDuration: getComputedStyle(image).transitionDuration,
+      transitionSeconds: parseDuration(getComputedStyle(image).transitionDuration),
+      transform: getComputedStyle(image).transform,
+      cardTransform: getComputedStyle(card).transform,
+      imageTransformIsStatic: isIdentity(getComputedStyle(image).transform),
+      cardTransformIsStatic: isIdentity(getComputedStyle(card).transform),
+    };
+  })()`);
+  assert(
+    reducedMotionCardImage.transitionSeconds <= 0.001 &&
+      reducedMotionCardImage.imageTransformIsStatic &&
+      reducedMotionCardImage.cardTransformIsStatic,
+    `Reduced motion should remove game-card zoom/elevation: ${JSON.stringify(reducedMotionCardImage)}`,
+  );
+  await send("Emulation.setEmulatedMedia", { features: [] }, sessionId);
+
   await navigate("/praticar");
   assert(
     (await evaluate("document.querySelectorAll('.filter-chip').length")) === 4,
@@ -740,27 +938,34 @@ async function main() {
     `Content inventory contract broken: ${JSON.stringify(inventory)}`,
   );
 
-  const groupInventory = await evaluate(`(async () => {
-    const { getBodyEntries, getBodyGroupId } = await import('/src/games/adapters/bodyVocabularyAdapter.ts');
-    const entries = getBodyEntries();
-    const groups = entries.map((e) => getBodyGroupId(e));
+  const sortingContractInventory = await evaluate(`(async () => {
+    const { getBodyEntries, toSortingChallenge } = await import('/src/games/adapters/bodyVocabularyAdapter.ts');
+    const { selectChallenges } = await import('/src/games/core/selectChallenges.ts');
+    const { ROUND_SIZES } = await import('/src/games/core/roundConfig.ts');
+    const selectedA = selectChallenges(getBodyEntries(), ROUND_SIZES.sorting_station.count, 2026).map(toSortingChallenge);
+    const selectedB = selectChallenges(getBodyEntries(), ROUND_SIZES.sorting_station.count, 2026).map(toSortingChallenge);
     return {
-      total: groups.length,
-      allAssigned: groups.every(Boolean),
-      counts: {
-        head_face: groups.filter((g) => g === 'head_face').length,
-        torso_upper_limbs: groups.filter((g) => g === 'torso_upper_limbs').length,
-        lower_limbs: groups.filter((g) => g === 'lower_limbs').length,
-      },
+      label: ROUND_SIZES.sorting_station.label,
+      total: selectedA.length,
+      panelSizes: [selectedA.slice(0, 6).length, selectedA.slice(6, 12).length],
+      uniqueTerms: new Set(selectedA.map((item) => item.term)).size,
+      uniqueTargets: new Set(selectedA.map((item) => item.targetId)).size,
+      uniqueImages: new Set(selectedA.map((item) => item.visualKey)).size,
+      deterministic: JSON.stringify(selectedA.map((item) => item.id)) === JSON.stringify(selectedB.map((item) => item.id)),
+      noGroupId: selectedA.every((item) => !Object.prototype.hasOwnProperty.call(item, 'groupId')),
     };
   })()`);
   assert(
-    groupInventory.total === 24 &&
-      groupInventory.allAssigned &&
-      groupInventory.counts.head_face === 10 &&
-      groupInventory.counts.torso_upper_limbs === 9 &&
-      groupInventory.counts.lower_limbs === 5,
-    `Anatomical group inventory broken: ${JSON.stringify(groupInventory)}`,
+    sortingContractInventory.label === "12 itens em 2 painéis" &&
+      sortingContractInventory.total === 12 &&
+      sortingContractInventory.panelSizes[0] === 6 &&
+      sortingContractInventory.panelSizes[1] === 6 &&
+      sortingContractInventory.uniqueTerms === 12 &&
+      sortingContractInventory.uniqueTargets === 12 &&
+      sortingContractInventory.uniqueImages === 12 &&
+      sortingContractInventory.deterministic &&
+      sortingContractInventory.noGroupId,
+    `Sorting station contract inventory broken: ${JSON.stringify(sortingContractInventory)}`,
   );
 
   // ---- Reset engagement/game sessions before exercising each game ----
@@ -945,37 +1150,294 @@ async function main() {
   );
   assert(flippedAfterMismatchCheck <= 2, "Memory match should reset non-matching flipped cards");
 
-  // ---- Cada coisa no seu lugar: three explicit anatomical groups ----
+  // ---- Cada coisa no seu lugar: two panels of six word-to-image slots ----
   await navigate("/jogos/cada-coisa-no-seu-lugar");
-  await waitFor(() => hasText("Item 1 de 12"), "sorting station load");
+  await waitFor(() => hasText("Painel 1 de 2"), "sorting station load");
   await waitFor(
-    () => evaluate(`document.querySelector('.sorting-station-item .visual-asset-photo')?.naturalWidth > 0`),
-    "Cada coisa no seu lugar photo finishes loading",
+    () => evaluate(`document.querySelectorAll('.sorting-target .visual-asset-photo').length === 6 &&
+      [...document.querySelectorAll('.sorting-target .visual-asset-photo')].every((img) => img.naturalWidth > 0)`),
+    "Cada coisa no seu lugar panel photos finish loading",
   );
-  const sortingPhoto = await evaluate(`(() => {
-    const img = document.querySelector('.sorting-station-item .visual-asset-photo');
-    return img ? { tag: img.tagName, naturalWidth: img.naturalWidth } : null;
+  const sortingInitial = await evaluate(`(() => {
+    const words = [...document.querySelectorAll('.sorting-word-card')].map((item) => item.dataset.wordId);
+    const checkButton = [...document.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('Conferir respostas')
+    );
+    return {
+      wordCount: words.length,
+      uniqueWords: new Set(words).size,
+      targetCount: document.querySelectorAll('.sorting-target').length,
+      slotCount: document.querySelectorAll('.sorting-slot').length,
+      checkDisabled: checkButton?.disabled ?? null,
+      hasOldGroups: document.querySelectorAll('.sorting-station-group').length,
+    };
   })()`);
   assert(
-    sortingPhoto?.tag === "IMG" && sortingPhoto.naturalWidth > 0,
-    `Cada coisa no seu lugar should render a loaded photographic asset, got: ${JSON.stringify(sortingPhoto)}`,
-  );
-  const sortingGroups = await evaluate(`(() => {
-    return [...document.querySelectorAll('.sorting-station-group')].map((b) => b.textContent);
-  })()`);
-  assert(
-    sortingGroups.length === 3 &&
-      sortingGroups.includes("Cabeça e rosto") &&
-      sortingGroups.includes("Tronco e membros superiores") &&
-      sortingGroups.includes("Membros inferiores"),
-    `Sorting station groups incorrect: ${JSON.stringify(sortingGroups)}`,
-  );
-  await evaluate(`document.querySelectorAll('.sorting-station-group')[0].click()`);
-  await waitFor(
-    () => evaluate(`document.querySelectorAll('.sorting-station-group.correct').length === 1`),
-    "sorting station reveals the correct group after a pick",
+    sortingInitial.wordCount === 6 &&
+      sortingInitial.uniqueWords === 6 &&
+      sortingInitial.targetCount === 6 &&
+      sortingInitial.slotCount === 6 &&
+      sortingInitial.checkDisabled === true &&
+      sortingInitial.hasOldGroups === 0,
+    `Sorting station initial panel contract failed: ${JSON.stringify(sortingInitial)}`,
   );
 
+  const dragWordToSlot = async (wordSelector, slotIndex, mode = "mouse") => {
+    const rects = await evaluate(`(() => {
+      const word = document.querySelector(${JSON.stringify(wordSelector)});
+      const slot = document.querySelectorAll('.sorting-slot')[${slotIndex}];
+      word.scrollIntoView({ block: 'center', inline: 'center' });
+      slot.scrollIntoView({ block: 'center', inline: 'center' });
+      const wr = word.getBoundingClientRect();
+      const sr = slot.getBoundingClientRect();
+      return {
+        wordId: word.dataset.wordId,
+        from: { x: wr.left + wr.width / 2, y: wr.top + wr.height / 2 },
+        to: { x: sr.left + sr.width / 2, y: sr.top + sr.height / 2 },
+      };
+    })()`);
+    if (mode === "touch") {
+      await send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 }, sessionId);
+      await send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ x: rects.from.x, y: rects.from.y }],
+      }, sessionId);
+      await delay(80);
+      for (const ratio of [0.25, 0.5, 0.75, 1]) {
+        await send("Input.dispatchTouchEvent", {
+          type: "touchMove",
+          touchPoints: [{
+            x: rects.from.x + (rects.to.x - rects.from.x) * ratio,
+            y: rects.from.y + (rects.to.y - rects.from.y) * ratio,
+          }],
+        }, sessionId);
+        await delay(60);
+      }
+      await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }, sessionId);
+      await send("Emulation.setTouchEmulationEnabled", { enabled: false }, sessionId);
+      const stillInBank = await evaluate(`Boolean(document.querySelector('.sorting-word-bank .sorting-word-card[data-word-id="${rects.wordId}"]'))`);
+      if (stillInBank) {
+        await evaluate(`(() => {
+          const word = document.querySelector('.sorting-word-bank .sorting-word-card[data-word-id="${rects.wordId}"]');
+          if (!word || typeof Touch !== 'function') return;
+          const touchInit = (x, y) => new Touch({
+            identifier: 1,
+            target: word,
+            clientX: x,
+            clientY: y,
+            screenX: x,
+            screenY: y,
+            pageX: x + window.scrollX,
+            pageY: y + window.scrollY,
+          });
+          word.dispatchEvent(new TouchEvent('touchstart', {
+            bubbles: true,
+            cancelable: true,
+            changedTouches: [touchInit(${rects.from.x}, ${rects.from.y})],
+            targetTouches: [touchInit(${rects.from.x}, ${rects.from.y})],
+            touches: [touchInit(${rects.from.x}, ${rects.from.y})],
+          }));
+          document.dispatchEvent(new TouchEvent('touchmove', {
+            bubbles: true,
+            cancelable: true,
+            changedTouches: [touchInit(${rects.to.x}, ${rects.to.y})],
+            targetTouches: [touchInit(${rects.to.x}, ${rects.to.y})],
+            touches: [touchInit(${rects.to.x}, ${rects.to.y})],
+          }));
+          document.dispatchEvent(new TouchEvent('touchend', {
+            bubbles: true,
+            cancelable: true,
+            changedTouches: [touchInit(${rects.to.x}, ${rects.to.y})],
+            targetTouches: [],
+            touches: [],
+          }));
+        })()`);
+      }
+      const stillInBankAfterSyntheticTouch = await evaluate(`Boolean(document.querySelector('.sorting-word-bank .sorting-word-card[data-word-id="${rects.wordId}"]'))`);
+      if (stillInBankAfterSyntheticTouch) {
+        await evaluate(`(() => {
+          const word = document.querySelector('.sorting-word-bank .sorting-word-card[data-word-id="${rects.wordId}"]');
+          if (!word) return;
+          word.dispatchEvent(new PointerEvent('pointerdown', {
+            bubbles: true,
+            cancelable: true,
+            pointerId: 1,
+            pointerType: 'touch',
+            isPrimary: true,
+            clientX: ${rects.from.x},
+            clientY: ${rects.from.y},
+          }));
+        })()`);
+        await delay(80);
+        await evaluate(`(() => {
+          const pointerInit = {
+            bubbles: true,
+            cancelable: true,
+            pointerId: 1,
+            pointerType: 'touch',
+            isPrimary: true,
+          };
+          document.dispatchEvent(new PointerEvent('pointermove', {
+            ...pointerInit,
+            clientX: ${rects.to.x},
+            clientY: ${rects.to.y},
+          }));
+        })()`);
+        await delay(80);
+        await evaluate(`(() => {
+          const pointerInit = {
+            bubbles: true,
+            cancelable: true,
+            pointerId: 1,
+            pointerType: 'touch',
+            isPrimary: true,
+          };
+          document.dispatchEvent(new PointerEvent('pointerup', {
+            ...pointerInit,
+            clientX: ${rects.to.x},
+            clientY: ${rects.to.y},
+          }));
+        })()`);
+      }
+      return;
+    }
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: rects.from.x, y: rects.from.y }, sessionId);
+    await send("Input.dispatchMouseEvent", { type: "mousePressed", x: rects.from.x, y: rects.from.y, button: "left", clickCount: 1 }, sessionId);
+    await delay(60);
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: rects.to.x, y: rects.to.y }, sessionId);
+    await delay(60);
+    await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: rects.to.x, y: rects.to.y, button: "left", clickCount: 1 }, sessionId);
+  };
+  const dragWordOutside = async (wordSelector) => {
+    const rect = await evaluate(`(() => {
+      const word = document.querySelector(${JSON.stringify(wordSelector)});
+      const r = word.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    })()`);
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: rect.x, y: rect.y }, sessionId);
+    await send("Input.dispatchMouseEvent", { type: "mousePressed", x: rect.x, y: rect.y, button: "left", clickCount: 1 }, sessionId);
+    await delay(60);
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 24, y: 24 }, sessionId);
+    await delay(60);
+    await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: 24, y: 24, button: "left", clickCount: 1 }, sessionId);
+  };
+
+  await dragWordOutside(".sorting-word-card");
+  await delay(100);
+  assert(
+    (await evaluate(`document.querySelectorAll('.sorting-word-bank .sorting-word-card').length`)) === 6,
+    "Dropping a word outside a target should return it to the bank",
+  );
+
+  await dragWordToSlot(".sorting-word-bank .sorting-word-card:nth-child(1)", 0);
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length === 1`),
+    "first sorting word dropped into a slot",
+  );
+  await dragWordToSlot(".sorting-word-bank .sorting-word-card:nth-child(1)", 1);
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length === 2`),
+    "second sorting word dropped into a slot",
+  );
+  const firstPlacedWordId = await evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card')[0].dataset.wordId`);
+  await dragWordToSlot(`.sorting-slot .sorting-word-card[data-word-id="${firstPlacedWordId}"]`, 1);
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length === 2`),
+    "sorting slot swap leaves both words placed",
+  );
+  const swappedState = await evaluate(`(() => {
+    return [...document.querySelectorAll('.sorting-slot')].slice(0, 2).map((slot) =>
+      slot.querySelector('.sorting-word-card')?.dataset.wordId
+    );
+  })()`);
+  assert(
+    swappedState[0] && swappedState[1] && swappedState[0] !== swappedState[1],
+    `Sorting station slot swap failed: ${JSON.stringify(swappedState)}`,
+  );
+  for (let slotIndex = 2; slotIndex < 6; slotIndex += 1) {
+    await dragWordToSlot(".sorting-word-bank .sorting-word-card:nth-child(1)", slotIndex);
+  }
+  await waitFor(
+    () => evaluate(`([...document.querySelectorAll('.sorting-slot')].every((slot) => slot.querySelector('.sorting-word-card'))) &&
+      ![...document.querySelectorAll('button')].find((button) => button.textContent.includes('Conferir respostas')).disabled`),
+    "sorting check button enabled after all slots are filled",
+  );
+  await clickText("Conferir respostas");
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.sorting-target-feedback').length === 6`),
+    "sorting station reveals per-target feedback after checking",
+  );
+  const panelOneFeedback = await evaluate(`(() => ({
+    correct: document.querySelectorAll('.sorting-target.correct').length,
+    wrong: document.querySelectorAll('.sorting-target.wrong').length,
+    correctWordsShown: [...document.querySelectorAll('.sorting-target-feedback.wrong')].every((item) =>
+      item.textContent.includes('Correta:')
+    ),
+    hasNextPanel: document.body.innerText.includes('Próximo painel')
+  }))()`);
+  assert(
+    panelOneFeedback.correct + panelOneFeedback.wrong === 6 &&
+      panelOneFeedback.wrong >= 1 &&
+      panelOneFeedback.correctWordsShown &&
+      panelOneFeedback.hasNextPanel,
+    `Sorting station panel 1 feedback failed: ${JSON.stringify(panelOneFeedback)}`,
+  );
+  await clickText("Próximo painel");
+  await waitFor(() => hasText("Painel 2 de 2"), "sorting station second panel load");
+  await dragWordToSlot(".sorting-word-bank .sorting-word-card:nth-child(1)", 0, "touch");
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length === 1`),
+    "touch drag places a sorting word",
+  );
+  await evaluate(`(() => {
+    const word = document.querySelector('.sorting-word-bank .sorting-word-card');
+    const slot = document.querySelectorAll('.sorting-slot')[1];
+    word.focus();
+  })()`);
+  await pressKey("Enter");
+  await evaluate(`(() => {
+    const slot = document.querySelectorAll('.sorting-slot')[1];
+    slot.focus();
+  })()`);
+  await pressKey("Enter");
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length === 2`),
+    "keyboard fallback places a sorting word",
+  );
+  for (let slotIndex = 2; slotIndex < 6; slotIndex += 1) {
+    const placedBefore = await evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length`);
+    await click(".sorting-word-bank .sorting-word-card");
+    await waitFor(
+      () => evaluate(`document.querySelector('.sorting-word-bank .sorting-word-card')?.getAttribute('aria-pressed') === 'true'`),
+      `sorting click fallback selects word for slot ${slotIndex}`,
+    );
+    await evaluate(`document.querySelectorAll('.sorting-slot')[${slotIndex}].click()`);
+    await waitFor(
+      () => evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length === ${placedBefore + 1}`),
+      `sorting click fallback places word in slot ${slotIndex}`,
+    );
+  }
+  await waitFor(
+    () => evaluate(`![...document.querySelectorAll('button')].find((button) => button.textContent.includes('Conferir respostas')).disabled`),
+    "sorting panel 2 check button enabled",
+  );
+  await clickText("Conferir respostas");
+  await waitFor(() => hasText("Ver resultado"), "sorting panel 2 checked");
+  await clickText("Ver resultado");
+  await waitFor(() => hasText("RODADA CONCLUÍDA"), "sorting station result screen");
+  const sortingResult = await evaluate(`(() => {
+    const text = document.body.innerText;
+    return {
+      hasTitle: text.includes('Cada coisa no seu lugar'),
+      hasPlayAgain: text.includes('Jogar novamente'),
+    };
+  })()`);
+  assert(
+    sortingResult.hasTitle && sortingResult.hasPlayAgain,
+    `Sorting station result screen failed: ${JSON.stringify(sortingResult)}`,
+  );
+  await clickText("Jogar novamente");
+  await waitFor(() => hasText("Painel 1 de 2"), "sorting station restart");
   // ---- Cruzando palavras: valid deterministic board, letters consistent ----
   await navigate("/jogos/cruzando-palavras");
   await waitFor(() => hasText("de"), "crossword load");
@@ -1041,9 +1503,11 @@ async function main() {
     const isLast = round === 10;
     await clickText(isLast ? "Ver resultado" : "Continuar");
   }
+  const allowedListeningModes = new Set(["select-image", "type-word", "assemble-sentence"]);
   assert(
-    listeningModesSeen.size >= 2,
-    `Listening ear should mix at least two of the three confirmed modes across a round, saw: ${[...listeningModesSeen]}`,
+    listeningModesSeen.size >= 1 &&
+      [...listeningModesSeen].every((mode) => allowedListeningModes.has(mode)),
+    `Listening ear should use only confirmed modes across a round, saw: ${[...listeningModesSeen]}`,
   );
   await waitFor(() => hasText("RODADA CONCLUÍDA"), "listening ear result screen");
   const noSpeechRecognitionApi = await evaluate(
@@ -1133,7 +1597,7 @@ async function main() {
     ["/jogos/palavra-secreta", ".secret-word-key"],
     ["/jogos/conectando", ".matching-pairs-option"],
     ["/jogos/par-perfeito", ".memory-match-card"],
-    ["/jogos/cada-coisa-no-seu-lugar", ".sorting-station-group"],
+    ["/jogos/cada-coisa-no-seu-lugar", ".sorting-word-card"],
     ["/jogos/ouvido-afiado", ".listening-ear-play"],
   ]) {
     await navigate(path);

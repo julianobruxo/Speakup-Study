@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inglês em Jogo - revisão dos cards corrigidos</title>
+    <style>
+      :root {
+        --navy-950: #07102d;
+        --navy-900: #0f1738;
+        --navy-800: #17234b;
+        --wine: #981f3b;
+        --cyan: #36c6d9;
+        --gold: #f5b642;
+        --green: #26d77b;
+        --paper: #f7f9ff;
+        --line: #dfe6f5;
+        --muted: #65708a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 12% -12%, rgba(54, 198, 217, 0.14), transparent 28%),
+          radial-gradient(circle at 92% 4%, rgba(152, 31, 59, 0.12), transparent 26%),
+          var(--paper);
+        color: var(--navy-950);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        margin: 0 auto;
+        max-width: 1440px;
+        padding: 32px 28px 56px;
+      }
+
+      header,
+      .section,
+      .panel-copy,
+      .notes {
+        display: grid;
+      }
+
+      header {
+        gap: 10px;
+        margin-bottom: 28px;
+      }
+
+      .eyebrow {
+        color: var(--wine);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(30px, 5vw, 56px);
+        letter-spacing: -0.04em;
+        line-height: 0.98;
+      }
+
+      header p,
+      .panel-copy p,
+      .notes p,
+      .mini-card span {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      header p {
+        max-width: 920px;
+      }
+
+      .section {
+        gap: 18px;
+        margin-top: 32px;
+      }
+
+      .section h2 {
+        font-size: 24px;
+        letter-spacing: -0.035em;
+      }
+
+      .hero-panel,
+      .asset-panel,
+      .notes {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: 0 18px 42px rgba(16, 25, 60, 0.09);
+        overflow: hidden;
+      }
+
+      .hero-image,
+      .large-image,
+      .mini-card img,
+      .thumb img {
+        aspect-ratio: 16 / 9;
+        display: block;
+        object-fit: cover;
+        width: 100%;
+      }
+
+      .hero-image,
+      .large-image {
+        background: var(--navy-900);
+      }
+
+      .panel-copy {
+        gap: 8px;
+        padding: 18px;
+      }
+
+      .panel-copy h3 {
+        font-size: 18px;
+      }
+
+      .panel-copy p {
+        font-size: 14px;
+      }
+
+      .approved-grid,
+      .corrected-grid {
+        display: grid;
+        gap: 22px;
+      }
+
+      .approved-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .corrected-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .preview-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .mini-card {
+        background: #fff;
+        border: 1px solid rgba(54, 198, 217, 0.28);
+        border-radius: 18px;
+        box-shadow: 0 16px 34px rgba(16, 25, 60, 0.1);
+        min-height: 278px;
+        overflow: hidden;
+        padding: 16px;
+      }
+
+      .mini-card img {
+        border-radius: 14px;
+      }
+
+      .mini-card strong {
+        display: block;
+        font-size: 15px;
+        margin-top: 14px;
+      }
+
+      .mini-card span {
+        display: block;
+        font-size: 12px;
+        margin-top: 6px;
+      }
+
+      .mobile-frame {
+        background: var(--navy-950);
+        border-radius: 28px;
+        margin: 0 auto;
+        max-width: 390px;
+        padding: 16px;
+      }
+
+      .mobile-scroll {
+        background: var(--paper);
+        border-radius: 20px;
+        display: grid;
+        gap: 14px;
+        max-height: 844px;
+        overflow: auto;
+        padding: 14px;
+      }
+
+      .mobile-scroll .mini-card {
+        min-height: 0;
+      }
+
+      .consistency-grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(9, minmax(0, 1fr));
+      }
+
+      .thumb {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .thumb span {
+        display: block;
+        font-size: 10px;
+        font-weight: 800;
+        overflow: hidden;
+        padding: 7px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .badge {
+        border-radius: 999px;
+        display: inline-flex;
+        font-size: 11px;
+        font-weight: 900;
+        justify-self: start;
+        letter-spacing: 0.08em;
+        padding: 6px 10px;
+        text-transform: uppercase;
+      }
+
+      .badge.approved {
+        background: rgba(54, 198, 217, 0.14);
+        color: var(--navy-800);
+      }
+
+      .badge.corrected {
+        background: rgba(38, 215, 123, 0.16);
+        color: #0d6940;
+      }
+
+      .notes {
+        gap: 8px;
+        padding: 18px;
+      }
+
+      @media (max-width: 980px) {
+        main {
+          padding: 22px 16px 44px;
+        }
+
+        .approved-grid,
+        .corrected-grid,
+        .preview-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .consistency-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="eyebrow">Revisão visual</span>
+        <h1>Cards de jogos corrigidos</h1>
+        <p>
+          Esta página compara as seis imagens já aprovadas com as três versões corrigidas nesta rodada.
+          A revisão foca em consistência de paleta, materiais, iluminação, leitura imediata da mecânica e
+          funcionamento em cards desktop e mobile.
+        </p>
+      </header>
+
+      <section class="section">
+        <h2>Imagem-mãe aprovada</h2>
+        <article class="hero-panel">
+          <img class="hero-image" alt="Monte a frase" src="../src/assets/game-card-images/sentence-builder.webp" />
+          <div class="panel-copy">
+            <span class="badge approved">Aprovada</span>
+            <h3>Monte a frase</h3>
+            <p>Referência principal de paleta navy, luz cyan, materiais off-white, detalhe vinho/dourado e acabamento premium.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="section">
+        <h2>Imagens aprovadas preservadas</h2>
+        <div class="approved-grid" id="approvedGrid"></div>
+      </section>
+
+      <section class="section">
+        <h2>Novas versões corrigidas</h2>
+        <div class="corrected-grid" id="correctedGrid"></div>
+      </section>
+
+      <section class="section">
+        <h2>Cards desktop</h2>
+        <div class="preview-grid" id="desktopCards"></div>
+      </section>
+
+      <section class="section">
+        <h2>Cards mobile</h2>
+        <div class="mobile-frame">
+          <div class="mobile-scroll" id="mobileCards"></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Consistência da coleção</h2>
+        <div class="consistency-grid" id="consistencyGrid"></div>
+      </section>
+
+      <section class="section">
+        <h2>Checklist visual</h2>
+        <div class="notes">
+          <p>As imagens corrigidas evitam repetir a solução de blocos e usam protagonistas diferentes: cronômetro, painel drag-and-drop e headphone/ondas sonoras.</p>
+          <p>Todas mantêm fundo navy, luz cyan, detalhes vinho/dourado, superfícies off-white e câmera levemente elevada.</p>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const remainingBase = "../src/assets/game-card-images/prototypes/remaining-games/";
+      const assetsBase = "../src/assets/game-card-images/";
+
+      const approved = [
+        {
+          title: "Caça ao erro",
+          copy: "Lupa como protagonista, investigando o erro em uma frase.",
+          src: `${remainingBase}error-hunt.webp`,
+        },
+        {
+          title: "Palavra secreta",
+          copy: "Slots e letras reveladas comunicam a fantasia de descobrir a palavra.",
+          src: `${remainingBase}secret-word.webp`,
+        },
+        {
+          title: "Cruzando palavras",
+          copy: "Grade cruzada com peças encaixadas e leitura clara da mecânica.",
+          src: `${remainingBase}crossword.webp`,
+        },
+        {
+          title: "Par perfeito",
+          copy: "Grade de memória com par revelado e conexão visual imediata.",
+          src: `${remainingBase}memory-match.webp`,
+        },
+        {
+          title: "Conectando",
+          copy: "Linha luminosa liga palavra e imagem como ação central.",
+          src: `${remainingBase}matching-pairs.webp`,
+        },
+      ];
+
+      const corrected = [
+        {
+          title: "Contra o relógio",
+          copy: "Cronômetro dominante, anel luminoso e contagem aplicada em pós-processamento.",
+          src: `${remainingBase}beat-the-clock.webp`,
+        },
+        {
+          title: "Cada coisa no seu lugar",
+          copy: "Banco de palavras, targets visuais, slots e gesto de arrastar para associar.",
+          src: `${remainingBase}sorting-station.webp`,
+        },
+        {
+          title: "Ouvido afiado",
+          copy: "Headphone dominante emite ondas até a opção correta destacada.",
+          src: `${remainingBase}listening-ear.webp`,
+        },
+      ];
+
+      const mother = {
+        title: "Monte a frase",
+        copy: "Imagem-mãe aprovada.",
+        src: `${assetsBase}sentence-builder.webp`,
+      };
+
+      function panel(asset, status) {
+        const article = document.createElement("article");
+        article.className = "asset-panel";
+        article.innerHTML = `
+          <img class="large-image" alt="${asset.title}" src="${asset.src}" />
+          <div class="panel-copy">
+            <span class="badge ${status}">${status === "approved" ? "Aprovada" : "Corrigida"}</span>
+            <h3>${asset.title}</h3>
+            <p>${asset.copy}</p>
+          </div>
+        `;
+        return article;
+      }
+
+      function card(asset) {
+        const item = document.createElement("article");
+        item.className = "mini-card";
+        item.innerHTML = `
+          <img alt="${asset.title}" src="${asset.src}" />
+          <strong>${asset.title}</strong>
+          <span>${asset.copy}</span>
+        `;
+        return item;
+      }
+
+      function thumb(asset) {
+        const item = document.createElement("article");
+        item.className = "thumb";
+        item.innerHTML = `<img alt="${asset.title}" src="${asset.src}" /><span>${asset.title}</span>`;
+        return item;
+      }
+
+      for (const asset of approved) {
+        approvedGrid.append(panel(asset, "approved"));
+      }
+
+      for (const asset of corrected) {
+        correctedGrid.append(panel(asset, "corrected"));
+        desktopCards.append(card(asset));
+        mobileCards.append(card(asset));
+      }
+
+      for (const asset of [mother, ...approved, ...corrected]) {
+        consistencyGrid.append(thumb(asset));
+      }
+    </script>
+  </body>
+</html>

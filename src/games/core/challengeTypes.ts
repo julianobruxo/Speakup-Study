@@ -25,13 +25,13 @@ export interface ErrorHuntChallenge extends BaseChallenge {
   topicId: GrammarTopicId;
 }
 
-/** Cada coisa no seu lugar: sort a vocabulary item into its reviewed group. */
+/** Cada coisa no seu lugar: move a vocabulary word card into its matching image slot. */
 export interface SortingChallenge extends BaseChallenge {
   kind: "sorting";
   term: string;
   translation: string;
   visualKey?: string;
-  groupId: string;
+  targetId: string;
 }
 
 /** Palavra secreta: Hangman with a Portuguese clue and an English answer. */

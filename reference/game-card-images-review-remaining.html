@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inglês em Jogo - revisão dos cards restantes</title>
+    <style>
+      :root {
+        --navy-950: #07102d;
+        --navy-900: #0f1738;
+        --navy-800: #17234b;
+        --wine: #981f3b;
+        --cyan: #36c6d9;
+        --gold: #f5b642;
+        --paper: #f7f9ff;
+        --line: #dfe6f5;
+        --muted: #65708a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 12% -12%, rgba(54, 198, 217, 0.14), transparent 28%),
+          radial-gradient(circle at 92% 4%, rgba(152, 31, 59, 0.12), transparent 26%),
+          var(--paper);
+        color: var(--navy-950);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        margin: 0 auto;
+        max-width: 1440px;
+        padding: 32px 28px 56px;
+      }
+
+      header {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 28px;
+      }
+
+      .eyebrow {
+        color: var(--wine);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(30px, 5vw, 56px);
+        letter-spacing: -0.04em;
+        line-height: 0.98;
+      }
+
+      header p {
+        color: var(--muted);
+        line-height: 1.65;
+        max-width: 860px;
+      }
+
+      .section {
+        display: grid;
+        gap: 18px;
+        margin-top: 32px;
+      }
+
+      .section h2 {
+        font-size: 24px;
+        letter-spacing: -0.035em;
+      }
+
+      .reference-panel,
+      .asset-panel {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: 0 18px 42px rgba(16, 25, 60, 0.09);
+        overflow: hidden;
+      }
+
+      .hero-image,
+      .large-image {
+        aspect-ratio: 16 / 9;
+        background: var(--navy-900);
+        display: block;
+        object-fit: cover;
+        width: 100%;
+      }
+
+      .panel-copy {
+        display: grid;
+        gap: 8px;
+        padding: 18px;
+      }
+
+      .panel-copy h3 {
+        font-size: 18px;
+      }
+
+      .panel-copy p {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .asset-grid {
+        display: grid;
+        gap: 22px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .card-preview-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .quick-card {
+        background: #fff;
+        border: 1px solid rgba(54, 198, 217, 0.28);
+        border-radius: 18px;
+        box-shadow: 0 16px 34px rgba(16, 25, 60, 0.1);
+        min-height: 276px;
+        overflow: hidden;
+        padding: 16px;
+      }
+
+      .quick-card img {
+        aspect-ratio: 16 / 9;
+        border-radius: 14px;
+        display: block;
+        object-fit: cover;
+        width: 100%;
+      }
+
+      .quick-card strong {
+        display: block;
+        font-size: 15px;
+        margin-top: 14px;
+      }
+
+      .quick-card span {
+        color: var(--muted);
+        display: block;
+        font-size: 12px;
+        line-height: 1.45;
+        margin-top: 6px;
+      }
+
+      .mobile-frame {
+        background: var(--navy-950);
+        border-radius: 28px;
+        margin: 0 auto;
+        max-width: 390px;
+        padding: 16px;
+      }
+
+      .mobile-scroll {
+        background: var(--paper);
+        border-radius: 20px;
+        display: grid;
+        gap: 14px;
+        max-height: 844px;
+        overflow: auto;
+        padding: 14px;
+      }
+
+      .consistency-grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(9, minmax(0, 1fr));
+      }
+
+      .thumb {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .thumb img {
+        aspect-ratio: 16 / 9;
+        display: block;
+        object-fit: cover;
+        width: 100%;
+      }
+
+      .thumb span {
+        display: block;
+        font-size: 10px;
+        font-weight: 800;
+        overflow: hidden;
+        padding: 7px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      @media (max-width: 900px) {
+        main {
+          padding: 22px 16px 44px;
+        }
+
+        .asset-grid,
+        .card-preview-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .consistency-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="eyebrow">Assets em revisão</span>
+        <h1>Cards restantes do catálogo de jogos</h1>
+        <p>
+          A primeira imagem é a referência aprovada para Monte a frase. As oito imagens seguintes são
+          protótipos gerados para revisão visual, ainda não integrados aos cards do aplicativo.
+        </p>
+      </header>
+
+      <section class="section">
+        <h2>Referência aprovada</h2>
+        <article class="reference-panel">
+          <img class="hero-image" alt="Referência aprovada para Monte a frase" src="../src/assets/game-card-images/sentence-builder.webp" />
+          <div class="panel-copy">
+            <h3>Monte a frase</h3>
+            <p>Referência de paleta, câmera, materiais, luz cyan, detalhe vinho/dourado e acabamento premium.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="section">
+        <h2>Imagens grandes</h2>
+        <div class="asset-grid" id="largeGrid"></div>
+      </section>
+
+      <section class="section">
+        <h2>Reprodução aproximada dos cards - desktop</h2>
+        <div class="card-preview-grid" id="desktopCards"></div>
+      </section>
+
+      <section class="section">
+        <h2>Reprodução aproximada dos cards - mobile</h2>
+        <div class="mobile-frame">
+          <div class="mobile-scroll" id="mobileCards"></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Comparação de consistência</h2>
+        <div class="consistency-grid" id="consistencyGrid"></div>
+      </section>
+    </main>
+
+    <script>
+      const base = "../src/assets/game-card-images/prototypes/remaining-games/";
+      const assets = [
+        {
+          title: "Caça ao erro",
+          copy: "Frase em blocos com lupa investigando o erro.",
+          src: `${base}error-hunt.webp`,
+        },
+        {
+          title: "Contra o relógio",
+          copy: "Timer central com cartões em movimento controlado.",
+          src: `${base}beat-the-clock.webp`,
+        },
+        {
+          title: "Cada coisa no seu lugar",
+          copy: "Banco de palavras, imagens e slot correspondente.",
+          src: `${base}sorting-station.webp`,
+        },
+        {
+          title: "Palavra secreta",
+          copy: "Blocos de letras revelados e espaços ocultos.",
+          src: `${base}secret-word.webp`,
+        },
+        {
+          title: "Conectando",
+          copy: "Linha luminosa ligando palavra e imagem.",
+          src: `${base}matching-pairs.webp`,
+        },
+        {
+          title: "Cruzando palavras",
+          copy: "Tabuleiro 3D de cruzadas com peças encaixadas.",
+          src: `${base}crossword.webp`,
+        },
+        {
+          title: "Par perfeito",
+          copy: "Grade de memória com duas cartas iguais reveladas.",
+          src: `${base}memory-match.webp`,
+        },
+        {
+          title: "Ouvido afiado",
+          copy: "Fonte de áudio emitindo ondas para cards de resposta.",
+          src: `${base}listening-ear.webp`,
+        },
+      ];
+
+      const reference = {
+        title: "Monte a frase",
+        copy: "Imagem aprovada.",
+        src: "../src/assets/game-card-images/sentence-builder.webp",
+      };
+
+      function assetPanel(asset) {
+        const article = document.createElement("article");
+        article.className = "asset-panel";
+        article.innerHTML = `
+          <img class="large-image" alt="${asset.title}" src="${asset.src}" />
+          <div class="panel-copy">
+            <h3>${asset.title}</h3>
+            <p>${asset.copy}</p>
+          </div>
+        `;
+        return article;
+      }
+
+      function card(asset) {
+        const item = document.createElement("article");
+        item.className = "quick-card";
+        item.innerHTML = `
+          <img alt="${asset.title}" src="${asset.src}" />
+          <strong>${asset.title}</strong>
+          <span>${asset.copy}</span>
+        `;
+        return item;
+      }
+
+      function thumb(asset) {
+        const item = document.createElement("article");
+        item.className = "thumb";
+        item.innerHTML = `<img alt="${asset.title}" src="${asset.src}" /><span>${asset.title}</span>`;
+        return item;
+      }
+
+      for (const asset of assets) {
+        largeGrid.append(assetPanel(asset));
+        desktopCards.append(card(asset));
+        mobileCards.append(card(asset));
+      }
+
+      for (const asset of [reference, ...assets]) {
+        consistencyGrid.append(thumb(asset));
+      }
+    </script>
+  </body>
+</html>

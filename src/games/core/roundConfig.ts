@@ -10,7 +10,7 @@ export const ROUND_SIZES: Record<GameId, RoundSizeConfig> = {
   sentence_builder: { count: 10, label: "10 frases" },
   error_hunt: { count: 10, label: "10 frases" },
   beat_the_clock: { count: 10, label: "10 desafios mistos" },
-  sorting_station: { count: 12, label: "12 itens em 3 grupos" },
+  sorting_station: { count: 12, label: "12 itens em 2 painéis" },
   secret_word: { count: 5, label: "5 palavras" },
   matching_pairs: { count: 6, label: "6 pares" },
   crossword: { count: 8, label: "até 8 palavras" },

@@ -17,6 +17,7 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Progresso com atividade semanal, conquistas, revisão e métricas locais.
 - Perfil local editável, preferências e reset local confirmado.
 - Jogos: os nove jogos do catálogo oficial funcionais com `present_tobe` + `body`.
+- Página de Jogos: nove cards com thumbnails aprovadas integradas no topo, versões WebP 800x450 em `src/assets/game-card-images/cards/`, masters 1600x900 preservados e carregamento otimizado sem PNGs de produção.
 
 ## Conteúdo
 
@@ -34,6 +35,7 @@ Partes do corpo:
 - ilustrações locais;
 - pronúncia via Web Speech API;
 - swipe, teclado e som.
+- Cada coisa no seu lugar usa associação palavra-imagem com dois painéis de seis pares, fotos locais e fallback por toque/teclado.
 
 Planejado: Past TO BE, Simple Present, Present Continuous, Be Going To, Simple Past, There TO BE, Prepositions e demais categorias de Vocabulário.
 

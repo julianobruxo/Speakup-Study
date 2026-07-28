@@ -56,7 +56,7 @@ export const GAME_CATALOG: GameCatalogEntry[] = [
   {
     id: "sorting_station",
     title: "Cada coisa no seu lugar",
-    description: "Arraste cada palavra para o grupo certo.",
+    description: "Arraste cada palavra até a imagem correspondente.",
     compatibleDomains: ["vocabulary"],
     defaultRoundSize: 12,
     supportsDragAndDrop: true,

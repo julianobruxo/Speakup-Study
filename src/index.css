@@ -5521,3 +5521,440 @@ html[data-animations="off"] *::after {
     transform: none;
   }
 }
+
+/* Game card images */
+.games-page.standard-page {
+  padding-top: 0;
+}
+
+.games-page .page-lead.compact {
+  margin-bottom: 14px;
+  padding: 2px 3px 10px;
+}
+
+.games-page .page-lead h2 {
+  margin: 10px 0 5px;
+}
+
+.games-page .page-lead p {
+  max-width: 720px;
+}
+
+.games-page .quick-games-grid {
+  align-items: stretch;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.games-page .quick-game-card {
+  background: #fff;
+  border: 1px solid var(--card-border-navy) !important;
+  border-radius: 18px;
+  box-shadow: var(--card-shadow-rest), 0 0 14px -4px var(--card-glow-light-blue-strong);
+  color: var(--navy);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  transform: translateY(0);
+}
+
+.games-page .quick-game-card:not([aria-disabled="true"]):hover,
+.games-page .quick-game-card:not([aria-disabled="true"]):focus-visible {
+  border-color: var(--card-border-navy-strong) !important;
+  box-shadow: var(--card-shadow-hover), 0 0 16px -3px var(--card-glow-light-blue-strong);
+  transform: translateY(-3px);
+}
+
+.game-card-image-wrap {
+  aspect-ratio: 16 / 9;
+  background: var(--navy-900, var(--navy));
+  display: block;
+  flex: 0 0 auto;
+  margin: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  z-index: 2;
+}
+
+.game-card-image {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.22s ease;
+  width: 100%;
+}
+
+.games-page .quick-game-card:hover .game-card-image,
+.games-page .quick-game-card:focus-visible .game-card-image {
+  transform: scale(1.02);
+}
+
+.games-page .quick-game-icon {
+  flex: 0 0 auto;
+  height: 38px;
+  opacity: 1;
+  width: 38px;
+}
+
+.games-page .quick-game-icon svg {
+  height: 21px;
+  width: 21px;
+}
+
+.games-page .tone-blue .quick-game-icon {
+  background: var(--navy-soft);
+  color: var(--navy);
+}
+
+.games-page .tone-rose .quick-game-icon {
+  background: var(--wine-soft);
+  color: var(--wine);
+}
+
+.games-page .tone-gold .quick-game-icon {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+
+.games-page .tone-green .quick-game-icon {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.games-page .tone-violet .quick-game-icon {
+  background: var(--violet-soft);
+  color: var(--violet);
+}
+
+.games-page .tone-coral .quick-game-icon {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.games-page .game-card-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 0;
+  padding: 13px 16px 15px;
+}
+
+.games-page .game-card-title-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.games-page .game-card-copy strong {
+  color: var(--navy);
+  font-size: 15px;
+  line-height: 1.25;
+  margin: 0;
+  min-width: 0;
+}
+
+.games-page .game-card-copy > span:not(.game-card-title-row) {
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  line-height: 1.45;
+  margin-top: 0;
+}
+
+.games-page .game-card-pattern {
+  display: none;
+}
+
+@media (min-width: 760px) and (max-width: 1099px) {
+  .games-page .quick-games-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .games-page .quick-game-card {
+    min-height: 0;
+  }
+
+  .games-page .game-card-copy strong {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 759px) {
+  .games-page .page-lead.compact {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+
+  .games-page .quick-games-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .games-page .game-card-copy {
+    padding: 13px 16px 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-card-image {
+    transition: none;
+  }
+
+  .games-page .quick-game-card:not([aria-disabled="true"]):hover,
+  .games-page .quick-game-card:not([aria-disabled="true"]):focus-visible,
+  .games-page .quick-game-card:hover .game-card-image,
+  .games-page .quick-game-card:focus-visible .game-card-image {
+    transform: none;
+  }
+}
+
+/* Cada coisa no seu lugar: word-to-image slots */
+.sorting-station-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow: visible;
+  padding: 18px;
+}
+
+.sorting-station-instructions h1 {
+  color: var(--navy);
+  font-size: clamp(22px, 4vw, 30px);
+  line-height: 1.16;
+  margin: 8px 0 0;
+}
+
+.sorting-station-board {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.sorting-word-bank {
+  background: linear-gradient(150deg, var(--navy-soft), #fff);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.sorting-panel-label {
+  color: var(--wine);
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.sorting-word-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sorting-word-card {
+  align-items: center;
+  background: #fff;
+  border: 1.5px solid rgba(23, 35, 75, 0.18);
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgba(23, 35, 75, 0.08);
+  color: var(--navy);
+  cursor: grab;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 42px;
+  min-width: 86px;
+  padding: 9px 12px;
+  touch-action: none;
+  transition:
+    border-color 0.14s ease,
+    box-shadow 0.14s ease,
+    transform 0.14s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sorting-word-card.selected {
+  background: var(--cyan-soft);
+  border-color: var(--cyan);
+  box-shadow:
+    0 8px 18px rgba(23, 35, 75, 0.08),
+    0 0 0 2px rgba(28, 143, 166, 0.16);
+}
+
+.sorting-word-card.dragging {
+  cursor: grabbing;
+  left: 0;
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  transform: translate(-50%, -50%) scale(1.04);
+  z-index: 80;
+}
+
+.sorting-target-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sorting-target {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(23, 35, 75, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.sorting-target.drop-hover {
+  border-color: var(--cyan);
+  box-shadow:
+    0 8px 20px rgba(23, 35, 75, 0.06),
+    0 0 0 3px rgba(28, 143, 166, 0.14);
+}
+
+.sorting-target.correct {
+  border-color: rgba(35, 112, 91, 0.44);
+}
+
+.sorting-target.wrong {
+  border-color: rgba(141, 29, 48, 0.42);
+}
+
+.sorting-target .visual-asset-photo,
+.sorting-target .body-part-illustration {
+  aspect-ratio: 1 / 1;
+  height: auto;
+  max-width: none;
+  object-fit: contain;
+  width: 100%;
+}
+
+.sorting-slot {
+  align-items: center;
+  background: var(--paper);
+  border: 1.5px dashed rgba(23, 35, 75, 0.26);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  min-height: 52px;
+  padding: 6px;
+}
+
+.sorting-slot:focus-visible,
+.sorting-word-card:focus-visible {
+  box-shadow: 0 0 0 3px rgba(28, 143, 166, 0.2);
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.slot-placeholder {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.sorting-slot .sorting-word-card {
+  width: 100%;
+}
+
+.sorting-target-feedback {
+  align-items: center;
+  border-radius: 10px;
+  display: flex;
+  font-size: 11px;
+  font-weight: 850;
+  gap: 6px;
+  line-height: 1.35;
+  padding: 8px;
+}
+
+.sorting-target-feedback.correct {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.sorting-target-feedback.wrong {
+  background: var(--wine-soft);
+  color: var(--wine);
+}
+
+.sorting-live-message {
+  color: var(--ink-soft);
+  font-size: 11px;
+  margin: 0;
+  min-height: 16px;
+}
+
+.sorting-panel-feedback {
+  margin-top: 0;
+  width: 100%;
+}
+
+@media (min-width: 760px) {
+  .sorting-station-board {
+    grid-template-columns: minmax(190px, 0.36fr) minmax(0, 0.64fr);
+  }
+
+  .sorting-word-list {
+    align-content: flex-start;
+    flex-direction: column;
+  }
+
+  .sorting-word-card {
+    width: 100%;
+  }
+
+  .sorting-target-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 430px) {
+  .sorting-station-card {
+    padding: 14px;
+  }
+
+  .sorting-word-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sorting-target-grid {
+    gap: 10px;
+  }
+
+  .sorting-word-card {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .sorting-target-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sorting-word-card {
+    transition: none;
+  }
+
+  .sorting-word-card.dragging {
+    transform: translate(-50%, -50%);
+  }
+}

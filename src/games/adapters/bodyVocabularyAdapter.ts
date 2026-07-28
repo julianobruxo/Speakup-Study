@@ -17,7 +17,7 @@ export const BODY_GROUPS: { id: BodyGroupId; label: string }[] = [
 
 /**
  * Explicit, reviewed anatomical grouping. Never infer this silently from
- * text — Cada coisa no seu lugar depends on this map being curated by hand.
+ * text. Kept as reviewed metadata for future grouping-based vocabulary flows.
  */
 const BODY_GROUP_BY_VISUAL_KEY: Record<string, BodyGroupId> = {
   head: "head_face",
@@ -67,7 +67,7 @@ export function toSortingChallenge(entry: VocabularyEntry): SortingChallenge {
     term: entry.term,
     translation: entry.translation,
     visualKey: entry.visualKey,
-    groupId: getBodyGroupId(entry),
+    targetId: entry.id,
   };
 }
 

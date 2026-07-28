@@ -23,6 +23,7 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Package name `ingles-em-jogo` e metadata atualizada.
 - Fundação compartilhada de jogos: catálogo central, matriz de compatibilidade, seleção determinística de conteúdo, engine de sessão, XP/missão/streak idempotentes, adapters de Gramática (`present_tobe`) e Vocabulário (`body`).
 - Os nove jogos oficiais funcionais com o escopo `present_tobe` + `body`.
+- Cards da página de Jogos com as nove imagens aprovadas integradas no topo, usando versões de produção WebP 800x450 em `src/assets/game-card-images/cards/`; os masters 1600x900 permanecem preservados.
 
 ## Jogos
 
@@ -31,7 +32,7 @@ Os nove jogos do catálogo oficial estão funcionais nesta fase, usando exclusiv
 - Monte a frase — reordenar tokens da frase correta (117 questões elegíveis de 130).
 - Caça ao erro — tocar no token corrompido por um distrator revisado (114 elegíveis).
 - Contra o relógio — mistura das quatro mecânicas com timers individuais (10s/20s/10s/20s).
-- Cada coisa no seu lugar — arrastar/tocar item para um dos 3 grupos anatômicos revisados.
+- Cada coisa no seu lugar — arrastar/tocar cartões de palavras para seis slots de imagens correspondentes, em dois painéis de seis pares.
 - Palavra secreta — Hangman tradicional, pista em português, 5 erros, teclado físico e virtual.
 - Conectando — associação de palavra em inglês à imagem.
 - Cruzando palavras — tabuleiro gerado deterministicamente (até 8 palavras, usa menos quando necessário).
@@ -67,6 +68,7 @@ Planejado:
 - Não há login, backend, sincronização, analytics remoto, PWA, deploy ou competição online.
 - A Liga Safira é local; os demais participantes são simulados e não representam usuários conectados.
 - Dados preservados por migração devem continuar compatíveis com históricos existentes.
+- A página de Jogos carrega somente os WebPs otimizados de cards, sem PNGs grandes, base64, preload global ou dependência nova.
 
 ## Git
 
