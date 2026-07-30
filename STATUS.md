@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-07-24 (rollout dos 9 jogos)
+Atualizado em: 2026-07-30 (Fase 0 do loop de jogos v1)
 
 ## Estado Atual
 
@@ -34,9 +34,9 @@ Os nove jogos do catálogo oficial estão funcionais nesta fase, usando exclusiv
 - Contra o relógio — mistura das quatro mecânicas com timers individuais (10s/20s/10s/20s).
 - Cada coisa no seu lugar — arrastar/tocar cartões de palavras para seis slots de imagens correspondentes, em dois painéis de seis pares.
 - Palavra secreta — Hangman tradicional, pista em português, 5 erros, teclado físico e virtual.
-- Conectando — associação de palavra em inglês à imagem.
+- Conectando — consolidado localmente na branch `feat/loop-jogos-v1`: tabuleiro responsivo e compacto com seis palavras e seis imagens, ligação por linha gestual e fallback por clique/teclado.
 - Cruzando palavras — tabuleiro gerado deterministicamente (até 8 palavras, usa menos quando necessário).
-- Par perfeito — jogo da memória com cartas de palavra e imagem.
+- Par perfeito — jogo da memória com cartas de palavra e imagem em board responsivo ampliado.
 - Ouvido afiado — três modos: ouvir e selecionar imagem, ouvir e digitar, ouvir e montar frase.
 
 `Conectando` é o nome aprovado para associação entre palavra em inglês e imagem.
@@ -72,11 +72,11 @@ Planejado:
 
 ## Git
 
-- Branch principal: `main`.
+- Branch de trabalho do loop: `feat/loop-jogos-v1`, criada sobre `2547adda3db0a05959f2fa1cf377918d5df6b6eb` com todas as mudanças locais anteriores preservadas.
 - Remoto: `origin` em `https://github.com/julianobruxo/Speakup-Study.git`.
-- Base esperada antes desta publicação: `ae36376 feat: complete full product interface revamp`.
+- `main` e `origin/main` estavam alinhadas em `2547add` no início do loop.
 - Não renomear a pasta local nem o repositório remoto nesta fase.
-- Não alterar `CLAUDE.md`.
+- Checkpoints do loop são somente locais; push, PR, tag, release e deploy continuam proibidos.
 
 ## Stack Detectada
 
@@ -106,3 +106,14 @@ O smoke deve cobrir 360x800, 390x844, 412x915, 768x1024, 1000x800, 1024x768, 136
 O bloqueio anterior (`node scripts/smokeUi.mjs` não alcançava `127.0.0.1:5173`) tinha causa raiz confirmada: o script assumia um servidor Vite externo já rodando, mas processos iniciados em invocações de terminal separadas não eram acessíveis entre si neste ambiente. `scripts/smokeUi.mjs` agora inicia e gerencia seu próprio servidor Vite (reaproveitando um já ativo em `127.0.0.1:5173` quando existir) e encerra apenas o servidor que ele mesmo criou. O Edge headless também passou a rodar com `--disable-extensions` para eliminar ruído de uma extensão do perfil do sistema que gerava exceções não relacionadas ao produto.
 
 O smoke agora cobre fluxo funcional completo dos nove jogos, timers individuais do Contra o relógio, persistência/XP/missão/streak idempotentes e checagens estruturais de acessibilidade, além dos fluxos já existentes. Passou em execuções consecutivas com `browserErrors: 0`.
+
+## Fase 0 — baseline consolidado
+
+- Mudanças anteriores de Conectando, Par perfeito, assets dos cards, CSS, smoke e documentação foram preservadas.
+- O primeiro outcome de cada palavra no Conectando é registrado de forma síncrona e idempotente, inclusive em React StrictMode; feedback neutro não aparece como acerto e há uma única região de anúncio.
+- O fluxo gestual do Conectando cobre mouse e touch real no smoke, com cancelamento, retry, clique e teclado; timers e seleção transitória são limpos.
+- Os seis assets autorizados tiveram somente os textos reposicionados, mantendo a grafia inglesa original e preservando composição, textura, bordas e iluminação.
+- As hitboxes dos alvos não se sobrepõem; o smoke confirma um drop correto próximo à borda. No desktop, as colunas foram centralizadas e as linhas encurtadas.
+- As screenshots de catálogo, Conectando e Par perfeito foram abertas e inspecionadas em 1440x900, 768x1024 e 390x844.
+- Gate técnico aprovado em 2026-07-30: conteúdo, TypeScript, lint, build, smoke completo e `git diff --check`.
+- O build ainda reporta chunk inicial de cerca de 535 kB; code-splitting permanece obrigatório antes da introdução do Phaser.

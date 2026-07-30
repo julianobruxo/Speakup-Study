@@ -1090,37 +1090,314 @@ async function main() {
   );
   assert(allKeysDisabled, "All secret word keys should be disabled once every letter has been guessed");
 
-  // ---- Conectando: English word + image only, no premature translation ----
+  // ---- Conectando: six words + six images with gesture lines ----
+  await setViewport(1440, 900);
   await navigate("/jogos/conectando");
-  await waitFor(() => hasText("Par 1 de 6"), "matching pairs load");
-  const matchingPreFeedback = await evaluate(`document.body.innerText`);
-  assert(
-    !/[À-ú]{4,}\s=\s/.test(matchingPreFeedback) || true,
-    "sanity placeholder",
-  );
-  const matchingOptions = await evaluate(`(() => {
-    return [...document.querySelectorAll('.matching-pairs-option')].map((b) => b.textContent);
+  await waitFor(() => hasText("0 de 6 pares conectados"), "matching pairs gesture board load");
+  const matchingInitial = await evaluate(`(() => {
+    const words = [...document.querySelectorAll('.matching-pairs-word')].map((button, index) => ({
+      id: button.dataset.wordId,
+      index,
+      text: button.textContent.trim(),
+    }));
+    const targets = [...document.querySelectorAll('.matching-pairs-target')].map((button, index) => ({
+      id: button.dataset.targetId,
+      index,
+      text: button.textContent.trim(),
+    }));
+    return {
+      wordCount: words.length,
+      targetCount: targets.length,
+      uniqueWords: new Set(words.map((word) => word.id)).size,
+      uniqueTargets: new Set(targets.map((target) => target.id)).size,
+      oldOptions: document.querySelectorAll('.matching-pairs-option').length,
+      sameRowMatches: words.filter((word, index) => targets[index]?.id === word.id).length,
+      photoCount: document.querySelectorAll('.matching-pairs-target .visual-asset-photo').length,
+      targetTextHidden: targets.every((target) => target.text === ""),
+      words,
+      targets,
+    };
   })()`);
-  assert(matchingOptions.length === 4, `Matching pairs should show 4 options, got ${matchingOptions.length}`);
-  await waitFor(
-    () => evaluate(`document.querySelector('.matching-pairs-image .visual-asset-photo')?.naturalWidth > 0`),
-    "Conectando photo finishes loading",
+  assert(
+    matchingInitial.wordCount === 6 &&
+      matchingInitial.targetCount === 6 &&
+      matchingInitial.uniqueWords === 6 &&
+      matchingInitial.uniqueTargets === 6 &&
+      matchingInitial.oldOptions === 0 &&
+      matchingInitial.sameRowMatches === 0 &&
+      matchingInitial.targetTextHidden,
+    `Conectando board contract failed: ${JSON.stringify(matchingInitial)}`,
   );
-  const matchingPhoto = await evaluate(`(() => {
-    const img = document.querySelector('.matching-pairs-image .visual-asset-photo');
-    return img ? { tag: img.tagName, naturalWidth: img.naturalWidth } : null;
+  await waitFor(
+    () =>
+      evaluate(`([...document.querySelectorAll('.matching-pairs-target .visual-asset-photo')]
+        .length === 6) && [...document.querySelectorAll('.matching-pairs-target .visual-asset-photo')]
+        .every((img) => img.naturalWidth > 0)`),
+    "Conectando photos finish loading",
+  );
+  const matchingDeterministic = await evaluate(`(async () => {
+    const { getBodyEntries, toMatchingPairChallenge } = await import('/src/games/adapters/bodyVocabularyAdapter.ts');
+    const { ROUND_SIZES } = await import('/src/games/core/roundConfig.ts');
+    const { selectChallenges } = await import('/src/games/core/selectChallenges.ts');
+    const { shuffleWithSeed } = await import('/src/games/core/shuffle.ts');
+    const build = (seed) => selectChallenges(getBodyEntries(), ROUND_SIZES.matching_pairs.count, seed).map(toMatchingPairChallenge);
+    const selectedA = build(2026);
+    const selectedB = build(2026);
+    const wordsA = shuffleWithSeed(selectedA, 2026 + 101).map((item) => item.id);
+    const wordsB = shuffleWithSeed(selectedB, 2026 + 101).map((item) => item.id);
+    const imagesA = shuffleWithSeed(selectedA, 2026 + 503).map((item) => item.id);
+    const imagesB = shuffleWithSeed(selectedB, 2026 + 503).map((item) => item.id);
+    return {
+      selectedSame: selectedA.map((item) => item.id).join('|') === selectedB.map((item) => item.id).join('|'),
+      wordsSame: wordsA.join('|') === wordsB.join('|'),
+      imagesSame: imagesA.join('|') === imagesB.join('|'),
+      independentColumns: wordsA.join('|') !== imagesA.join('|'),
+    };
   })()`);
   assert(
-    matchingPhoto?.tag === "IMG" && matchingPhoto.naturalWidth > 0,
-    `Conectando should render a loaded photographic asset, got: ${JSON.stringify(matchingPhoto)}`,
-  );
-  await evaluate(`document.querySelectorAll('.matching-pairs-option')[0].click()`);
-  await waitFor(
-    () => evaluate(`document.querySelectorAll('.matching-pairs-option.correct').length === 1`),
-    "matching pairs reveals exactly one correct option after pick",
+    matchingDeterministic.selectedSame &&
+      matchingDeterministic.wordsSame &&
+      matchingDeterministic.imagesSame &&
+      matchingDeterministic.independentColumns,
+    `Conectando deterministic shuffle failed: ${JSON.stringify(matchingDeterministic)}`,
   );
 
+  const matchingScreenshotInitial = await screenshot("matching-pairs-board-1440x900");
+  screenshots.push(matchingScreenshotInitial);
+
+  const dragMatchingPair = async (
+    wordId,
+    targetId,
+    eventType = "pointerup",
+    pointerType = "mouse",
+    targetEdge = "center",
+  ) => {
+    const targetY = targetEdge === "top" ? "tr.top + 6" : "tr.top + tr.height / 2";
+    const rects = await evaluate(`(() => {
+      const word = document.querySelector('.matching-pairs-word[data-word-id="${wordId}"]');
+      const target = document.querySelector('.matching-pairs-target[data-target-id="${targetId}"]');
+      word.scrollIntoView({ block: 'center', inline: 'center' });
+      target.scrollIntoView({ block: 'center', inline: 'center' });
+      const wr = word.getBoundingClientRect();
+      const tr = target.getBoundingClientRect();
+      return {
+        from: { x: wr.left + wr.width / 2, y: wr.top + wr.height / 2 },
+        to: { x: tr.left + tr.width / 2, y: ${targetY} },
+      };
+    })()`);
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: rects.from.x, y: rects.from.y, pointerType }, sessionId);
+    await send("Input.dispatchMouseEvent", { type: "mousePressed", x: rects.from.x, y: rects.from.y, button: "left", clickCount: 1, pointerType }, sessionId);
+    await delay(80);
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: rects.from.x + (rects.to.x - rects.from.x) * 0.45, y: rects.from.y + (rects.to.y - rects.from.y) * 0.45, pointerType }, sessionId);
+    await delay(80);
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: rects.to.x, y: rects.to.y, pointerType }, sessionId);
+    await delay(80);
+    if (eventType === "pointercancel") {
+      await evaluate(`(() => {
+        document.dispatchEvent(new PointerEvent('pointercancel', {
+          bubbles: true,
+          cancelable: true,
+          pointerId: 1,
+          pointerType: 'mouse',
+          clientX: ${rects.to.x},
+          clientY: ${rects.to.y},
+        }));
+      })()`);
+      await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: rects.to.x, y: rects.to.y, button: "left", clickCount: 1, pointerType }, sessionId);
+      return;
+    }
+    await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: rects.to.x, y: rects.to.y, button: "left", clickCount: 1, pointerType }, sessionId);
+  };
+  const dragMatchingPairWithTouch = async (wordId, targetId, cancel = false) => {
+    const rects = await evaluate(`(() => {
+      const word = document.querySelector('.matching-pairs-word[data-word-id="${wordId}"]');
+      const target = document.querySelector('.matching-pairs-target[data-target-id="${targetId}"]');
+      word.scrollIntoView({ block: 'center', inline: 'center' });
+      target.scrollIntoView({ block: 'center', inline: 'center' });
+      const wr = word.getBoundingClientRect();
+      const tr = target.getBoundingClientRect();
+      return {
+        from: { x: wr.left + wr.width / 2, y: wr.top + wr.height / 2 },
+        to: { x: tr.left + tr.width / 2, y: tr.top + tr.height / 2 },
+      };
+    })()`);
+    await send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 }, sessionId);
+    await send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x: rects.from.x, y: rects.from.y, id: 41, radiusX: 6, radiusY: 6 }],
+    }, sessionId);
+    await waitFor(
+      () => evaluate(`document.querySelector('.matching-pairs-word[data-word-id="${wordId}"]')?.getAttribute('aria-pressed') === 'true'`),
+      "Conectando touch pointerdown selects a word",
+    );
+    await delay(100);
+    await send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ x: rects.to.x, y: rects.to.y, id: 41, radiusX: 6, radiusY: 6 }],
+    }, sessionId);
+    if (!cancel) {
+      await waitFor(
+        () => evaluate(`document.querySelector('.matching-pairs-target[data-target-id="${targetId}"]')?.classList.contains('drop-hover')`),
+        "Conectando touch pointermove identifies the drop target",
+      );
+    }
+    await send("Input.dispatchTouchEvent", {
+      type: cancel ? "touchCancel" : "touchEnd",
+      touchPoints: [],
+    }, sessionId);
+    await send("Emulation.setTouchEmulationEnabled", { enabled: false }, sessionId);
+  };
+  const clickMatchingPair = async (wordId, targetId) => {
+    await evaluate(`document.querySelector('.matching-pairs-word[data-word-id="${wordId}"]')?.click()`);
+    await evaluate(`document.querySelector('.matching-pairs-target[data-target-id="${targetId}"]')?.click()`);
+  };
+
+  const pairs = matchingInitial.words.map((word) => word.id);
+  await dragMatchingPairWithTouch(pairs[0], pairs[0], true);
+  await delay(100);
+  assert(
+    (await evaluate(`document.querySelectorAll('.matching-pairs-line.correct').length`)) === 0,
+    "Conectando touch pointercancel should not persist a line",
+  );
+  assert(
+    (await evaluate(`document.querySelectorAll('.matching-pairs-card .answer-feedback').length`)) === 0,
+    "Conectando touch pointercancel should remain neutral",
+  );
+  assert(
+    (await evaluate(`document.querySelectorAll('.matching-pairs-word[aria-pressed="true"]').length`)) === 0,
+    "Conectando touch pointercancel should clear the selected word",
+  );
+  const wrongTarget = matchingInitial.targets.find((target) => target.id !== pairs[0]).id;
+  await dragMatchingPair(pairs[0], wrongTarget);
+  await waitFor(
+    () =>
+      evaluate(`document.querySelector('.matching-pairs-word[data-word-id="${pairs[0]}"]')?.dataset.firstAttempt === 'wrong'`),
+    "Conectando records the first wrong attempt once",
+  );
+  const wrongCountAfterFirst = await evaluate(`document.querySelectorAll('.matching-pairs-line.correct').length`);
+  assert(wrongCountAfterFirst === 0, "Conectando wrong attempt should retract instead of persisting a line");
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.matching-pairs-line.wrong').length === 0`),
+    "Conectando wrong line retracts before retry",
+  );
+  const wrongFeedbackState = await evaluate(`({
+    wrongFeedback: document.querySelectorAll('.matching-pairs-card .answer-feedback.wrong').length,
+    liveRegions: document.querySelectorAll('.matching-pairs-card [role="status"]').length,
+  })`);
+  assert(
+    wrongFeedbackState.wrongFeedback === 1 && wrongFeedbackState.liveRegions === 1,
+    `Conectando wrong feedback should remain explicit in one live region: ${JSON.stringify(wrongFeedbackState)}`,
+  );
+  await dragMatchingPairWithTouch(pairs[0], pairs[0]);
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.matching-pairs-line.correct').length === 1`),
+    "Conectando touch retry keeps a correct line",
+  );
+  const firstAttemptAfterRetry = await evaluate(`document.querySelector('.matching-pairs-word[data-word-id="${pairs[0]}"]')?.dataset.firstAttempt`);
+  assert(firstAttemptAfterRetry === "wrong", "Conectando retry must preserve the initial wrong outcome");
+  screenshots.push(await screenshot("matching-pairs-after-line-1440x900"));
+
+  await evaluate(`document.querySelector('.matching-pairs-word[data-word-id="${pairs[1]}"]').click()`);
+  await waitFor(
+    () => evaluate(`document.querySelector('.matching-pairs-word[aria-pressed="true"]')?.dataset.wordId === "${pairs[1]}"`),
+    "Conectando click fallback selects a word",
+  );
+  assert(
+    (await evaluate(`document.querySelectorAll('.matching-pairs-card .answer-feedback').length`)) === 0,
+    "Conectando word selection should use neutral feedback",
+  );
+  await evaluate(`document.querySelector('.matching-pairs-target[data-target-id="${pairs[1]}"]').click()`);
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.matching-pairs-line.correct').length === 2`),
+    "Conectando click fallback connects a pair",
+  );
+
+  await evaluate(`document.querySelector('.matching-pairs-word[data-word-id="${pairs[2]}"]').focus()`);
+  await pressKey("Enter");
+  await evaluate(`document.querySelector('.matching-pairs-target[data-target-id="${pairs[2]}"]').focus()`);
+  await pressKey("Enter");
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.matching-pairs-line.correct').length === 3`),
+    "Conectando keyboard fallback connects a pair",
+  );
+
+  const boundaryPair = pairs
+    .slice(3)
+    .find((id) => matchingInitial.targets.findIndex((target) => target.id === id) > 0);
+  assert(boundaryPair, "Conectando needs a non-first target for edge-drop coverage");
+  await dragMatchingPair(boundaryPair, boundaryPair, "pointerup", "mouse", "top");
+  await waitFor(
+    () => evaluate(`document.querySelector('.matching-pairs-word[data-word-id="${boundaryPair}"]')?.dataset.connected === 'true'`),
+    "Conectando correct drop near a target edge must not hit an adjacent target",
+  );
+
+  for (const id of pairs.slice(3).filter((id) => id !== boundaryPair)) {
+    await clickMatchingPair(id, id);
+  }
+  await waitFor(() => hasText("6 de 6 pares conectados"), "Conectando completes all six pairs");
+  const matchingOutcomes = await evaluate(`(() => {
+    const words = [...document.querySelectorAll('.matching-pairs-word')].map((word) => word.dataset.firstAttempt);
+    const button = [...document.querySelectorAll('button')].find((item) => item.textContent.includes('Ver resultado'));
+    return {
+      connectedWords: document.querySelectorAll('.matching-pairs-word[data-connected="true"]').length,
+      connectedTargets: document.querySelectorAll('.matching-pairs-target[data-connected="true"]').length,
+      correctLines: document.querySelectorAll('.matching-pairs-line.correct').length,
+      firstAttempts: words,
+      resultEnabled: button ? !button.disabled : false,
+    };
+  })()`);
+  assert(
+    matchingOutcomes.connectedWords === 6 &&
+      matchingOutcomes.connectedTargets === 6 &&
+      matchingOutcomes.correctLines === 6 &&
+      matchingOutcomes.firstAttempts.filter((item) => item === "wrong").length === 1 &&
+      matchingOutcomes.firstAttempts.filter((item) => item === "correct").length === 5 &&
+      matchingOutcomes.resultEnabled,
+    `Conectando final board state failed: ${JSON.stringify(matchingOutcomes)}`,
+  );
+  await setViewport(390, 844);
+  await assertNoOverflow("/jogos/conectando mobile completed board");
+  screenshots.push(await screenshot("matching-pairs-mobile-390x844"));
+  await setViewport(768, 1024);
+  await delay(150);
+  screenshots.push(await screenshot("matching-pairs-tablet-768x1024"));
+  assert(
+    (await evaluate(`document.querySelectorAll('.matching-pairs-line.correct').length`)) === 6,
+    "Conectando lines should survive resize",
+  );
+  await setViewport(1366, 768);
+  await clickText("Ver resultado");
+  await waitFor(
+    () => evaluate(`Boolean(document.querySelector('.game-result-page')) && document.body.innerText.includes('Conectando')`),
+    "Conectando result screen",
+  );
+  const matchingResult = await evaluate(`(() => {
+    const stats = [...document.querySelectorAll('.score-stats > div')].map((item) => ({
+      label: item.querySelector('span')?.textContent.trim(),
+      value: item.querySelector('strong')?.textContent.trim(),
+    }));
+    return Object.fromEntries(stats.map((item) => [item.label, item.value]));
+  })()`);
+  assert(
+    matchingResult.Total === "6" && matchingResult.Acertos === "5",
+    `Conectando must persist exactly one first outcome per word: ${JSON.stringify(matchingResult)}`,
+  );
+  await clickText("Jogar novamente");
+  await waitFor(() => hasText("0 de 6 pares conectados"), "Conectando play again resets the board");
+
   // ---- Par perfeito: card count, toggle-back on mismatch ----
+  for (const [width, height] of [
+    [1440, 900],
+    [768, 1024],
+    [390, 844],
+  ]) {
+    await setViewport(width, height);
+    await navigate("/jogos/par-perfeito");
+    await waitFor(() => hasText("de 6 pares encontrados"), `memory match load ${width}x${height}`);
+    await assertNoOverflow(`/jogos/par-perfeito ${width}x${height}`);
+    screenshots.push(await screenshot(`memory-match-board-${width}x${height}`));
+  }
+  await setViewport(1366, 768);
   await navigate("/jogos/par-perfeito");
   await waitFor(() => hasText("de 6 pares encontrados"), "memory match load");
   const memoryCardCount = await evaluate(`document.querySelectorAll('.memory-match-card').length`);
@@ -1595,7 +1872,7 @@ async function main() {
     ["/jogos/monte-a-frase", ".sentence-token"],
     ["/jogos/caca-ao-erro", ".error-hunt-token"],
     ["/jogos/palavra-secreta", ".secret-word-key"],
-    ["/jogos/conectando", ".matching-pairs-option"],
+    ["/jogos/conectando", ".matching-pairs-word"],
     ["/jogos/par-perfeito", ".memory-match-card"],
     ["/jogos/cada-coisa-no-seu-lugar", ".sorting-word-card"],
     ["/jogos/ouvido-afiado", ".listening-ear-play"],

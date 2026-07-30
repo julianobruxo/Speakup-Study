@@ -111,7 +111,8 @@ export default function MemoryMatchGame() {
         </span>
       </section>
 
-      <div className="memory-match-grid" role="grid" aria-label="Cartas do jogo da memória">
+      <div className="memory-match-board">
+        <div className="memory-match-grid" role="grid" aria-label="Cartas do jogo da memória">
         {cards.map((card) => {
           const isFlipped = flipped.includes(card.cardId) || matchedPairIds.has(card.pairId);
           const isMatched = matchedPairIds.has(card.pairId);
@@ -143,6 +144,7 @@ export default function MemoryMatchGame() {
             </button>
           );
         })}
+        </div>
       </div>
 
       <div className="session-action">

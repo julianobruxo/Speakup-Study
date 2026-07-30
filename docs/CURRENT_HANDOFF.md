@@ -1,6 +1,6 @@
 # Current Handoff
 
-Atualizado em: 2026-07-24
+Atualizado em: 2026-07-30
 
 ## Produto
 
@@ -64,7 +64,7 @@ Os nove jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gra
 - Par perfeito;
 - Ouvido afiado.
 
-`Conectando` é o nome aprovado para associação entre palavra em inglês e imagem.
+`Conectando` é o nome aprovado para associação entre palavra em inglês e imagem. A branch local `feat/loop-jogos-v1` preserva e consolida a nova experiência, com seis palavras e seis imagens no mesmo tabuleiro responsivo e compacto, linhas por Pointer Events, fallback por clique/teclado e somente o primeiro outcome por palavra. `Par perfeito` também preserva o ajuste local de largura/densidade do board, sem mudança de mecânica.
 
 ## Rotas Principais
 
@@ -101,10 +101,24 @@ node scripts/smokeUi.mjs
 
 O smoke cobre nove viewports: 360x800, 390x844, 412x915, 768x1024, 1000x800, 1024x768, 1366x768, 1440x900 e 1920x1080.
 
+Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lint, build, smoke completo e `git diff --check`. As capturas de catálogo, Conectando e Par perfeito foram inspecionadas em 1440x900, 768x1024 e 390x844. O build atual mantém um aviso de chunk inicial de cerca de 535 kB, que será tratado por code-splitting antes do Phaser.
+
+### Relatório da Fase 0
+
+- Objetivo: preservar e concluir o trabalho local iniciado em Conectando, Par perfeito, assets, CSS, smoke e documentação.
+- Decisões: manter React como dono da rodada e persistência; registrar somente o primeiro outcome por palavra; usar uma única região live; tratar seleção/cancelamento como feedback neutro; preservar integralmente a composição dos WebPs.
+- Revisões: Dalton revisou o diff técnico e os assets; Bernoulli auditou os nove jogos e a fundação para orientar as Fases 1 e 2. Ambos atuaram somente em leitura.
+- Defeitos corrigidos: assets com máscaras aparentes ou grafia divergente, updater impuro em StrictMode, tom incorreto após retração, anúncios duplicados, timer sem limpeza, seleção mantida após `pointercancel`, `touchEnd` sem coordenadas úteis, hitboxes sobrepostas, linhas desktop excessivamente longas e alvo mobile abaixo de 44 px.
+- Testes: `validateContent`, `tsc -b`, `lint`, `build`, smoke funcional/visual e `git diff --check`; o smoke cobre mouse, touch real via CDP, drop próximo à borda, clique, teclado, resultado 5/6, reset e resize, com `browserErrors: 0`.
+- Evidências visuais: diretório `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-g3MRP2`, incluindo catálogo, Conectando e Par perfeito em 1440x900, 768x1024 e 390x844.
+- Arquivos: `MatchingPairsGame.tsx`, `MemoryMatchGame.tsx`, `index.css`, `smokeUi.mjs`, seis WebPs autorizados, `STATUS.md` e este handoff.
+- Git: checkpoint exclusivamente local na branch `feat/loop-jogos-v1`; o SHA fica no histórico Git e será consolidado no relatório do próximo checkpoint. Nenhum push ou deploy.
+
 ## Git
 
-- Branch: `main`.
+- Branch: `feat/loop-jogos-v1`.
+- Base do loop: `2547adda3db0a05959f2fa1cf377918d5df6b6eb`; todas as mudanças não commitadas anteriores foram preservadas ao criar a branch.
 - Remoto: `origin` em `https://github.com/julianobruxo/Speakup-Study.git`.
 - A pasta local e o repositório remoto mantêm nomes históricos.
-- Não fazer deploy, PR, tag ou release nesta fase.
-- Não alterar `CLAUDE.md`.
+- Checkpoints locais são autorizados somente após gate verde.
+- Não fazer push, deploy, PR, tag ou release durante o loop.
