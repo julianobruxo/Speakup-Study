@@ -5,7 +5,9 @@ import { AppShell, PrimaryButton } from "../../components/AppShell";
 import type { GameRoundResult } from "../core/sessionEngine";
 
 interface GameResultScreenProps {
+  completionError: Error | null;
   gameTitle: string;
+  onRetryPersistence: () => void;
   result: GameRoundResult;
   reduceMotion: boolean;
   onPlayAgain: () => void;
@@ -14,10 +16,12 @@ interface GameResultScreenProps {
 }
 
 export function GameResultScreen({
+  completionError,
   gameTitle,
   onChangeGame,
   onHome,
   onPlayAgain,
+  onRetryPersistence,
   reduceMotion,
   result,
 }: GameResultScreenProps) {
@@ -75,6 +79,25 @@ export function GameResultScreen({
               </div>
             </div>
           </section>
+
+          {completionError && (
+            <section className="result-save-error" role="alert">
+              <span className="feedback-icon">
+                <AppIcon name="close" size={20} />
+              </span>
+              <div>
+                <strong>O resultado ainda não foi salvo.</strong>
+                <p>Confira o armazenamento do navegador e tente novamente.</p>
+              </div>
+              <PrimaryButton
+                icon={<AppIcon name="refresh" size={18} />}
+                onClick={onRetryPersistence}
+                variant="secondary"
+              >
+                Tentar salvar novamente
+              </PrimaryButton>
+            </section>
+          )}
 
           <div className="result-actions">
             <PrimaryButton icon={<AppIcon name="refresh" />} onClick={onPlayAgain}>

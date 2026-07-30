@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-07-30 (Fase 0 do loop de jogos v1)
+Atualizado em: 2026-07-30 (Fase 1 do loop de jogos v1)
 
 ## Estado Atual
 
@@ -22,6 +22,9 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - IndexedDB versão 3 com migração idempotente, preservando `questions`, `sessions` e `engagement`, e adicionando `gameSessions`.
 - Package name `ingles-em-jogo` e metadata atualizada.
 - Fundação compartilhada de jogos: catálogo central, matriz de compatibilidade, seleção determinística de conteúdo, engine de sessão, XP/missão/streak idempotentes, adapters de Gramática (`present_tobe`) e Vocabulário (`body`).
+- Roadmap canônico dos 13 jogos em `docs/IMPLEMENTATION_MAP.md`, com fronteira React–Phaser e gates por fase.
+- Suite pura com `node:test`: 9 testes para catálogo, compatibilidade, seleção, rodada, resultado e conclusão persistente.
+- Conclusão de jogo serializada e idempotente, com duas tentativas automáticas, retry visível e a mesma `sessionId`.
 - Os nove jogos oficiais funcionais com o escopo `present_tobe` + `body`.
 - Cards da página de Jogos com as nove imagens aprovadas integradas no topo, usando versões de produção WebP 800x450 em `src/assets/game-card-images/cards/`; os masters 1600x900 permanecem preservados.
 
@@ -93,6 +96,7 @@ Planejado:
 
 ## Validações Obrigatórias
 
+- `npm test`
 - `node scripts/validateContent.mjs`
 - `npx tsc -b`
 - `npm run lint`
@@ -117,3 +121,15 @@ O smoke agora cobre fluxo funcional completo dos nove jogos, timers individuais 
 - As screenshots de catálogo, Conectando e Par perfeito foram abertas e inspecionadas em 1440x900, 768x1024 e 390x844.
 - Gate técnico aprovado em 2026-07-30: conteúdo, TypeScript, lint, build, smoke completo e `git diff --check`.
 - O build ainda reporta chunk inicial de cerca de 535 kB; code-splitting permanece obrigatório antes da introdução do Phaser.
+
+## Fase 1 — roadmap e fundação
+
+- `docs/IMPLEMENTATION_MAP.md` é o único roadmap ativo para a release candidate local com 13 jogos.
+- A seleção determinística agora rejeita contagens negativas e remove entradas duplicadas sem alterar a fonte.
+- A engine registra somente o primeiro outcome por desafio e cria snapshots imutáveis no resultado.
+- `completionCoordinator.ts` deduplica conclusões concorrentes, serializa resets e novas sessões, repete uma falha automaticamente e preserva a `sessionId` no retry explícito.
+- Os nove resultados DOM exibem falha de persistência em região acessível, sem impedir que o jogador repita a tentativa.
+- `package.json` declara Node `>=22.18`; nenhuma dependência foi adicionada e o lockfile recebeu somente o mesmo metadata de engine.
+- O smoke cobre a regressão gestual do Conectando com touch real, mouse, clique, teclado, `pointercancel` e drop próximo à borda.
+- Gate técnico e revisão aprovados em 2026-07-30: 9/9 testes puros, smoke completo em nove viewports e `browserErrors: 0`; evidências em `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-ePzXdk`.
+- `npm audit` reporta duas ocorrências altas da mesma advisory de CSRF em modo RSC do React Router; a aplicação é uma SPA Vite e não usa RSC Actions, mas a atualização compatível permanece uma decisão aberta.

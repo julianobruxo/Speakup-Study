@@ -159,7 +159,7 @@ Vocabulário
 
 ### Games
 
-The official catalog is:
+The official v1 target catalog is:
 
 1. Monte a frase;
 2. Caça ao erro;
@@ -170,8 +170,14 @@ The official catalog is:
 7. Cruzando palavras;
 8. Par perfeito;
 9. Ouvido afiado.
+10. Bubble Shooter;
+11. Corte a palavra;
+12. Ninja;
+13. Corrida individual.
 
 `Conectando` is the official name for direct association between an English word and an image.
+
+The first nine games are the existing DOM catalog. The four arcade games are implemented incrementally during the authorized games-v1 loop. Multiplayer racing, rooms, matchmaking, WebSocket, Colyseus, backend, authentication, and remote synchronization are outside this version.
 
 Games are **reusable mechanics**, not fixed content modules. They must reuse canonical content, progress, audio, session, engagement, and persistence services. Do not duplicate content banks or progress logic inside each game.
 
@@ -424,7 +430,7 @@ After an incorrect answer, preserve the current pedagogical feedback and manual 
 
 Implement the complete official game catalog in **controlled phases over one shared foundation**. Do not build nine disconnected mini-applications, and do not attempt one uncontrolled mega-change.
 
-Each phase must finish with working code and full validation before the next phase begins. The final scope of this rollout includes all nine games.
+Each phase must finish with working code and full validation before the next phase begins. The first baseline includes the nine DOM games; the authorized v1 loop expands the final scope to 13 games with Bubble Shooter, Corte a palavra, Ninja, and Corrida individual.
 
 ### Content scope for the first complete templates
 
@@ -585,6 +591,22 @@ Create shared contracts for:
 - keyboard, touch, drag-and-drop, reduced-motion, and screen-reader behavior.
 
 Do not create files such as `sentenceBuilderQuestions.ts` or `errorHuntQuestions.ts` that copy canonical banks. Use adapters over canonical content.
+
+### React–Phaser boundary for arcade games
+
+Phaser 3 is authorized only after route-level code-splitting is implemented and verified. It must remain in a separate lazy-loaded chunk.
+
+React owns:
+
+- routing, shell, catalog, content selection, and round configuration;
+- canonical content, session, outcomes, results, and retry;
+- IndexedDB, XP, mission, streak, preferences, and external accessibility.
+
+Phaser owns only:
+
+- arcade rendering, physics, collision, movement, sprites, particles, controls, and transient match state.
+
+Phaser must never persist progress, grant XP, own canonical content, or navigate the product directly. Each arcade must return outcomes to React through a small bridge and provide a simplified DOM mode so the learning content is not exclusively dependent on Canvas.
 
 ---
 
@@ -792,6 +814,8 @@ Forbidden without express authorization:
 - committing lockfile or configuration changes merely because they exist.
 
 Preparing changes in the working tree is allowed. Staging files with `git add` should also be avoided unless Juliano explicitly asks for staging or a commit-ready state.
+
+For the explicitly authorized `feat/loop-jogos-v1` mission, local checkpoint commits are allowed only after the complete phase gate is green, reviewed, visually inspected, documented, and checked with `git diff --check`. This standing authorization applies only to coherent local checkpoints in that loop and does not authorize push, PR, merge, tag, release, or deploy.
 
 ### Never push without explicit authorization
 

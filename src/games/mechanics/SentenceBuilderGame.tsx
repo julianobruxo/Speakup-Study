@@ -35,7 +35,7 @@ export default function SentenceBuilderGame() {
   const [isCorrect, setIsCorrect] = useState(false);
   const [roundState, setRoundState] = useState<GameRoundState>(() => createRoundState("sentence_builder"));
   const [finished, setFinished] = useState(false);
-  const { complete, resetSession } = useGameCompletion("sentence_builder", "grammar");
+  const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("sentence_builder", "grammar");
 
   const challenge = challenges[index];
 
@@ -94,9 +94,11 @@ export default function SentenceBuilderGame() {
     const result = finalizeRound(roundState);
     return (
       <GameResultScreen
+        completionError={completionError}
         gameTitle="Monte a frase"
         onChangeGame={() => navigate("/jogos")}
         onHome={() => navigate("/")}
+        onRetryPersistence={retryCompletion}
         onPlayAgain={() => {
           resetSession();
           setSeed(Date.now());

@@ -1711,6 +1711,37 @@ dialog:focus-visible {
   gap: 8px;
 }
 
+.result-save-error {
+  align-items: start;
+  background: #fff1f1;
+  border: 1px solid #efb5b5;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin: 12px 0;
+  padding: 12px;
+}
+
+.result-save-error .feedback-icon {
+  color: #a32032;
+}
+
+.result-save-error div {
+  display: grid;
+  gap: 2px;
+}
+
+.result-save-error p {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.result-save-error .primary-button {
+  grid-column: 1 / -1;
+}
+
 .confetti {
   height: 190px;
   left: 0;

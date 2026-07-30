@@ -1,48 +1,76 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { ContentDomain, GameId } from "./catalog";
 import type { GameRoundResult } from "./sessionEngine";
+import { createCompletionCoordinator, type CompletionCoordinator } from "./completionCoordinator";
 import { saveGameSession } from "../../services/progress/localProgress";
 import { recordGameRoundEngagement } from "../../services/progress/engagement";
 
 /**
- * Persists a finished game round exactly once per session, then reports the
- * result to the shared XP/mission/streak engine. Call `complete` from the
- * game's finish handler; the sessionId returned by `useGameSessionId` keeps
- * repeated calls (StrictMode double-invoke, re-render) idempotent.
+ * Serializes completion per session and retries the idempotent persistence
+ * pipeline once. A terminal error is exposed to the result UI instead of
+ * becoming an unhandled rejection.
  */
 export function useGameCompletion(gameId: GameId, contentDomain: ContentDomain) {
-  const sessionIdRef = useRef(crypto.randomUUID());
-  const savedRef = useRef(false);
+  const [completionError, setCompletionError] = useState<Error | null>(null);
+  const generationRef = useRef(0);
+  const lastResultRef = useRef<GameRoundResult | null>(null);
+  const coordinatorRef = useRef<CompletionCoordinator<GameRoundResult> | null>(null);
+
+  if (!coordinatorRef.current) {
+    coordinatorRef.current = createCompletionCoordinator({
+      createSessionId: () => crypto.randomUUID(),
+      persist: async (sessionId, result) => {
+        await saveGameSession({
+          sessionId,
+          gameId,
+          contentDomain,
+          totalChallenges: result.totalChallenges,
+          correctCount: result.correctCount,
+          xpEarned: result.xpEarned,
+          score: result.score,
+          completedAt: result.completedAt,
+        });
+
+        await recordGameRoundEngagement(
+          sessionId,
+          contentDomain,
+          result.xpEarned,
+          result.totalChallenges,
+          new Date(result.completedAt),
+        );
+      },
+    });
+  }
 
   async function complete(result: GameRoundResult) {
-    if (savedRef.current) return;
-    savedRef.current = true;
-    const sessionId = sessionIdRef.current;
+    const generation = generationRef.current;
+    lastResultRef.current = result;
+    setCompletionError(null);
+    try {
+      await coordinatorRef.current!.complete(result);
+    } catch (error) {
+      if (generationRef.current === generation) {
+        setCompletionError(error instanceof Error ? error : new Error("Não foi possível salvar o resultado."));
+      }
+    }
+  }
 
-    await saveGameSession({
-      sessionId,
-      gameId,
-      contentDomain,
-      totalChallenges: result.totalChallenges,
-      correctCount: result.correctCount,
-      xpEarned: result.xpEarned,
-      score: result.score,
-      completedAt: result.completedAt,
-    });
-
-    await recordGameRoundEngagement(
-      sessionId,
-      contentDomain,
-      result.xpEarned,
-      result.totalChallenges,
-      new Date(result.completedAt),
-    );
+  function retryCompletion() {
+    if (lastResultRef.current) void complete(lastResultRef.current);
   }
 
   function resetSession() {
-    sessionIdRef.current = crypto.randomUUID();
-    savedRef.current = false;
+    generationRef.current += 1;
+    coordinatorRef.current!.reset();
+    lastResultRef.current = null;
+    setCompletionError(null);
   }
 
-  return { complete, resetSession, sessionId: sessionIdRef.current };
+  return {
+    complete,
+    completionError,
+    resetSession,
+    retryCompletion,
+    sessionId: coordinatorRef.current.getSessionId(),
+  };
 }

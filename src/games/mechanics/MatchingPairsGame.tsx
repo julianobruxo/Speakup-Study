@@ -25,6 +25,7 @@ interface BoardPoint {
 interface DragState {
   wordId: string;
   pointerId: number;
+  wasSelected: boolean;
   from: BoardPoint;
   to: BoardPoint;
   hoverTargetId: string | null;
@@ -70,10 +71,14 @@ export default function MatchingPairsGame() {
   const boardRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef<DragState | null>(null);
   const firstAttemptsRef = useRef<Record<string, boolean>>({});
+  const pointerSelectionRef = useRef<{
+    startedAt: number;
+    wordId: string;
+  } | null>(null);
   const wrongTimerRef = useRef<number | null>(null);
   const wordRefs = useRef(new Map<string, HTMLButtonElement>());
   const targetRefs = useRef(new Map<string, HTMLButtonElement>());
-  const { complete, resetSession } = useGameCompletion("matching_pairs", "vocabulary");
+  const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("matching_pairs", "vocabulary");
 
   const completedCount = Object.keys(connections).length;
   const roundComplete = challenges.length > 0 && completedCount === challenges.length;
@@ -235,7 +240,13 @@ export default function MatchingPairsGame() {
       const word = challengeById(activeDrag.wordId);
       if (word) {
         setFeedbackTone(null);
-        setLiveMessage(`${word.term} voltou para a coluna de palavras.`);
+        if (activeDrag.wasSelected) {
+          setSelectedWordId(null);
+          setLiveMessage(`${word.term} não está mais selecionada.`);
+        } else {
+          setSelectedWordId(activeDrag.wordId);
+          setLiveMessage(`${word.term} selecionada. Escolha a imagem correspondente.`);
+        }
       }
     }
 
@@ -279,6 +290,10 @@ export default function MatchingPairsGame() {
     setWrongAttempt(null);
     setFeedbackTone(null);
     setLiveMessage("");
+    pointerSelectionRef.current = {
+      startedAt: performance.now(),
+      wordId,
+    };
     event.preventDefault();
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -289,6 +304,7 @@ export default function MatchingPairsGame() {
     const nextDrag = {
       wordId,
       pointerId: event.pointerId,
+      wasSelected: selectedWordId === wordId,
       from,
       to: pointFromClient(event.clientX, event.clientY),
       hoverTargetId: getTargetAtPoint(event.clientX, event.clientY),
@@ -305,6 +321,19 @@ export default function MatchingPairsGame() {
     setFeedbackTone(null);
     setSelectedWordId((current) => (current === wordId ? null : wordId));
     if (word) setLiveMessage(`${word.term} selecionada. Escolha a imagem correspondente.`);
+  }
+
+  function selectWordFromClick(wordId: string, clickDetail: number) {
+    const pointerSelection = pointerSelectionRef.current;
+    pointerSelectionRef.current = null;
+    if (
+      pointerSelection?.wordId === wordId &&
+      clickDetail > 0 &&
+      performance.now() - pointerSelection.startedAt < 500
+    ) {
+      return;
+    }
+    selectWord(wordId);
   }
 
   function selectTarget(targetId: string) {
@@ -340,9 +369,11 @@ export default function MatchingPairsGame() {
     const result = finalizeRound(roundState);
     return (
       <GameResultScreen
+        completionError={completionError}
         gameTitle="Conectando"
         onChangeGame={() => navigate("/jogos")}
         onHome={() => navigate("/")}
+        onRetryPersistence={retryCompletion}
         onPlayAgain={resetRound}
         reduceMotion={Boolean(reduceMotion)}
         result={result}
@@ -423,7 +454,7 @@ export default function MatchingPairsGame() {
                   data-word-id={word.id}
                   disabled={connected}
                   key={word.id}
-                  onClick={() => selectWord(word.id)}
+                  onClick={(event) => selectWordFromClick(word.id, event.detail)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();

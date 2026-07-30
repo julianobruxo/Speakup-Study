@@ -1208,7 +1208,7 @@ async function main() {
     }
     await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: rects.to.x, y: rects.to.y, button: "left", clickCount: 1, pointerType }, sessionId);
   };
-  const dragMatchingPairWithTouch = async (wordId, targetId, cancel = false) => {
+  const cancelMatchingPairWithTouch = async (wordId, targetId) => {
     const rects = await evaluate(`(() => {
       const word = document.querySelector('.matching-pairs-word[data-word-id="${wordId}"]');
       const target = document.querySelector('.matching-pairs-target[data-target-id="${targetId}"]');
@@ -1222,6 +1222,7 @@ async function main() {
       };
     })()`);
     await send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 }, sessionId);
+    await delay(50);
     await send("Input.dispatchTouchEvent", {
       type: "touchStart",
       touchPoints: [{ x: rects.from.x, y: rects.from.y, id: 41, radiusX: 6, radiusY: 6 }],
@@ -1235,25 +1236,97 @@ async function main() {
       type: "touchMove",
       touchPoints: [{ x: rects.to.x, y: rects.to.y, id: 41, radiusX: 6, radiusY: 6 }],
     }, sessionId);
-    if (!cancel) {
-      await waitFor(
-        () => evaluate(`document.querySelector('.matching-pairs-target[data-target-id="${targetId}"]')?.classList.contains('drop-hover')`),
-        "Conectando touch pointermove identifies the drop target",
-      );
-    }
     await send("Input.dispatchTouchEvent", {
-      type: cancel ? "touchCancel" : "touchEnd",
+      type: "touchCancel",
       touchPoints: [],
     }, sessionId);
+    await send("Emulation.setTouchEmulationEnabled", { enabled: false }, sessionId);
+  };
+  const tapMatchingPairWithTouch = async (wordId, targetId) => {
+    const points = await evaluate(`(() => {
+      const word = document.querySelector('.matching-pairs-word[data-word-id="${wordId}"]');
+      const target = document.querySelector('.matching-pairs-target[data-target-id="${targetId}"]');
+      const wr = word.getBoundingClientRect();
+      const tr = target.getBoundingClientRect();
+      return {
+        word: { x: wr.left + wr.width / 2, y: wr.top + wr.height / 2 },
+        target: { x: tr.left + tr.width / 2, y: tr.top + tr.height / 2 },
+      };
+    })()`);
+    await send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 }, sessionId);
+    await delay(50);
+    await send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ ...points.word, id: 51, radiusX: 6, radiusY: 6 }],
+    }, sessionId);
+    await delay(80);
+    await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }, sessionId);
+    await waitFor(
+      () =>
+        evaluate(
+          `document.querySelector('.matching-pairs-word[data-word-id="${wordId}"]')?.getAttribute('aria-pressed') === 'true'`,
+        ),
+      "Conectando touch tap selects a word",
+    );
+    await send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ ...points.target, id: 52, radiusX: 6, radiusY: 6 }],
+    }, sessionId);
+    await delay(80);
+    await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }, sessionId);
     await send("Emulation.setTouchEmulationEnabled", { enabled: false }, sessionId);
   };
   const clickMatchingPair = async (wordId, targetId) => {
     await evaluate(`document.querySelector('.matching-pairs-word[data-word-id="${wordId}"]')?.click()`);
     await evaluate(`document.querySelector('.matching-pairs-target[data-target-id="${targetId}"]')?.click()`);
   };
+  const clickMatchingWordWithMouse = async (wordId) => {
+    const point = await evaluate(`(() => {
+      const word = document.querySelector('.matching-pairs-word[data-word-id="${wordId}"]');
+      const rect = word.getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    })()`);
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", ...point, pointerType: "mouse" }, sessionId);
+    await send(
+      "Input.dispatchMouseEvent",
+      { type: "mousePressed", ...point, button: "left", clickCount: 1, pointerType: "mouse" },
+      sessionId,
+    );
+    await send(
+      "Input.dispatchMouseEvent",
+      { type: "mouseReleased", ...point, button: "left", clickCount: 1, pointerType: "mouse" },
+      sessionId,
+    );
+  };
 
-  const pairs = matchingInitial.words.map((word) => word.id);
-  await dragMatchingPairWithTouch(pairs[0], pairs[0], true);
+  const touchPair = matchingInitial.words[0].id;
+  await tapMatchingPairWithTouch(touchPair, touchPair);
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.matching-pairs-line.correct').length === 1`),
+    "Conectando touch taps connect a pair",
+  );
+
+  await navigate("/jogos/conectando");
+  await waitFor(() => hasText("0 de 6 pares conectados"), "matching pairs clean scoring board load");
+  const scoringBoard = await evaluate(`({
+    words: [...document.querySelectorAll('.matching-pairs-word')].map((button) => button.dataset.wordId),
+    targets: [...document.querySelectorAll('.matching-pairs-target')].map((button) => button.dataset.targetId),
+  })`);
+  const pairs = scoringBoard.words;
+  await clickMatchingWordWithMouse(pairs[0]);
+  await waitFor(
+    () =>
+      evaluate(
+        `document.querySelector('.matching-pairs-word[data-word-id="${pairs[0]}"]')?.getAttribute('aria-pressed') === 'true'`,
+      ),
+    "Conectando physical mouse click selects a word",
+  );
+  await clickMatchingWordWithMouse(pairs[0]);
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.matching-pairs-word[aria-pressed="true"]').length === 0`),
+    "Conectando second physical mouse click clears the selected word",
+  );
+  await cancelMatchingPairWithTouch(pairs[0], pairs[0]);
   await delay(100);
   assert(
     (await evaluate(`document.querySelectorAll('.matching-pairs-line.correct').length`)) === 0,
@@ -1267,7 +1340,7 @@ async function main() {
     (await evaluate(`document.querySelectorAll('.matching-pairs-word[aria-pressed="true"]').length`)) === 0,
     "Conectando touch pointercancel should clear the selected word",
   );
-  const wrongTarget = matchingInitial.targets.find((target) => target.id !== pairs[0]).id;
+  const wrongTarget = scoringBoard.targets.find((targetId) => targetId !== pairs[0]);
   await dragMatchingPair(pairs[0], wrongTarget);
   await waitFor(
     () =>
@@ -1288,10 +1361,10 @@ async function main() {
     wrongFeedbackState.wrongFeedback === 1 && wrongFeedbackState.liveRegions === 1,
     `Conectando wrong feedback should remain explicit in one live region: ${JSON.stringify(wrongFeedbackState)}`,
   );
-  await dragMatchingPairWithTouch(pairs[0], pairs[0]);
+  await dragMatchingPair(pairs[0], pairs[0]);
   await waitFor(
     () => evaluate(`document.querySelectorAll('.matching-pairs-line.correct').length === 1`),
-    "Conectando touch retry keeps a correct line",
+    "Conectando mouse retry keeps a correct line",
   );
   const firstAttemptAfterRetry = await evaluate(`document.querySelector('.matching-pairs-word[data-word-id="${pairs[0]}"]')?.dataset.firstAttempt`);
   assert(firstAttemptAfterRetry === "wrong", "Conectando retry must preserve the initial wrong outcome");
@@ -1321,17 +1394,7 @@ async function main() {
     "Conectando keyboard fallback connects a pair",
   );
 
-  const boundaryPair = pairs
-    .slice(3)
-    .find((id) => matchingInitial.targets.findIndex((target) => target.id === id) > 0);
-  assert(boundaryPair, "Conectando needs a non-first target for edge-drop coverage");
-  await dragMatchingPair(boundaryPair, boundaryPair, "pointerup", "mouse", "top");
-  await waitFor(
-    () => evaluate(`document.querySelector('.matching-pairs-word[data-word-id="${boundaryPair}"]')?.dataset.connected === 'true'`),
-    "Conectando correct drop near a target edge must not hit an adjacent target",
-  );
-
-  for (const id of pairs.slice(3).filter((id) => id !== boundaryPair)) {
+  for (const id of pairs.slice(3)) {
     await clickMatchingPair(id, id);
   }
   await waitFor(() => hasText("6 de 6 pares conectados"), "Conectando completes all six pairs");
@@ -1384,6 +1447,18 @@ async function main() {
   );
   await clickText("Jogar novamente");
   await waitFor(() => hasText("0 de 6 pares conectados"), "Conectando play again resets the board");
+  const boundaryPair = await evaluate(
+    `document.querySelectorAll('.matching-pairs-target')[1]?.dataset.targetId`,
+  );
+  assert(boundaryPair, "Conectando needs a non-first target for edge-drop coverage");
+  await dragMatchingPair(boundaryPair, boundaryPair, "pointerup", "mouse", "top");
+  await waitFor(
+    () =>
+      evaluate(
+        `document.querySelector('.matching-pairs-word[data-word-id="${boundaryPair}"]')?.dataset.connected === 'true'`,
+      ),
+    "Conectando correct drop near a target edge must not hit an adjacent target",
+  );
 
   // ---- Par perfeito: card count, toggle-back on mismatch ----
   for (const [width, height] of [

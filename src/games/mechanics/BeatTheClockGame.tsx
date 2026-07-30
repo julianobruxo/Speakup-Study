@@ -40,7 +40,7 @@ export default function BeatTheClockGame() {
   const [score, setScore] = useState(0);
   const [roundState, setRoundState] = useState<GameRoundState>(() => createRoundState("beat_the_clock"));
   const [finished, setFinished] = useState(false);
-  const { complete, resetSession } = useGameCompletion("beat_the_clock", "grammar");
+  const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("beat_the_clock", "grammar");
   const intervalRef = useRef<number | null>(null);
 
   const challenge: BeatTheClockChallenge | undefined = challenges[index];
@@ -132,9 +132,11 @@ export default function BeatTheClockGame() {
     const result = finalizeRound(roundState, new Date().toISOString(), score);
     return (
       <GameResultScreen
+        completionError={completionError}
         gameTitle="Contra o relógio"
         onChangeGame={() => navigate("/jogos")}
         onHome={() => navigate("/")}
+        onRetryPersistence={retryCompletion}
         onPlayAgain={() => {
           resetSession();
           setSeed(Date.now());

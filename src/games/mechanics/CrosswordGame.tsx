@@ -35,7 +35,7 @@ export default function CrosswordGame() {
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [roundState, setRoundState] = useState<GameRoundState>(() => createRoundState("crossword"));
   const [finished, setFinished] = useState(false);
-  const { complete, resetSession } = useGameCompletion("crossword", "vocabulary");
+  const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("crossword", "vocabulary");
 
   if (grid.placements.length === 0) {
     return (
@@ -75,9 +75,11 @@ export default function CrosswordGame() {
     const result = finalizeRound(roundState);
     return (
       <GameResultScreen
+        completionError={completionError}
         gameTitle="Cruzando palavras"
         onChangeGame={() => navigate("/jogos")}
         onHome={() => navigate("/")}
+        onRetryPersistence={retryCompletion}
         onPlayAgain={() => {
           resetSession();
           setSeed(Date.now());

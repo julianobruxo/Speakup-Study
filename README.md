@@ -76,6 +76,8 @@ Stack declarada em `package.json`:
 
 ## Como Executar
 
+Requer Node.js `>=22.18`.
+
 ```bash
 npm install
 npm run dev
@@ -86,6 +88,7 @@ O Vite informa a URL local ao iniciar.
 ## Build e Validação
 
 ```bash
+npm test
 npm run build
 npm run lint
 npx tsc -b

@@ -1,5 +1,5 @@
 import type { GameId } from "./catalog";
-import { calculateRoundXp } from "./roundConfig";
+import { calculateRoundXp } from "./roundConfig.ts";
 
 export interface ChallengeOutcome {
   challengeId: string;
@@ -33,6 +33,7 @@ export function recordOutcome(
   correct: boolean,
   answeredAt: string = new Date().toISOString(),
 ): GameRoundState {
+  if (state.outcomes.some((outcome) => outcome.challengeId === challengeId)) return state;
   return {
     ...state,
     currentIndex: state.currentIndex + 1,
@@ -56,7 +57,7 @@ export function finalizeRound(
     gameId: state.gameId,
     totalChallenges,
     correctCount,
-    outcomes: state.outcomes,
+    outcomes: state.outcomes.map((outcome) => ({ ...outcome })),
     xpEarned: calculateRoundXp(correctCount, totalChallenges),
     score: scoreOverride ?? correctCount,
     completedAt,

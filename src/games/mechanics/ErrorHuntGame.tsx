@@ -32,7 +32,7 @@ export default function ErrorHuntGame() {
   const [checked, setChecked] = useState(false);
   const [roundState, setRoundState] = useState<GameRoundState>(() => createRoundState("error_hunt"));
   const [finished, setFinished] = useState(false);
-  const { complete, resetSession } = useGameCompletion("error_hunt", "grammar");
+  const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("error_hunt", "grammar");
 
   const challenge = challenges[index];
 
@@ -75,9 +75,11 @@ export default function ErrorHuntGame() {
     const result = finalizeRound(roundState);
     return (
       <GameResultScreen
+        completionError={completionError}
         gameTitle="Caça ao erro"
         onChangeGame={() => navigate("/jogos")}
         onHome={() => navigate("/")}
+        onRetryPersistence={retryCompletion}
         onPlayAgain={() => {
           resetSession();
           setSeed(Date.now());

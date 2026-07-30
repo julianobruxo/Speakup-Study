@@ -1,6 +1,6 @@
 # Decisões Abertas
 
-Atualizado em: 2026-07-24
+Atualizado em: 2026-07-30
 
 ## Resolvidas
 
@@ -18,7 +18,7 @@ Atualizado em: 2026-07-24
 
 4. Persistência local
 
-   IndexedDB nativo, banco `practice-progress`, versão 2, com stores `questions`, `sessions` e `engagement`. `localStorage` fica restrito a preferências pequenas.
+   IndexedDB nativo, banco `practice-progress`, versão 3, com stores `questions`, `sessions`, `engagement` e `gameSessions`. `localStorage` fica restrito a preferências pequenas.
 
 5. Conteúdo funcional
 
@@ -26,7 +26,7 @@ Atualizado em: 2026-07-24
 
 6. Feedback
 
-   Acertos avançam automaticamente após 3 segundos. Erros exibem explicação e mantêm avanço manual com acesso a `Estudar esse tópico`.
+   Acertos avançam automaticamente após 2 segundos. Erros exibem explicação e mantêm avanço manual com acesso a `Estudar esse tópico`.
 
 7. Liga e ranking
 
@@ -34,7 +34,7 @@ Atualizado em: 2026-07-24
 
 8. Catálogo de jogos
 
-   Catálogo planejado aprovado:
+   Catálogo v1 aprovado:
 
    - Monte a frase;
    - Caça ao erro;
@@ -44,9 +44,14 @@ Atualizado em: 2026-07-24
    - Conectando;
    - Cruzando palavras;
    - Par perfeito;
-   - Ouvido afiado — fase posterior.
+   - Ouvido afiado;
+   - Bubble Shooter;
+   - Corte a palavra;
+   - Ninja;
+   - Corrida individual.
 
    `Conectando` é o nome aprovado para associação entre palavra em inglês e imagem.
+   Os nove primeiros jogos DOM estão funcionais; os quatro arcades serão implementados nas Fases 4–7 do roadmap canônico.
 
 9. Repositório
 
@@ -55,6 +60,10 @@ Atualizado em: 2026-07-24
 10. Jogos funcionais
 
     Os nove jogos do catálogo oficial estão implementados sobre uma fundação compartilhada (`src/games`), usando `present_tobe` e `body`. Nenhum banco de conteúdo foi duplicado; cada jogo consome os bancos canônicos via adapters.
+
+11. Roadmap e testes puros
+
+    `docs/IMPLEMENTATION_MAP.md` é o roadmap canônico dos 13 jogos. A fundação usa `node:test` sem dependência adicional e mantém React responsável por sessão, resultado, persistência e engajamento.
 
 ## Abertas
 
@@ -66,13 +75,13 @@ Atualizado em: 2026-07-24
 
    As demais categorias de vocabulário ainda precisam de conteúdo, assets e validação antes de entrar em `ROLLOUT_CONTENT`.
 
-3. Smoke test completo pendente
+3. Atualização do React Router
 
-   O smoke visual (`node scripts/smokeUi.mjs`) não pôde ser executado até o fim nesta sessão por um bloqueio de rede do sandbox (Edge headless não alcança o Vite local). Juliano precisa rodá-lo localmente para validar os nove jogos nos nove viewports.
+   `npm audit` reporta a advisory alta `GHSA-qwww-vcr4-c8h2`, relativa a CSRF em RSC Actions. O produto atual é uma SPA Vite e não usa RSC, mas deve adotar uma versão corrigida e compatível quando ela estiver disponível na linha usada pelo projeto. Não aplicar o downgrade sugerido automaticamente pelo npm.
 
 4. Testes automatizados adicionais
 
-   Vitest e React Testing Library continuam recomendados, mas não instalados. Adicionar dependências exige aprovação.
+   A fundação possui testes puros com `node:test` e o smoke cobre os fluxos reais no Edge. Testes de componente com uma biblioteca dedicada continuam opcionais; adicionar dependências além do Phaser autorizado exige decisão explícita.
 
 5. Login e sincronização
 
@@ -89,3 +98,7 @@ Atualizado em: 2026-07-24
 8. Deploy
 
    Deploy, PR, tag e release estão fora desta publicação e exigem autorização separada.
+
+9. Code-splitting
+
+   O chunk inicial permanece acima de 500 kB. O code-splitting de rotas é obrigatório na Fase 3 antes da instalação do Phaser.

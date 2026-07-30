@@ -85,7 +85,7 @@ export default function SortingStationGame() {
   const boardRef = useRef<HTMLDivElement | null>(null);
   const targetRefs = useRef(new Map<string, HTMLElement>());
   const suppressClickRef = useRef<string | null>(null);
-  const { complete, resetSession } = useGameCompletion("sorting_station", "vocabulary");
+  const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("sorting_station", "vocabulary");
 
   const panel = useMemo(() => panels[panelIndex] ?? [], [panelIndex, panels]);
   const totalPanels = panels.filter((items) => items.length > 0).length;
@@ -406,9 +406,11 @@ export default function SortingStationGame() {
     const result = finalizeRound(roundState);
     return (
       <GameResultScreen
+        completionError={completionError}
         gameTitle="Cada coisa no seu lugar"
         onChangeGame={() => navigate("/jogos")}
         onHome={() => navigate("/")}
+        onRetryPersistence={retryCompletion}
         onPlayAgain={() => {
           resetSession();
           setSeed(Date.now());

@@ -92,6 +92,7 @@ Os nove jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gra
 Rodar antes de commit/push:
 
 ```bash
+npm test
 node scripts/validateContent.mjs
 npx tsc -b
 npm run lint
@@ -113,6 +114,19 @@ Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lin
 - Evidências visuais: diretório `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-g3MRP2`, incluindo catálogo, Conectando e Par perfeito em 1440x900, 768x1024 e 390x844.
 - Arquivos: `MatchingPairsGame.tsx`, `MemoryMatchGame.tsx`, `index.css`, `smokeUi.mjs`, seis WebPs autorizados, `STATUS.md` e este handoff.
 - Git: checkpoint exclusivamente local na branch `feat/loop-jogos-v1`; o SHA fica no histórico Git e será consolidado no relatório do próximo checkpoint. Nenhum push ou deploy.
+
+### Relatório da Fase 1
+
+- Objetivo: tornar `docs/IMPLEMENTATION_MAP.md` o roadmap executável dos 13 jogos e fechar os contratos puros antes da auditoria dos jogos DOM.
+- Decisões: usar `node:test` sem dependência nova; manter React dono de sessão, resultado e persistência; adiar Phaser e code-splitting para a Fase 3.
+- Fundação: seleção determinística e sem duplicatas, primeiro outcome por desafio, snapshot imutável de resultado e conclusão coordenada entre retries/resets.
+- Falhas de persistência: duas tentativas automáticas, mesma `sessionId`, erro acessível na tela de resultado e retry explícito.
+- Testes: 9 testes puros cobrindo catálogo, compatibilidade, round sizes/timers/XP, seed/seleção, outcome/resultado e concorrência/falha/reset da conclusão.
+- Regressão corrigida: cliques sintetizados após toque ou mouse no Conectando não desfazem mais a seleção; o smoke também confirma desseleção no segundo clique físico, drag e teclado.
+- Revisão: Bernoulli aprovou o checkpoint após reproduzir o clique físico de mouse e revalidar a correção; a lacuna residual é um teste de UI com falha de persistência injetada.
+- Evidências: smoke verde em nove viewports, todas as rotas, `browserErrors: 0`, com capturas em `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-ePzXdk`.
+- Dependências: nenhuma adicionada; o lockfile recebeu somente o metadata de engine; Node mínimo documentado como `>=22.18`.
+- Risco conhecido: `npm audit` aponta a advisory `GHSA-qwww-vcr4-c8h2` no React Router em modo RSC. Este SPA Vite não usa RSC Actions; não foi aplicado downgrade ou `audit fix`.
 
 ## Git
 

@@ -37,7 +37,7 @@ export default function SecretWordGame() {
   const [wordFinished, setWordFinished] = useState(false);
   const [roundState, setRoundState] = useState<GameRoundState>(() => createRoundState("secret_word"));
   const [finished, setFinished] = useState(false);
-  const { complete, resetSession } = useGameCompletion("secret_word", "vocabulary");
+  const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("secret_word", "vocabulary");
 
   const challenge = challenges[index];
   const letters = challenge ? normalizedLetters(challenge.answer) : [];
@@ -102,9 +102,11 @@ export default function SecretWordGame() {
     const result = finalizeRound(roundState);
     return (
       <GameResultScreen
+        completionError={completionError}
         gameTitle="Palavra secreta"
         onChangeGame={() => navigate("/jogos")}
         onHome={() => navigate("/")}
+        onRetryPersistence={retryCompletion}
         onPlayAgain={() => {
           resetSession();
           setSeed(Date.now());

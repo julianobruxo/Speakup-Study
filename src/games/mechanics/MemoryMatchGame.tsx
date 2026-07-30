@@ -42,7 +42,7 @@ export default function MemoryMatchGame() {
   const [isChecking, setIsChecking] = useState(false);
   const [roundState, setRoundState] = useState<GameRoundState>(() => createRoundState("memory_match"));
   const [finished, setFinished] = useState(false);
-  const { complete, resetSession } = useGameCompletion("memory_match", "vocabulary");
+  const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("memory_match", "vocabulary");
 
   const totalPairs = cards.length / 2;
   const allMatched = matchedPairIds.size === totalPairs && totalPairs > 0;
@@ -86,9 +86,11 @@ export default function MemoryMatchGame() {
     const result = finalizeRound(roundState);
     return (
       <GameResultScreen
+        completionError={completionError}
         gameTitle="Par perfeito"
         onChangeGame={() => navigate("/jogos")}
         onHome={() => navigate("/")}
+        onRetryPersistence={retryCompletion}
         onPlayAgain={() => {
           resetSession();
           setSeed(Date.now());

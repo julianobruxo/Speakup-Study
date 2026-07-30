@@ -30,7 +30,7 @@ export default function ListeningEarGame() {
   const [checked, setChecked] = useState(false);
   const [roundState, setRoundState] = useState<GameRoundState>(() => createRoundState("listening_ear"));
   const [finished, setFinished] = useState(false);
-  const { complete, resetSession } = useGameCompletion("listening_ear", "vocabulary");
+  const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("listening_ear", "vocabulary");
 
   const challenge = challenges[index];
 
@@ -109,9 +109,11 @@ export default function ListeningEarGame() {
     const result = finalizeRound(roundState);
     return (
       <GameResultScreen
+        completionError={completionError}
         gameTitle="Ouvido afiado"
         onChangeGame={() => navigate("/jogos")}
         onHome={() => navigate("/")}
+        onRetryPersistence={retryCompletion}
         onPlayAgain={() => {
           resetSession();
           setSeed(Date.now());
