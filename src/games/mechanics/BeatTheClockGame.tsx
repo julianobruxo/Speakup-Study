@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import AppIcon from "../../components/AppIcon";
 import { PrimaryButton } from "../../components/AppShell";
 import { buildBeatTheClockChallenges } from "../adapters/beatTheClockAdapter";
+import { isSelectableErrorToken } from "../adapters/presentTobeAdapter";
+import { resolveBeatClockAttempt } from "../core/beatClockSettlement";
 import { ROUND_SIZES } from "../core/roundConfig";
-import { selectChallenges } from "../core/selectChallenges";
 import { shuffleWithSeed } from "../core/shuffle";
 import { createRoundState, finalizeRound, recordOutcome, type GameRoundState } from "../core/sessionEngine";
 import { useGameCompletion } from "../core/useGameCompletion";
@@ -25,13 +26,14 @@ export default function BeatTheClockGame() {
   const reduceMotion = useReducedMotion();
   const [seed, setSeed] = useState(() => Date.now());
   const challenges = useMemo(
-    () => selectChallenges(buildBeatTheClockChallenges(seed), roundSize, seed),
+    () => buildBeatTheClockChallenges(seed, roundSize),
     [seed],
   );
   const [index, setIndex] = useState(0);
   const [remainingMs, setRemainingMs] = useState(0);
   const [checked, setChecked] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
+  const [answerCorrect, setAnswerCorrect] = useState<boolean | null>(null);
   const [typedAnswer, setTypedAnswer] = useState("");
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [selectedTokenIndex, setSelectedTokenIndex] = useState<number | null>(null);
@@ -40,16 +42,65 @@ export default function BeatTheClockGame() {
   const [score, setScore] = useState(0);
   const [roundState, setRoundState] = useState<GameRoundState>(() => createRoundState("beat_the_clock"));
   const [finished, setFinished] = useState(false);
-  const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("beat_the_clock", "grammar");
+  const { complete, completionError, resetSession, retryCompletion } = useGameCompletion(
+    "beat_the_clock",
+    ["grammar", "vocabulary"],
+  );
   const intervalRef = useRef<number | null>(null);
+  const deadlineRef = useRef(0);
+  const settledRef = useRef(false);
 
   const challenge: BeatTheClockChallenge | undefined = challenges[index];
 
+  const settleResult = useCallback(
+    (requestedCorrect: boolean) => {
+      if (!challenge || settledRef.current) return;
+      const now = performance.now();
+      const settlement = resolveBeatClockAttempt(
+        requestedCorrect,
+        now,
+        deadlineRef.current,
+      );
+      settledRef.current = true;
+      if (intervalRef.current !== null) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      setRemainingMs(settlement.remainingMs);
+      setAnswerCorrect(settlement.correct);
+      setTimedOut(settlement.timedOut);
+      setChecked(true);
+      setRoundState((current) => recordOutcome(current, challenge.id, settlement.correct));
+      if (settlement.correct) {
+        setScore(
+          (current) =>
+            current +
+            Math.round(settlement.remainingMs / 1000) * SCORE_PER_SECOND_REMAINING +
+            10,
+        );
+      }
+    },
+    [challenge],
+  );
+
+  const advance = useCallback(() => {
+    if (index === challenges.length - 1) {
+      const result = finalizeRound(roundState, new Date().toISOString(), score);
+      setFinished(true);
+      void complete(result);
+      return;
+    }
+    setIndex((current) => current + 1);
+  }, [challenges.length, complete, index, roundState, score]);
+
   useEffect(() => {
     if (!challenge) return;
+    settledRef.current = false;
+    deadlineRef.current = performance.now() + challenge.timerMs;
     setRemainingMs(challenge.timerMs);
     setChecked(false);
     setTimedOut(false);
+    setAnswerCorrect(null);
     setTypedAnswer("");
     setSelectedOption(null);
     setSelectedTokenIndex(null);
@@ -60,31 +111,29 @@ export default function BeatTheClockGame() {
   }, [challenge, index, seed]);
 
   useEffect(() => {
-    if (!challenge || checked) {
-      if (intervalRef.current) window.clearInterval(intervalRef.current);
-      return;
-    }
+    if (!challenge || checked) return;
     intervalRef.current = window.setInterval(() => {
-      setRemainingMs((current) => {
-        if (current <= 100) {
-          window.clearInterval(intervalRef.current!);
-          setTimedOut(true);
-          setChecked(true);
-          return 0;
-        }
-        return current - 100;
-      });
+      const nextRemaining = Math.max(0, deadlineRef.current - performance.now());
+      setRemainingMs(nextRemaining);
+      if (nextRemaining > 0) return;
+      settleResult(false);
     }, 100);
     return () => {
-      if (intervalRef.current) window.clearInterval(intervalRef.current);
+      if (intervalRef.current !== null) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
-  }, [challenge, checked]);
+  }, [challenge, checked, settleResult]);
 
   useEffect(() => {
-    if (timedOut && challenge) {
-      setRoundState((current) => recordOutcome(current, challenge.id, false));
-    }
-  }, [timedOut, challenge]);
+    if (!timedOut) return;
+    const timeoutId = window.setTimeout(
+      advance,
+      reduceMotion ? 650 : 1400,
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [advance, reduceMotion, timedOut]);
 
   if (!challenge && !finished) {
     return (
@@ -95,12 +144,7 @@ export default function BeatTheClockGame() {
   }
 
   function registerResult(correct: boolean) {
-    if (checked || !challenge) return;
-    setChecked(true);
-    setRoundState((current) => recordOutcome(current, challenge.id, correct));
-    if (correct) {
-      setScore((current) => current + Math.round(remainingMs / 1000) * SCORE_PER_SECOND_REMAINING + 10);
-    }
+    settleResult(correct);
   }
 
   function pickToken(token: string, fromBank: boolean) {
@@ -116,16 +160,6 @@ export default function BeatTheClockGame() {
       setPlaced((current) => current.filter((_, i) => i !== position));
       setBank((current) => [...current, token]);
     }
-  }
-
-  function advance() {
-    if (index === challenges.length - 1) {
-      const result = finalizeRound(roundState, new Date().toISOString(), score);
-      setFinished(true);
-      void complete(result);
-      return;
-    }
-    setIndex((current) => current + 1);
   }
 
   if (finished) {
@@ -282,6 +316,13 @@ export default function BeatTheClockGame() {
             </div>
             <div className="error-hunt-sentence" role="group" aria-label="Frase com um erro">
               {challenge.displayTokens.map((token, tokenIndex) => {
+                if (!isSelectableErrorToken(token)) {
+                  return (
+                    <span className="error-hunt-punctuation" key={`${token}-${tokenIndex}`}>
+                      {token}
+                    </span>
+                  );
+                }
                 const isSelected = selectedTokenIndex === tokenIndex;
                 const isTargetError = checked && tokenIndex === challenge.errorTokenIndex;
                 const isWrong = checked && isSelected && !isTargetError;
@@ -312,13 +353,19 @@ export default function BeatTheClockGame() {
         )}
 
         {checked && (
-          <div className={`answer-feedback ${timedOut ? "wrong" : "correct"}`} role="status" aria-live="polite">
+          <div
+            className={`answer-feedback ${answerCorrect ? "correct" : "wrong"}`}
+            role="status"
+            aria-live="polite"
+          >
             <span className="feedback-icon">
-              <AppIcon name={timedOut ? "close" : "check"} size={20} />
+              <AppIcon name={answerCorrect ? "check" : "close"} size={20} />
             </span>
             <div>
-              <strong>{timedOut ? "Tempo esgotado!" : "Resposta registrada."}</strong>
-              {timedOut && (
+              <strong>
+                {answerCorrect ? "Correto!" : timedOut ? "Tempo esgotado!" : "Resposta incorreta."}
+              </strong>
+              {!answerCorrect && (
                 <p>
                   Resposta correta:{" "}
                   {challenge.kind === "word_challenge" && challenge.correctOption}

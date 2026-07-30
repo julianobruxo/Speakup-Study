@@ -14,9 +14,24 @@ import { useEngagement } from "../services/progress/useEngagement";
 import { useProgressSummary } from "../services/progress/useProgressSummary";
 
 const games = [
-  { symbol: "⏱", title: "Contra o relógio", copy: "Responda rápido e mantenha a sequência." },
-  { symbol: "◫", title: "Conectando", copy: "Associe palavra em inglês e imagem." },
-  { symbol: "ABC", title: "Monte a frase", copy: "Organize as palavras na ordem certa." },
+  {
+    symbol: "⏱",
+    title: "Contra o relógio",
+    copy: "Responda rápido e mantenha a sequência.",
+    route: "/jogos/contra-o-relogio",
+  },
+  {
+    symbol: "◫",
+    title: "Conectando",
+    copy: "Associe palavra em inglês e imagem.",
+    route: "/jogos/conectando",
+  },
+  {
+    symbol: "ABC",
+    title: "Monte a frase",
+    copy: "Organize as palavras na ordem certa.",
+    route: "/jogos/monte-a-frase",
+  },
 ];
 
 export default function HomePage() {
@@ -109,7 +124,7 @@ export default function HomePage() {
               onClick={() => navigate("/vocabulario/body/flashcards")}
             />
             <PathCard
-              copy="Desafios curtos para reforçar o conteúdo estudado · Em breve"
+              copy="Nove jogos disponíveis com Gramática e Vocabulário"
               icon="✦"
               progress={0}
               title="Jogos rápidos"
@@ -135,12 +150,10 @@ export default function HomePage() {
         <div className="game-grid">
           {games.map((game) => (
             <button
-              aria-disabled="true"
               className="game-card"
               key={game.title}
-              onClick={() => setNotice(`${game.title}: disponível em breve.`)}
+              onClick={() => navigate(game.route)}
             >
-              <span className="game-lock">Em breve</span>
               <span className="game-symbol">{game.symbol}</span>
               <strong>{game.title}</strong>
               <span>{game.copy}</span>

@@ -3,7 +3,11 @@ import { useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import AppIcon from "../../components/AppIcon";
 import { PrimaryButton } from "../../components/AppShell";
-import { getErrorHuntQuestions, toErrorHuntChallenge } from "../adapters/presentTobeAdapter";
+import {
+  getErrorHuntQuestions,
+  isSelectableErrorToken,
+  toErrorHuntChallenge,
+} from "../adapters/presentTobeAdapter";
 import { ROUND_SIZES } from "../core/roundConfig";
 import { selectChallenges } from "../core/selectChallenges";
 import { createRoundState, finalizeRound, recordOutcome, type GameRoundState } from "../core/sessionEngine";
@@ -109,6 +113,13 @@ export default function ErrorHuntGame() {
 
         <div className="error-hunt-sentence" role="group" aria-label="Frase com um erro">
           {challenge.displayTokens.map((token, tokenIndex) => {
+            if (!isSelectableErrorToken(token)) {
+              return (
+                <span className="error-hunt-punctuation" key={`${token}-${tokenIndex}`}>
+                  {token}
+                </span>
+              );
+            }
             const isSelected = selectedTokenIndex === tokenIndex;
             const isTargetError = checked && tokenIndex === challenge.errorTokenIndex;
             const isWrongPick = checked && isSelected && !isTargetError;

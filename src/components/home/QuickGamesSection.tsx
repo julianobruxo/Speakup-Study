@@ -8,26 +8,25 @@ const quickGames = [
     title: "Contra o relógio",
     copy: "Responda antes do tempo acabar.",
     tone: "blue",
+    route: "/jogos/contra-o-relogio",
   },
   {
     icon: "grid" as const,
     title: "Conectando",
     copy: "Associe palavra em inglês e imagem.",
     tone: "rose",
+    route: "/jogos/conectando",
   },
   {
     icon: "game" as const,
     title: "Monte a frase",
     copy: "Organize as palavras na ordem certa.",
     tone: "gold",
+    route: "/jogos/monte-a-frase",
   },
 ];
 
-export default function QuickGamesSection({
-  onLocked,
-}: {
-  onLocked: (title: string) => void;
-}) {
+export default function QuickGamesSection() {
   const navigate = useNavigate();
 
   return (
@@ -42,20 +41,15 @@ export default function QuickGamesSection({
       <div className="quick-games-grid">
         {quickGames.map((game) => (
           <motion.button
-            aria-disabled="true"
             className={`quick-game-card tone-${game.tone}`}
             key={game.title}
-            onClick={() => onLocked(game.title)}
+            onClick={() => navigate(game.route)}
             whileHover={{ y: -3 }}
             whileTap={{ scale: 0.985 }}
           >
             <span className="game-card-top">
               <span className="quick-game-icon">
                 <AppIcon name={game.icon} size={24} />
-              </span>
-              <span className="locked-badge">
-                <AppIcon name="lock" size={12} />
-                Em breve
               </span>
             </span>
             <span className="game-card-copy">

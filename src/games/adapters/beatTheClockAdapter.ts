@@ -1,7 +1,8 @@
-import { getBodyEntries } from "./bodyVocabularyAdapter";
-import { getErrorHuntQuestions, getSentenceBuilderQuestions, materializeSentence, toErrorHuntChallenge } from "./presentTobeAdapter";
-import { BEAT_THE_CLOCK_TIMERS_MS } from "../core/roundConfig";
-import { shuffleWithSeed } from "../core/shuffle";
+import { getBodyEntries } from "./bodyVocabularyAdapter.ts";
+import { getErrorHuntQuestions, getSentenceBuilderQuestions, materializeSentence, toErrorHuntChallenge } from "./presentTobeAdapter.ts";
+import { BEAT_THE_CLOCK_TIMERS_MS } from "../core/roundConfig.ts";
+import { selectChallenges } from "../core/selectChallenges.ts";
+import { shuffleWithSeed } from "../core/shuffle.ts";
 import type { BeatTheClockChallenge } from "../core/challengeTypes";
 
 function buildWordChallenges(seed: number): BeatTheClockChallenge[] {
@@ -65,13 +66,21 @@ function buildErrorHuntChallenges(): BeatTheClockChallenge[] {
     .map((challenge) => ({ ...challenge, timerMs: BEAT_THE_CLOCK_TIMERS_MS.errorHunt }));
 }
 
-/** Balanced mix of the four Contra o relógio challenge types, grammar-first per the confirmed catalog. */
-export function buildBeatTheClockChallenges(seed: number): BeatTheClockChallenge[] {
-  const pool = [
-    ...buildWordChallenges(seed),
-    ...buildSentenceTypingChallenges(),
-    ...buildSentenceUnscrambleChallenges(seed),
-    ...buildErrorHuntChallenges(),
+/** Builds a deterministic round with every confirmed challenge type when count permits. */
+export function buildBeatTheClockChallenges(seed: number, count = 10): BeatTheClockChallenge[] {
+  const groups = [
+    buildWordChallenges(seed),
+    buildSentenceTypingChallenges(),
+    buildSentenceUnscrambleChallenges(seed),
+    buildErrorHuntChallenges(),
   ];
-  return shuffleWithSeed(pool, seed);
+  const safeCount = Math.max(0, Math.trunc(count));
+  const guaranteed = groups
+    .slice(0, Math.min(safeCount, groups.length))
+    .map((group, index) => selectChallenges(group, 1, seed + index * 101)[0])
+    .filter((challenge): challenge is BeatTheClockChallenge => Boolean(challenge));
+  const guaranteedIds = new Set(guaranteed.map((challenge) => challenge.id));
+  const remaining = groups.flat().filter((challenge) => !guaranteedIds.has(challenge.id));
+  const extras = selectChallenges(remaining, safeCount - guaranteed.length, seed + 911);
+  return shuffleWithSeed([...guaranteed, ...extras], seed + 977);
 }

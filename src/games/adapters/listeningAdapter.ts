@@ -1,7 +1,8 @@
-import { getBodyEntries } from "./bodyVocabularyAdapter";
-import { getSentenceBuilderQuestions, materializeSentence } from "./presentTobeAdapter";
+import { getBodyEntries } from "./bodyVocabularyAdapter.ts";
+import { getSentenceBuilderQuestions, materializeSentence } from "./presentTobeAdapter.ts";
 import type { ListeningChallenge, ListeningMode } from "../core/challengeTypes";
-import { shuffleWithSeed } from "../core/shuffle";
+import { selectChallenges } from "../core/selectChallenges.ts";
+import { shuffleWithSeed } from "../core/shuffle.ts";
 
 function buildSelectImageChallenges(seed: number): ListeningChallenge[] {
   const entries = getBodyEntries();
@@ -58,12 +59,20 @@ function buildAssembleSentenceChallenges(): ListeningChallenge[] {
   });
 }
 
-/** Mixes all three confirmed listening modes into one deterministic pool. */
-export function buildListeningChallenges(seed: number): ListeningChallenge[] {
-  const pool = [
-    ...buildSelectImageChallenges(seed),
-    ...buildTypeWordChallenges(),
-    ...buildAssembleSentenceChallenges(),
+/** Builds a deterministic round containing all three confirmed modes when count permits. */
+export function buildListeningChallenges(seed: number, count = 10): ListeningChallenge[] {
+  const groups = [
+    buildSelectImageChallenges(seed),
+    buildTypeWordChallenges(),
+    buildAssembleSentenceChallenges(),
   ];
-  return shuffleWithSeed(pool, seed);
+  const safeCount = Math.max(0, Math.trunc(count));
+  const guaranteed = groups
+    .slice(0, Math.min(safeCount, groups.length))
+    .map((group, index) => selectChallenges(group, 1, seed + index * 103)[0])
+    .filter((challenge): challenge is ListeningChallenge => Boolean(challenge));
+  const guaranteedIds = new Set(guaranteed.map((challenge) => challenge.id));
+  const remaining = groups.flat().filter((challenge) => !guaranteedIds.has(challenge.id));
+  const extras = selectChallenges(remaining, safeCount - guaranteed.length, seed + 919);
+  return shuffleWithSeed([...guaranteed, ...extras], seed + 983);
 }

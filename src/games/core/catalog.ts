@@ -75,7 +75,7 @@ export const GAME_CATALOG: GameCatalogEntry[] = [
     description: "Associe a palavra em inglês à imagem correta.",
     compatibleDomains: ["vocabulary"],
     defaultRoundSize: 6,
-    supportsDragAndDrop: false,
+    supportsDragAndDrop: true,
   },
   {
     id: "crossword",

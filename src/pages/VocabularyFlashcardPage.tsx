@@ -193,13 +193,20 @@ export default function VocabularyFlashcardPage() {
               ? "+25 XP de conclusão"
               : "Revele os 24 cards para ganhar o bônus de conclusão."}
           </p>
-          <p>Os jogos de vocabulário chegam em breve.</p>
+          <p>Continue praticando Partes do corpo em um dos jogos compatíveis.</p>
           <div className="completion-actions">
             <PrimaryButton
               icon={<AppIcon name="grid" size={19} />}
               onClick={() => navigate("/vocabulario")}
             >
               Estudar outro tema
+            </PrimaryButton>
+            <PrimaryButton
+              icon={<AppIcon name="game" size={19} />}
+              onClick={() => navigate("/jogos")}
+              variant="secondary"
+            >
+              Praticar em jogos
             </PrimaryButton>
             <PrimaryButton
               icon={<AppIcon name="refresh" size={19} />}

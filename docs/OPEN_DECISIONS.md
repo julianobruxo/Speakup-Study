@@ -65,6 +65,10 @@ Atualizado em: 2026-07-30
 
     `docs/IMPLEMENTATION_MAP.md` é o roadmap canônico dos 13 jogos. A fundação usa `node:test` sem dependência adicional e mantém React responsável por sessão, resultado, persistência e engajamento.
 
+12. Fluxos de entrada dos jogos
+
+    A auditoria das nove mecânicas DOM pertence à Fase 2. A configuração game-first e content-first para o catálogo completo pertence à Fase 8, depois que os quatro arcades existirem, evitando implementar duas vezes a mesma integração.
+
 ## Abertas
 
 1. Próximo tópico gramatical
@@ -81,7 +85,7 @@ Atualizado em: 2026-07-30
 
 4. Testes automatizados adicionais
 
-   A fundação possui testes puros com `node:test` e o smoke cobre os fluxos reais no Edge. Testes de componente com uma biblioteca dedicada continuam opcionais; adicionar dependências além do Phaser autorizado exige decisão explícita.
+   A fundação e os contratos DOM possuem 15 testes puros com `node:test`, e o smoke cobre os fluxos reais no Edge. Testes de componente com uma biblioteca dedicada continuam opcionais; adicionar dependências além do Phaser autorizado exige decisão explícita.
 
 5. Login e sincronização
 

@@ -4,17 +4,20 @@ import {
   useMemo,
   useRef,
   useState,
-  type MouseEvent,
   type MutableRefObject,
   type PointerEvent,
-  type TouchEvent,
 } from "react";
 import { useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import AppIcon from "../../components/AppIcon";
 import { PrimaryButton } from "../../components/AppShell";
 import { playSound } from "../../services/audio/sound";
-import { getBodyEntries, toSortingChallenge } from "../adapters/bodyVocabularyAdapter";
+import {
+  BODY_GROUPS,
+  getBodyEntries,
+  getBodyGroupId,
+  toSortingChallenge,
+} from "../adapters/bodyVocabularyAdapter";
 import { VisualAsset } from "../assets/visualResolver";
 import { GameProgressBar, GameShell } from "../components/GameShell";
 import { GameResultScreen } from "../components/GameResultScreen";
@@ -25,7 +28,7 @@ import { createRoundState, finalizeRound, recordOutcome, type GameRoundState } f
 import { useGameCompletion } from "../core/useGameCompletion";
 
 const roundSize = ROUND_SIZES.sorting_station.count;
-const panelSize = 6;
+const groupSize = roundSize / BODY_GROUPS.length;
 
 type Assignments = Record<string, string>;
 
@@ -38,13 +41,22 @@ interface DragState {
   hoverTargetId: string | null;
 }
 
-function buildChallenges(seed: number): SortingChallenge[] {
-  const entries = getBodyEntries();
-  return selectChallenges(entries, roundSize, seed).map((entry) => toSortingChallenge(entry));
+interface SortingPanel {
+  id: string;
+  label: string;
+  challenges: SortingChallenge[];
 }
 
-function chunkPanels(challenges: SortingChallenge[]): SortingChallenge[][] {
-  return [challenges.slice(0, panelSize), challenges.slice(panelSize, panelSize * 2)];
+function buildPanels(seed: number): SortingPanel[] {
+  const entries = getBodyEntries();
+  return BODY_GROUPS.map((group, index) => ({
+    ...group,
+    challenges: selectChallenges(
+      entries.filter((entry) => getBodyGroupId(entry) === group.id),
+      groupSize,
+      seed + index * 211,
+    ).map((entry) => toSortingChallenge(entry)),
+  }));
 }
 
 function findAssignedTarget(assignments: Assignments, wordId: string): string | null {
@@ -72,8 +84,7 @@ export default function SortingStationGame() {
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const [seed, setSeed] = useState(() => Date.now());
-  const challenges = useMemo(() => buildChallenges(seed), [seed]);
-  const panels = useMemo(() => chunkPanels(challenges), [challenges]);
+  const panels = useMemo(() => buildPanels(seed), [seed]);
   const [panelIndex, setPanelIndex] = useState(0);
   const [assignments, setAssignments] = useState<Assignments>({});
   const [checked, setChecked] = useState(false);
@@ -83,12 +94,14 @@ export default function SortingStationGame() {
   const [roundState, setRoundState] = useState<GameRoundState>(() => createRoundState("sorting_station"));
   const [finished, setFinished] = useState(false);
   const boardRef = useRef<HTMLDivElement | null>(null);
+  const draggingRef = useRef<DragState | null>(null);
   const targetRefs = useRef(new Map<string, HTMLElement>());
   const suppressClickRef = useRef<string | null>(null);
   const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("sorting_station", "vocabulary");
 
-  const panel = useMemo(() => panels[panelIndex] ?? [], [panelIndex, panels]);
-  const totalPanels = panels.filter((items) => items.length > 0).length;
+  const panelConfig = panels[panelIndex];
+  const panel = useMemo(() => panelConfig?.challenges ?? [], [panelConfig]);
+  const totalPanels = panels.filter((item) => item.challenges.length > 0).length;
   const completedPanels = panelIndex + (checked ? 1 : 0);
   const allSlotsFilled = panel.length > 0 && panel.every((challenge) => assignments[challenge.targetId]);
 
@@ -133,135 +146,59 @@ export default function SortingStationGame() {
   );
 
   useEffect(() => {
-    if (!dragging) return;
-    const activeDrag: DragState = dragging;
-    if (activeDrag.pointerId >= 0) {
-      function handlePointerMove(event: globalThis.PointerEvent) {
-        if (event.pointerId !== activeDrag.pointerId) return;
-        event.preventDefault();
-        const hoverTargetId = getTargetAtPoint(event.clientX, event.clientY);
-        if (event.clientY < 70) window.scrollBy({ top: -18, behavior: "auto" });
-        if (event.clientY > window.innerHeight - 70) window.scrollBy({ top: 18, behavior: "auto" });
-        setDragging((current) =>
-          current
-            ? {
-                ...current,
-                x: event.clientX,
-                y: event.clientY,
-                hoverTargetId,
-              }
-            : null,
-        );
-      }
-      function handlePointerUp(event: globalThis.PointerEvent) {
-        if (event.pointerId !== activeDrag.pointerId) return;
-        event.preventDefault();
-        setDragging((current) => {
-          if (!current) return null;
-          const dropTargetId = getTargetAtPoint(event.clientX, event.clientY);
-          if (dropTargetId) {
-            assignWordToTarget(current.wordId, dropTargetId);
-          } else {
-            const word = wordById(current.wordId);
-            if (word) setLiveMessage(`${word.term} voltou para a origem.`);
-          }
-          suppressClickRef.current = current.wordId;
-          return null;
-        });
-      }
-      document.addEventListener("pointermove", handlePointerMove, { passive: false });
-      document.addEventListener("pointerup", handlePointerUp, { passive: false });
-      document.addEventListener("pointercancel", handlePointerUp, { passive: false });
-      return () => {
-        document.removeEventListener("pointermove", handlePointerMove);
-        document.removeEventListener("pointerup", handlePointerUp);
-        document.removeEventListener("pointercancel", handlePointerUp);
-      };
-    }
-    if (activeDrag.pointerId === -2) {
-      function handleTouchMove(event: globalThis.TouchEvent) {
-        const touch = event.changedTouches[0];
-        if (!touch) return;
-        event.preventDefault();
-        const hoverTargetId = getTargetAtPoint(touch.clientX, touch.clientY);
-        if (touch.clientY < 70) window.scrollBy({ top: -18, behavior: "auto" });
-        if (touch.clientY > window.innerHeight - 70) window.scrollBy({ top: 18, behavior: "auto" });
-        setDragging((current) =>
-          current
-            ? {
-                ...current,
-                x: touch.clientX,
-                y: touch.clientY,
-                hoverTargetId,
-              }
-            : null,
-        );
-      }
-      function handleTouchEnd(event: globalThis.TouchEvent) {
-        const touch = event.changedTouches[0];
-        const clientX = touch?.clientX ?? activeDrag.x;
-        const clientY = touch?.clientY ?? activeDrag.y;
-        event.preventDefault();
-        setDragging((current) => {
-          if (!current) return null;
-          const dropTargetId = getTargetAtPoint(clientX, clientY);
-          if (dropTargetId) {
-            assignWordToTarget(current.wordId, dropTargetId);
-          } else {
-            const word = wordById(current.wordId);
-            if (word) setLiveMessage(`${word.term} voltou para a origem.`);
-          }
-          suppressClickRef.current = current.wordId;
-          return null;
-        });
-      }
-      document.addEventListener("touchmove", handleTouchMove, { passive: false });
-      document.addEventListener("touchend", handleTouchEnd, { passive: false });
-      document.addEventListener("touchcancel", handleTouchEnd, { passive: false });
-      return () => {
-        document.removeEventListener("touchmove", handleTouchMove);
-        document.removeEventListener("touchend", handleTouchEnd);
-        document.removeEventListener("touchcancel", handleTouchEnd);
-      };
-    }
-    function handleMouseMove(event: globalThis.MouseEvent) {
+    function handlePointerMove(event: globalThis.PointerEvent) {
+      const activeDrag = draggingRef.current;
+      if (!activeDrag) return;
+      if (event.pointerId !== activeDrag.pointerId) return;
       event.preventDefault();
       const hoverTargetId = getTargetAtPoint(event.clientX, event.clientY);
       if (event.clientY < 70) window.scrollBy({ top: -18, behavior: "auto" });
       if (event.clientY > window.innerHeight - 70) window.scrollBy({ top: 18, behavior: "auto" });
-      setDragging((current) =>
-        current
-          ? {
-              ...current,
-              x: event.clientX,
-              y: event.clientY,
-              hoverTargetId,
-            }
-          : null,
-      );
+      const nextDrag = {
+        ...activeDrag,
+        x: event.clientX,
+        y: event.clientY,
+        hoverTargetId,
+      };
+      draggingRef.current = nextDrag;
+      setDragging(nextDrag);
     }
-    function handleMouseUp(event: globalThis.MouseEvent) {
+    function handlePointerUp(event: globalThis.PointerEvent) {
+      const activeDrag = draggingRef.current;
+      if (!activeDrag) return;
+      if (event.pointerId !== activeDrag.pointerId) return;
       event.preventDefault();
-      setDragging((current) => {
-        if (!current) return null;
-        const dropTargetId = getTargetAtPoint(event.clientX, event.clientY);
-        if (dropTargetId) {
-          assignWordToTarget(current.wordId, dropTargetId);
-        } else {
-          const word = wordById(current.wordId);
-          if (word) setLiveMessage(`${word.term} voltou para a origem.`);
-        }
-        suppressClickRef.current = current.wordId;
-        return null;
-      });
+      draggingRef.current = null;
+      setDragging(null);
+      suppressClickRef.current = activeDrag.wordId;
+      const dropTargetId = getTargetAtPoint(event.clientX, event.clientY);
+      if (dropTargetId) {
+        assignWordToTarget(activeDrag.wordId, dropTargetId);
+      } else {
+        const word = wordById(activeDrag.wordId);
+        if (word) setLiveMessage(`${word.term} voltou para a origem.`);
+      }
     }
-    document.addEventListener("mousemove", handleMouseMove, { passive: false });
-    document.addEventListener("mouseup", handleMouseUp, { passive: false });
+    function handlePointerCancel(event: globalThis.PointerEvent) {
+      const activeDrag = draggingRef.current;
+      if (!activeDrag) return;
+      if (event.pointerId !== activeDrag.pointerId) return;
+      event.preventDefault();
+      draggingRef.current = null;
+      setDragging(null);
+      suppressClickRef.current = activeDrag.wordId;
+      const word = wordById(activeDrag.wordId);
+      if (word) setLiveMessage(`${word.term} voltou para a origem.`);
+    }
+    document.addEventListener("pointermove", handlePointerMove, { passive: false });
+    document.addEventListener("pointerup", handlePointerUp, { passive: false });
+    document.addEventListener("pointercancel", handlePointerCancel, { passive: false });
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerup", handlePointerUp);
+      document.removeEventListener("pointercancel", handlePointerCancel);
     };
-  }, [dragging, assignWordToTarget, getTargetAtPoint, wordById]);
+  }, [assignWordToTarget, getTargetAtPoint, wordById]);
 
   if (panel.length === 0 && !finished) {
     return (
@@ -300,78 +237,23 @@ export default function SortingStationGame() {
 
   function startDrag(event: PointerEvent<HTMLButtonElement>, wordId: string) {
     if (checked) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Synthetic and already-cancelled pointers may not support capture.
+    }
     event.preventDefault();
-    setDragging({
+    const nextDrag = {
       wordId,
       pointerId: event.pointerId,
       x: event.clientX,
       y: event.clientY,
       originTargetId: findAssignedTarget(assignments, wordId),
       hoverTargetId: getTargetAtPoint(event.clientX, event.clientY),
-    });
+    };
+    draggingRef.current = nextDrag;
+    setDragging(nextDrag);
     setSelectedWordId(wordId);
-  }
-
-  function startMouseDrag(event: MouseEvent<HTMLButtonElement>, wordId: string) {
-    if (checked) return;
-    event.preventDefault();
-    setDragging({
-      wordId,
-      pointerId: -1,
-      x: event.clientX,
-      y: event.clientY,
-      originTargetId: findAssignedTarget(assignments, wordId),
-      hoverTargetId: getTargetAtPoint(event.clientX, event.clientY),
-    });
-    setSelectedWordId(wordId);
-  }
-
-  function startTouchDrag(event: TouchEvent<HTMLButtonElement>, wordId: string) {
-    if (checked) return;
-    const touch = event.changedTouches[0];
-    if (!touch) return;
-    setDragging({
-      wordId,
-      pointerId: -2,
-      x: touch.clientX,
-      y: touch.clientY,
-      originTargetId: findAssignedTarget(assignments, wordId),
-      hoverTargetId: getTargetAtPoint(touch.clientX, touch.clientY),
-    });
-    setSelectedWordId(wordId);
-  }
-
-  function moveDrag(event: PointerEvent<HTMLButtonElement>) {
-    if (!dragging || dragging.pointerId !== event.pointerId) return;
-    event.preventDefault();
-    const hoverTargetId = getTargetAtPoint(event.clientX, event.clientY);
-    if (event.clientY < 70) window.scrollBy({ top: -18, behavior: "auto" });
-    if (event.clientY > window.innerHeight - 70) window.scrollBy({ top: 18, behavior: "auto" });
-    setDragging((current) =>
-      current
-        ? {
-            ...current,
-            x: event.clientX,
-            y: event.clientY,
-            hoverTargetId,
-          }
-        : null,
-    );
-  }
-
-  function endDrag(event: PointerEvent<HTMLButtonElement>) {
-    if (!dragging || dragging.pointerId !== event.pointerId) return;
-    event.preventDefault();
-    const dropTargetId = getTargetAtPoint(event.clientX, event.clientY);
-    if (dropTargetId) {
-      assignWordToTarget(dragging.wordId, dropTargetId);
-    } else {
-      const word = wordById(dragging.wordId);
-      if (word) setLiveMessage(`${word.term} voltou para a origem.`);
-    }
-    suppressClickRef.current = dragging.wordId;
-    setDragging(null);
   }
 
   function checkPanel() {
@@ -384,7 +266,7 @@ export default function SortingStationGame() {
     setChecked(true);
     const correctCount = panel.filter((target) => assignments[target.targetId] === target.targetId).length;
     playSound(correctCount === panel.length ? "correct" : "wrong");
-    setLiveMessage(`Painel conferido. ${correctCount} de ${panel.length} associações corretas.`);
+    setLiveMessage(`Grupo conferido. ${correctCount} de ${panel.length} associações corretas.`);
   }
 
   function advancePanel() {
@@ -398,8 +280,9 @@ export default function SortingStationGame() {
     setAssignments({});
     setChecked(false);
     setSelectedWordId(null);
+    draggingRef.current = null;
     setDragging(null);
-    setLiveMessage(`Painel ${panelIndex + 2} de ${totalPanels}.`);
+    setLiveMessage(`Grupo ${panelIndex + 2} de ${totalPanels}.`);
   }
 
   if (finished) {
@@ -418,6 +301,7 @@ export default function SortingStationGame() {
           setAssignments({});
           setChecked(false);
           setSelectedWordId(null);
+          draggingRef.current = null;
           setDragging(null);
           setRoundState(createRoundState("sorting_station"));
           setFinished(false);
@@ -430,16 +314,19 @@ export default function SortingStationGame() {
 
   const assignedWordIds = new Set(Object.values(assignments));
   const bankWords = panel.filter((challenge) => !assignedWordIds.has(challenge.targetId));
+  const panelCorrectCount = panel.filter(
+    (target) => assignments[target.targetId] === target.targetId,
+  ).length;
 
   return (
     <GameShell onBack={() => navigate("/jogos")} title="Cada coisa no seu lugar">
       <section className="session-meta">
         <span>
-          Painel {panelIndex + 1} de {totalPanels}
+          Grupo {panelIndex + 1} de {totalPanels} · {panelConfig?.label}
         </span>
         <span>{ROUND_SIZES.sorting_station.label}</span>
       </section>
-      <GameProgressBar current={completedPanels * panelSize} total={roundSize} />
+      <GameProgressBar current={completedPanels * groupSize} total={roundSize} />
 
       <section className="question-card sorting-station-card" ref={boardRef}>
         <div className="sorting-station-instructions">
@@ -454,14 +341,10 @@ export default function SortingStationGame() {
               {bankWords.map((word) => (
                 <WordCard
                         dragging={dragging}
-                        onMouseDown={startMouseDrag}
                         key={word.targetId}
                         onPointerDown={startDrag}
-                        onPointerMove={moveDrag}
-                        onPointerUp={endDrag}
                         onSelect={selectWord}
                         suppressClickRef={suppressClickRef}
-                        onTouchStart={startTouchDrag}
                         selected={selectedWordId === word.targetId}
                         word={word}
                       />
@@ -488,11 +371,10 @@ export default function SortingStationGame() {
                     .join(" ")}
                   key={target.targetId}
                 >
-                  <VisualAsset label={target.translation} visualKey={target.visualKey} />
-                  <div
+                  <button
                     aria-label={`Slot da imagem ${target.translation}${assignedWord ? `, preenchido com ${assignedWord.term}` : ""}`}
-                    aria-disabled={checked && isCorrect}
-                    className="sorting-slot"
+                    className="sorting-target-choice"
+                    disabled={checked}
                     onClick={() => handleTargetActivate(target.targetId)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -500,20 +382,20 @@ export default function SortingStationGame() {
                         handleTargetActivate(target.targetId);
                       }
                     }}
+                    type="button"
+                  >
+                    <VisualAsset label={target.translation} visualKey={target.visualKey} />
+                  </button>
+                  <div
+                    className="sorting-slot"
                     ref={(node) => setTargetRef(target.targetId, node)}
-                    role="button"
-                    tabIndex={checked && isCorrect ? -1 : 0}
                   >
                     {assignedWord ? (
                       <WordCard
                         dragging={dragging}
-                        onMouseDown={startMouseDrag}
                         onPointerDown={startDrag}
-                        onPointerMove={moveDrag}
-                        onPointerUp={endDrag}
                         onSelect={selectWord}
                         suppressClickRef={suppressClickRef}
-                        onTouchStart={startTouchDrag}
                         selected={selectedWordId === assignedWord.targetId}
                         word={assignedWord}
                       />
@@ -542,14 +424,20 @@ export default function SortingStationGame() {
         </p>
 
         {checked && (
-          <div className="answer-feedback sorting-panel-feedback" role="status" aria-live="polite">
+          <div
+            className={`answer-feedback sorting-panel-feedback ${
+              panelCorrectCount === panel.length ? "correct" : "wrong"
+            }`}
+            role="status"
+            aria-live="polite"
+          >
             <span className="feedback-icon">
-              <AppIcon name="check" size={20} />
+              <AppIcon name={panelCorrectCount === panel.length ? "check" : "close"} size={20} />
             </span>
             <div>
-              <strong>Painel conferido</strong>
+              <strong>Grupo conferido</strong>
               <p>
-                {panel.filter((target) => assignments[target.targetId] === target.targetId).length} de {panel.length}{" "}
+                {panelCorrectCount} de {panel.length}{" "}
                 associações corretas.
               </p>
             </div>
@@ -559,7 +447,7 @@ export default function SortingStationGame() {
         <div className="session-action">
           {checked ? (
             <PrimaryButton icon={<AppIcon name="chevron-right" />} onClick={advancePanel}>
-              {panelIndex >= totalPanels - 1 ? "Ver resultado" : "Próximo painel"}
+              {panelIndex >= totalPanels - 1 ? "Ver resultado" : "Próximo grupo"}
             </PrimaryButton>
           ) : (
             <PrimaryButton disabled={!allSlotsFilled} icon={<AppIcon name="check" />} onClick={checkPanel}>
@@ -575,10 +463,6 @@ export default function SortingStationGame() {
 function WordCard({
   dragging,
   onPointerDown,
-  onPointerMove,
-  onPointerUp,
-  onTouchStart,
-  onMouseDown,
   onSelect,
   selected,
   suppressClickRef,
@@ -586,10 +470,6 @@ function WordCard({
 }: {
   dragging: DragState | null;
   onPointerDown: (event: PointerEvent<HTMLButtonElement>, wordId: string) => void;
-  onPointerMove: (event: PointerEvent<HTMLButtonElement>) => void;
-  onPointerUp: (event: PointerEvent<HTMLButtonElement>) => void;
-  onTouchStart: (event: TouchEvent<HTMLButtonElement>, wordId: string) => void;
-  onMouseDown: (event: MouseEvent<HTMLButtonElement>, wordId: string) => void;
   onSelect: (wordId: string) => void;
   selected: boolean;
   suppressClickRef: MutableRefObject<string | null>;
@@ -617,12 +497,7 @@ function WordCard({
           onSelect(word.targetId);
         }
       }}
-      onPointerCancel={onPointerUp}
       onPointerDown={(event) => onPointerDown(event, word.targetId)}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onTouchStart={(event) => onTouchStart(event, word.targetId)}
-      onMouseDown={(event) => onMouseDown(event, word.targetId)}
       style={
         isDragging
           ? {

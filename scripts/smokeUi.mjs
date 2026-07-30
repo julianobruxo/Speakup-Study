@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import http from "node:http";
+import net from "node:net";
 import { mkdtempSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
@@ -8,7 +9,24 @@ import { fileURLToPath } from "node:url";
 const PROJECT_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const EDGE = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
 const HOST = "127.0.0.1";
-const PORT = 5173;
+
+function getAvailablePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.on("error", reject);
+    server.listen(0, HOST, () => {
+      const address = server.address();
+      if (!address || typeof address === "string") {
+        server.close(() => reject(new Error("Could not allocate a local smoke-test port.")));
+        return;
+      }
+      server.close(() => resolve(address.port));
+    });
+  });
+}
+
+const PORT = await getAvailablePort();
 const BASE_URL = `http://${HOST}:${PORT}`;
 const outputDirectory = mkdtempSync(join(tmpdir(), "ingles-em-jogo-ui-smoke-"));
 const viewports = [
@@ -23,13 +41,6 @@ const viewports = [
   [1920, 1080],
 ];
 
-/**
- * The smoke suite must own the Vite server's lifecycle rather than assume one
- * is already reachable: a dev server started in a separate terminal/process
- * is not guaranteed to be reachable from this script's process in every
- * environment. Probe first (a server may already legitimately be running for
- * manual dev use) and only spawn + tear down our own if nothing answers.
- */
 function pingServer(url, timeoutMs = 1500) {
   return new Promise((resolve) => {
     const request = http.get(url, { timeout: timeoutMs }, (res) => {
@@ -56,11 +67,7 @@ async function waitForServer(url, timeoutMs, intervalMs = 200) {
 let ownedViteProcess = null;
 
 async function ensureDevServer() {
-  if (await pingServer(BASE_URL)) {
-    console.log(`Reusing already-running Vite server at ${BASE_URL}`);
-    return;
-  }
-  console.log(`No server detected at ${BASE_URL}; starting Vite for this smoke run.`);
+  console.log(`Starting an isolated Vite server at ${BASE_URL}.`);
   const vite = spawn(
     process.execPath,
     [join(PROJECT_ROOT, "node_modules", "vite", "bin", "vite.js"), "--host", HOST, "--port", String(PORT), "--strictPort"],
@@ -80,10 +87,19 @@ async function ensureDevServer() {
   console.log(`Vite dev server ready at ${BASE_URL}`);
 }
 
-function stopOwnedServer() {
-  if (ownedViteProcess && !ownedViteProcess.killed) {
-    ownedViteProcess.kill();
-  }
+async function stopOwnedServer() {
+  const vite = ownedViteProcess;
+  ownedViteProcess = null;
+  if (!vite || vite.exitCode !== null) return;
+
+  await new Promise((resolve) => {
+    const timeout = setTimeout(resolve, 3000);
+    vite.once("exit", () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+    vite.kill();
+  });
 }
 
 if (!existsSync(EDGE)) {
@@ -806,8 +822,13 @@ async function main() {
   await navigate("/vocabulario/body/flashcards");
   await waitFor(() => hasText("1 de 24"), "flashcards load");
   await waitFor(
-    () => evaluate(`document.querySelector('.flashcard-visual')?.naturalWidth > 0`),
+    () =>
+      evaluate(`(() => {
+        const image = document.querySelector('.flashcard-visual');
+        return image?.alt === 'Parte do corpo: Cabeça' && image.complete && image.naturalWidth > 0;
+      })()`),
     "flashcard photo finishes loading",
+    10000,
   );
 
   const flashcardPhoto = await evaluate(`(() => {
@@ -931,23 +952,33 @@ async function main() {
     inventory.total === 130 &&
       inventory.easy === 50 &&
       inventory.medium === 80 &&
-      inventory.sentenceEligible === 115 &&
-      inventory.errorHuntEligible === 116 &&
+      inventory.sentenceEligible === 110 &&
+      inventory.errorHuntEligible === 115 &&
       inventory.bodyCount === 24 &&
       inventory.visualKeys === 24,
     `Content inventory contract broken: ${JSON.stringify(inventory)}`,
   );
 
   const sortingContractInventory = await evaluate(`(async () => {
-    const { getBodyEntries, toSortingChallenge } = await import('/src/games/adapters/bodyVocabularyAdapter.ts');
+    const { BODY_GROUPS, getBodyEntries, getBodyGroupId, toSortingChallenge } =
+      await import('/src/games/adapters/bodyVocabularyAdapter.ts');
     const { selectChallenges } = await import('/src/games/core/selectChallenges.ts');
     const { ROUND_SIZES } = await import('/src/games/core/roundConfig.ts');
-    const selectedA = selectChallenges(getBodyEntries(), ROUND_SIZES.sorting_station.count, 2026).map(toSortingChallenge);
-    const selectedB = selectChallenges(getBodyEntries(), ROUND_SIZES.sorting_station.count, 2026).map(toSortingChallenge);
+    const build = () => BODY_GROUPS.map((group, index) =>
+      selectChallenges(
+        getBodyEntries().filter((entry) => getBodyGroupId(entry) === group.id),
+        4,
+        2026 + index * 211,
+      ).map(toSortingChallenge)
+    );
+    const groupsA = build();
+    const groupsB = build();
+    const selectedA = groupsA.flat();
+    const selectedB = groupsB.flat();
     return {
       label: ROUND_SIZES.sorting_station.label,
       total: selectedA.length,
-      panelSizes: [selectedA.slice(0, 6).length, selectedA.slice(6, 12).length],
+      groupSizes: groupsA.map((group) => group.length),
       uniqueTerms: new Set(selectedA.map((item) => item.term)).size,
       uniqueTargets: new Set(selectedA.map((item) => item.targetId)).size,
       uniqueImages: new Set(selectedA.map((item) => item.visualKey)).size,
@@ -956,10 +987,9 @@ async function main() {
     };
   })()`);
   assert(
-    sortingContractInventory.label === "12 itens em 2 painéis" &&
+    sortingContractInventory.label === "12 itens em 3 grupos" &&
       sortingContractInventory.total === 12 &&
-      sortingContractInventory.panelSizes[0] === 6 &&
-      sortingContractInventory.panelSizes[1] === 6 &&
+      JSON.stringify(sortingContractInventory.groupSizes) === JSON.stringify([4, 4, 4]) &&
       sortingContractInventory.uniqueTerms === 12 &&
       sortingContractInventory.uniqueTargets === 12 &&
       sortingContractInventory.uniqueImages === 12 &&
@@ -1027,9 +1057,18 @@ async function main() {
   await waitFor(() => hasText("Desafio 1 de 10"), "error hunt load");
   const errorHuntFirst = await evaluate(`(() => {
     const tokens = [...document.querySelectorAll('.error-hunt-token')];
-    return tokens.map((t) => t.textContent);
+    return {
+      selectableTokens: tokens.map((token) => token.textContent),
+      punctuation: [...document.querySelectorAll('.error-hunt-punctuation')].map((token) => token.textContent),
+      punctuationButtons: document.querySelectorAll('button.error-hunt-punctuation').length,
+    };
   })()`);
-  assert(errorHuntFirst.length > 0, "Error hunt has no tokens to select");
+  assert(
+    errorHuntFirst.selectableTokens.length > 0 &&
+      errorHuntFirst.punctuation.length > 0 &&
+      errorHuntFirst.punctuationButtons === 0,
+    `Error hunt words should be selectable while punctuation remains text: ${JSON.stringify(errorHuntFirst)}`,
+  );
   await evaluate(`(() => {
     document.querySelectorAll('.error-hunt-token')[0].click();
   })()`);
@@ -1046,6 +1085,7 @@ async function main() {
   await navigate("/jogos"); // abandon deliberately mid-round to test navigation guard absence for games
 
   // ---- Palavra secreta: five lives, letter tracking, physical + virtual keyboard ----
+  await setViewport(360, 800);
   await navigate("/jogos/palavra-secreta");
   await waitFor(() => hasText("Palavra 1 de 5"), "secret word load");
   assert(await hasText("Erros: 0/5"), "Secret word does not start with 0 mistakes");
@@ -1053,6 +1093,33 @@ async function main() {
     return document.querySelectorAll('.secret-word-letter:not(.spacer)').length;
   })()`);
   assert(secretAnswerLetters > 0, "Secret word has no letter slots");
+  const secretMobileGeometry = await evaluate(`(() => {
+    const keys = [...document.querySelectorAll('.secret-word-key')];
+    const bounds = keys.map((key) => key.getBoundingClientRect());
+    return {
+      minLeft: Math.min(...bounds.map((rect) => rect.left)),
+      maxRight: Math.max(...bounds.map((rect) => rect.right)),
+      minHeight: Math.min(...bounds.map((rect) => rect.height)),
+      viewport: document.documentElement.clientWidth,
+      label: document.querySelector('.secret-word-letters')?.getAttribute('aria-label'),
+    };
+  })()`);
+  assert(
+    secretMobileGeometry.minLeft >= 0 &&
+      secretMobileGeometry.maxRight <= secretMobileGeometry.viewport + 1 &&
+      secretMobileGeometry.minHeight >= 44 &&
+      secretMobileGeometry.label?.includes("Letras tentadas: nenhuma"),
+    `Secret word mobile keyboard or accessible pattern is invalid: ${JSON.stringify(secretMobileGeometry)}`,
+  );
+  screenshots.push(await screenshot("secret-word-mobile-360x800"));
+  await evaluate(`document.querySelector('.secret-word-key')?.click()`);
+  await waitFor(
+    () =>
+      evaluate(
+        `!document.querySelector('.secret-word-letters')?.getAttribute('aria-label')?.includes('Letras tentadas: nenhuma')`,
+      ),
+    "Secret word accessible pattern updates after a guess",
+  );
 
   // Guess the entire A-Z keyboard once to fully reveal which letters are correct
   // vs. wrong for this run's word, without assuming its content in advance.
@@ -1176,8 +1243,11 @@ async function main() {
     const rects = await evaluate(`(() => {
       const word = document.querySelector('.matching-pairs-word[data-word-id="${wordId}"]');
       const target = document.querySelector('.matching-pairs-target[data-target-id="${targetId}"]');
-      word.scrollIntoView({ block: 'center', inline: 'center' });
-      target.scrollIntoView({ block: 'center', inline: 'center' });
+      const initialWord = word.getBoundingClientRect();
+      const initialTarget = target.getBoundingClientRect();
+      const wordDocumentY = initialWord.top + scrollY + initialWord.height / 2;
+      const targetDocumentY = initialTarget.top + scrollY + initialTarget.height / 2;
+      window.scrollTo({ top: Math.max(0, (wordDocumentY + targetDocumentY) / 2 - innerHeight / 2) });
       const wr = word.getBoundingClientRect();
       const tr = target.getBoundingClientRect();
       return {
@@ -1362,6 +1432,7 @@ async function main() {
     `Conectando wrong feedback should remain explicit in one live region: ${JSON.stringify(wrongFeedbackState)}`,
   );
   await dragMatchingPair(pairs[0], pairs[0]);
+  await delay(100);
   await waitFor(
     () => evaluate(`document.querySelectorAll('.matching-pairs-line.correct').length === 1`),
     "Conectando mouse retry keeps a correct line",
@@ -1477,7 +1548,18 @@ async function main() {
   await waitFor(() => hasText("de 6 pares encontrados"), "memory match load");
   const memoryCardCount = await evaluate(`document.querySelectorAll('.memory-match-card').length`);
   assert(memoryCardCount === 12, `Memory match should render 12 cards, got ${memoryCardCount}`);
-  await evaluate(`document.querySelectorAll('.memory-match-card')[0].click()`);
+  const memoryCards = await evaluate(`[
+    ...document.querySelectorAll('.memory-match-card')
+  ].map((card) => ({
+    cardId: card.dataset.cardId,
+    kind: card.dataset.cardKind,
+    pairId: card.dataset.pairId,
+  }))`);
+  const firstMemoryCard = memoryCards[0];
+  const mismatchedMemoryCard = memoryCards.find(
+    (card) => card.pairId !== firstMemoryCard.pairId,
+  );
+  await evaluate(`document.querySelector('.memory-match-card[data-card-id="${firstMemoryCard.cardId}"]')?.click()`);
   await waitFor(
     () =>
       evaluate(`(() => {
@@ -1495,20 +1577,85 @@ async function main() {
       (memoryPhotoOnFlippedCard.tag === "IMG" && memoryPhotoOnFlippedCard.naturalWidth > 0),
     `Par perfeito image card should render a loaded photographic asset when flipped, got: ${JSON.stringify(memoryPhotoOnFlippedCard)}`,
   );
-  await evaluate(`document.querySelectorAll('.memory-match-card')[1].click()`);
-  await delay(900);
+  await evaluate(`document.querySelector('.memory-match-card[data-card-id="${mismatchedMemoryCard.cardId}"]')?.click()`);
+  await waitFor(
+    () =>
+      evaluate(`[...document.querySelectorAll('button')].find((button) =>
+        button.textContent.includes('Embaralhar novamente')
+      )?.disabled === true`),
+    "Par perfeito disables shuffle while checking two cards",
+  );
+  await waitFor(
+    () => hasText("Essas cartas não formam um par."),
+    "Par perfeito announces a mismatch",
+  );
   const flippedAfterMismatchCheck = await evaluate(
     `document.querySelectorAll('.memory-match-card.is-flipped:not(.is-matched)').length`,
   );
-  assert(flippedAfterMismatchCheck <= 2, "Memory match should reset non-matching flipped cards");
-
-  // ---- Cada coisa no seu lugar: two panels of six word-to-image slots ----
-  await navigate("/jogos/cada-coisa-no-seu-lugar");
-  await waitFor(() => hasText("Painel 1 de 2"), "sorting station load");
+  assert(flippedAfterMismatchCheck === 0, "Memory match should reset non-matching flipped cards");
+  await clickText("Embaralhar novamente");
   await waitFor(
-    () => evaluate(`document.querySelectorAll('.sorting-target .visual-asset-photo').length === 6 &&
+    () => evaluate(`document.querySelectorAll('.memory-match-card.is-flipped').length === 0`),
+    "Par perfeito clean shuffle",
+  );
+  const memoryPairs = await evaluate(`(() => {
+    const pairs = {};
+    for (const card of document.querySelectorAll('.memory-match-card')) {
+      (pairs[card.dataset.pairId] ??= []).push(card.dataset.cardId);
+    }
+    return Object.values(pairs);
+  })()`);
+  for (let pairIndex = 0; pairIndex < memoryPairs.length; pairIndex += 1) {
+    const [firstCardId, secondCardId] = memoryPairs[pairIndex];
+    await evaluate(`document.querySelector('.memory-match-card[data-card-id="${firstCardId}"]')?.click()`);
+    await evaluate(`document.querySelector('.memory-match-card[data-card-id="${secondCardId}"]')?.click()`);
+    if (pairIndex === memoryPairs.length - 1) {
+      await waitFor(
+        () => evaluate(`Boolean(document.querySelector('.game-result-page'))`),
+        "Par perfeito completes after matching pair 6",
+      );
+    } else {
+      await waitFor(
+        () => evaluate(`document.querySelectorAll('.memory-match-card.is-matched').length === ${(pairIndex + 1) * 2}`),
+        `Par perfeito matches pair ${pairIndex + 1}`,
+      );
+    }
+  }
+  await waitFor(() => hasText("RODADA CONCLUÍDA"), "memory match result screen");
+  const memoryResult = await evaluate(`(() => {
+    const stats = [...document.querySelectorAll('.score-stats > div')].map((item) => ({
+      label: item.querySelector('span')?.textContent.trim(),
+      value: item.querySelector('strong')?.textContent.trim(),
+    }));
+    return Object.fromEntries(stats.map((item) => [item.label, item.value]));
+  })()`);
+  assert(
+    memoryResult.Total === "6",
+    `Par perfeito should persist exactly one first outcome per pair: ${JSON.stringify(memoryResult)}`,
+  );
+
+  // ---- Cada coisa no seu lugar: three reviewed groups of four word-to-image slots ----
+  for (const [width, height] of [
+    [1440, 900],
+    [768, 1024],
+    [390, 844],
+  ]) {
+    await setViewport(width, height);
+    await navigate("/jogos/cada-coisa-no-seu-lugar");
+    await waitFor(
+      () => evaluate(`document.querySelectorAll('.sorting-target .visual-asset-photo').length === 4`),
+      `sorting station visual load ${width}x${height}`,
+    );
+    await assertNoOverflow(`/jogos/cada-coisa-no-seu-lugar ${width}x${height}`);
+    screenshots.push(await screenshot(`sorting-station-board-${width}x${height}`));
+  }
+  await setViewport(1366, 768);
+  await navigate("/jogos/cada-coisa-no-seu-lugar");
+  await waitFor(() => hasText("Grupo 1 de 3"), "sorting station load");
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.sorting-target .visual-asset-photo').length === 4 &&
       [...document.querySelectorAll('.sorting-target .visual-asset-photo')].every((img) => img.naturalWidth > 0)`),
-    "Cada coisa no seu lugar panel photos finish loading",
+    "Cada coisa no seu lugar group photos finish loading",
   );
   const sortingInitial = await evaluate(`(() => {
     const words = [...document.querySelectorAll('.sorting-word-card')].map((item) => item.dataset.wordId);
@@ -1520,15 +1667,19 @@ async function main() {
       uniqueWords: new Set(words).size,
       targetCount: document.querySelectorAll('.sorting-target').length,
       slotCount: document.querySelectorAll('.sorting-slot').length,
+      targetChoiceCount: document.querySelectorAll('button.sorting-target-choice').length,
+      interactiveSlots: document.querySelectorAll('.sorting-slot[role], .sorting-slot[tabindex]').length,
       checkDisabled: checkButton?.disabled ?? null,
       hasOldGroups: document.querySelectorAll('.sorting-station-group').length,
     };
   })()`);
   assert(
-    sortingInitial.wordCount === 6 &&
-      sortingInitial.uniqueWords === 6 &&
-      sortingInitial.targetCount === 6 &&
-      sortingInitial.slotCount === 6 &&
+    sortingInitial.wordCount === 4 &&
+      sortingInitial.uniqueWords === 4 &&
+      sortingInitial.targetCount === 4 &&
+      sortingInitial.slotCount === 4 &&
+      sortingInitial.targetChoiceCount === 4 &&
+      sortingInitial.interactiveSlots === 0 &&
       sortingInitial.checkDisabled === true &&
       sortingInitial.hasOldGroups === 0,
     `Sorting station initial panel contract failed: ${JSON.stringify(sortingInitial)}`,
@@ -1568,89 +1719,7 @@ async function main() {
       await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }, sessionId);
       await send("Emulation.setTouchEmulationEnabled", { enabled: false }, sessionId);
       const stillInBank = await evaluate(`Boolean(document.querySelector('.sorting-word-bank .sorting-word-card[data-word-id="${rects.wordId}"]'))`);
-      if (stillInBank) {
-        await evaluate(`(() => {
-          const word = document.querySelector('.sorting-word-bank .sorting-word-card[data-word-id="${rects.wordId}"]');
-          if (!word || typeof Touch !== 'function') return;
-          const touchInit = (x, y) => new Touch({
-            identifier: 1,
-            target: word,
-            clientX: x,
-            clientY: y,
-            screenX: x,
-            screenY: y,
-            pageX: x + window.scrollX,
-            pageY: y + window.scrollY,
-          });
-          word.dispatchEvent(new TouchEvent('touchstart', {
-            bubbles: true,
-            cancelable: true,
-            changedTouches: [touchInit(${rects.from.x}, ${rects.from.y})],
-            targetTouches: [touchInit(${rects.from.x}, ${rects.from.y})],
-            touches: [touchInit(${rects.from.x}, ${rects.from.y})],
-          }));
-          document.dispatchEvent(new TouchEvent('touchmove', {
-            bubbles: true,
-            cancelable: true,
-            changedTouches: [touchInit(${rects.to.x}, ${rects.to.y})],
-            targetTouches: [touchInit(${rects.to.x}, ${rects.to.y})],
-            touches: [touchInit(${rects.to.x}, ${rects.to.y})],
-          }));
-          document.dispatchEvent(new TouchEvent('touchend', {
-            bubbles: true,
-            cancelable: true,
-            changedTouches: [touchInit(${rects.to.x}, ${rects.to.y})],
-            targetTouches: [],
-            touches: [],
-          }));
-        })()`);
-      }
-      const stillInBankAfterSyntheticTouch = await evaluate(`Boolean(document.querySelector('.sorting-word-bank .sorting-word-card[data-word-id="${rects.wordId}"]'))`);
-      if (stillInBankAfterSyntheticTouch) {
-        await evaluate(`(() => {
-          const word = document.querySelector('.sorting-word-bank .sorting-word-card[data-word-id="${rects.wordId}"]');
-          if (!word) return;
-          word.dispatchEvent(new PointerEvent('pointerdown', {
-            bubbles: true,
-            cancelable: true,
-            pointerId: 1,
-            pointerType: 'touch',
-            isPrimary: true,
-            clientX: ${rects.from.x},
-            clientY: ${rects.from.y},
-          }));
-        })()`);
-        await delay(80);
-        await evaluate(`(() => {
-          const pointerInit = {
-            bubbles: true,
-            cancelable: true,
-            pointerId: 1,
-            pointerType: 'touch',
-            isPrimary: true,
-          };
-          document.dispatchEvent(new PointerEvent('pointermove', {
-            ...pointerInit,
-            clientX: ${rects.to.x},
-            clientY: ${rects.to.y},
-          }));
-        })()`);
-        await delay(80);
-        await evaluate(`(() => {
-          const pointerInit = {
-            bubbles: true,
-            cancelable: true,
-            pointerId: 1,
-            pointerType: 'touch',
-            isPrimary: true,
-          };
-          document.dispatchEvent(new PointerEvent('pointerup', {
-            ...pointerInit,
-            clientX: ${rects.to.x},
-            clientY: ${rects.to.y},
-          }));
-        })()`);
-      }
+      assert(!stillInBank, `Physical touch drag did not place sorting word ${rects.wordId}`);
       return;
     }
     await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: rects.from.x, y: rects.from.y }, sessionId);
@@ -1677,8 +1746,66 @@ async function main() {
   await dragWordOutside(".sorting-word-card");
   await delay(100);
   assert(
-    (await evaluate(`document.querySelectorAll('.sorting-word-bank .sorting-word-card').length`)) === 6,
+    (await evaluate(`document.querySelectorAll('.sorting-word-bank .sorting-word-card').length`)) === 4,
     "Dropping a word outside a target should return it to the bank",
+  );
+
+  await evaluate(`(() => {
+    const word = document.querySelector('.sorting-word-bank .sorting-word-card');
+    const target = document.querySelector('.sorting-slot');
+    const wr = word.getBoundingClientRect();
+    const tr = target.getBoundingClientRect();
+    word.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      pointerId: 73,
+      pointerType: 'pen',
+      clientX: wr.left + wr.width / 2,
+      clientY: wr.top + wr.height / 2,
+    }));
+    setTimeout(() => document.dispatchEvent(new PointerEvent('pointercancel', {
+      bubbles: true,
+      cancelable: true,
+      pointerId: 73,
+      pointerType: 'pen',
+      clientX: tr.left + tr.width / 2,
+      clientY: tr.top + tr.height / 2,
+    })), 80);
+  })()`);
+  await delay(180);
+  assert(
+    (await evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length`)) === 0,
+    "Sorting pointercancel over a target must not assign the word",
+  );
+
+  await evaluate(`(() => {
+    const word = document.querySelector('.sorting-word-bank .sorting-word-card');
+    const target = document.querySelector('.sorting-slot');
+    const wr = word.getBoundingClientRect();
+    const tr = target.getBoundingClientRect();
+    word.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      pointerId: 81,
+      pointerType: 'touch',
+      isPrimary: true,
+      clientX: wr.left + wr.width / 2,
+      clientY: wr.top + wr.height / 2,
+    }));
+    setTimeout(() => document.dispatchEvent(new PointerEvent('pointercancel', {
+      bubbles: true,
+      cancelable: true,
+      pointerId: 81,
+      pointerType: 'touch',
+      isPrimary: true,
+      clientX: tr.left + tr.width / 2,
+      clientY: tr.top + tr.height / 2,
+    })), 80);
+  })()`);
+  await delay(180);
+  assert(
+    (await evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length`)) === 0,
+    "Sorting touchcancel over a target must not assign the word",
   );
 
   await dragWordToSlot(".sorting-word-bank .sorting-word-card:nth-child(1)", 0);
@@ -1706,7 +1833,7 @@ async function main() {
     swappedState[0] && swappedState[1] && swappedState[0] !== swappedState[1],
     `Sorting station slot swap failed: ${JSON.stringify(swappedState)}`,
   );
-  for (let slotIndex = 2; slotIndex < 6; slotIndex += 1) {
+  for (let slotIndex = 2; slotIndex < 4; slotIndex += 1) {
     await dragWordToSlot(".sorting-word-bank .sorting-word-card:nth-child(1)", slotIndex);
   }
   await waitFor(
@@ -1716,7 +1843,7 @@ async function main() {
   );
   await clickText("Conferir respostas");
   await waitFor(
-    () => evaluate(`document.querySelectorAll('.sorting-target-feedback').length === 6`),
+    () => evaluate(`document.querySelectorAll('.sorting-target-feedback').length === 4`),
     "sorting station reveals per-target feedback after checking",
   );
   const panelOneFeedback = await evaluate(`(() => ({
@@ -1725,17 +1852,17 @@ async function main() {
     correctWordsShown: [...document.querySelectorAll('.sorting-target-feedback.wrong')].every((item) =>
       item.textContent.includes('Correta:')
     ),
-    hasNextPanel: document.body.innerText.includes('Próximo painel')
+    hasNextGroup: document.body.innerText.includes('Próximo grupo')
   }))()`);
   assert(
-    panelOneFeedback.correct + panelOneFeedback.wrong === 6 &&
+    panelOneFeedback.correct + panelOneFeedback.wrong === 4 &&
       panelOneFeedback.wrong >= 1 &&
       panelOneFeedback.correctWordsShown &&
-      panelOneFeedback.hasNextPanel,
-    `Sorting station panel 1 feedback failed: ${JSON.stringify(panelOneFeedback)}`,
+      panelOneFeedback.hasNextGroup,
+    `Sorting station group 1 feedback failed: ${JSON.stringify(panelOneFeedback)}`,
   );
-  await clickText("Próximo painel");
-  await waitFor(() => hasText("Painel 2 de 2"), "sorting station second panel load");
+  await clickText("Próximo grupo");
+  await waitFor(() => hasText("Grupo 2 de 3"), "sorting station second group load");
   await dragWordToSlot(".sorting-word-bank .sorting-word-card:nth-child(1)", 0, "touch");
   await waitFor(
     () => evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length === 1`),
@@ -1747,23 +1874,30 @@ async function main() {
     word.focus();
   })()`);
   await pressKey("Enter");
+  await waitFor(
+    () =>
+      evaluate(
+        `document.querySelector('.sorting-word-bank .sorting-word-card')?.getAttribute('aria-pressed') === 'true'`,
+      ),
+    "sorting keyboard fallback selects a word",
+  );
   await evaluate(`(() => {
-    const slot = document.querySelectorAll('.sorting-slot')[1];
-    slot.focus();
+    const target = document.querySelectorAll('.sorting-target-choice')[1];
+    target.focus();
   })()`);
   await pressKey("Enter");
   await waitFor(
     () => evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length === 2`),
     "keyboard fallback places a sorting word",
   );
-  for (let slotIndex = 2; slotIndex < 6; slotIndex += 1) {
+  for (let slotIndex = 2; slotIndex < 4; slotIndex += 1) {
     const placedBefore = await evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length`);
     await click(".sorting-word-bank .sorting-word-card");
     await waitFor(
       () => evaluate(`document.querySelector('.sorting-word-bank .sorting-word-card')?.getAttribute('aria-pressed') === 'true'`),
       `sorting click fallback selects word for slot ${slotIndex}`,
     );
-    await evaluate(`document.querySelectorAll('.sorting-slot')[${slotIndex}].click()`);
+    await evaluate(`document.querySelectorAll('.sorting-target-choice')[${slotIndex}].click()`);
     await waitFor(
       () => evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length === ${placedBefore + 1}`),
       `sorting click fallback places word in slot ${slotIndex}`,
@@ -1771,10 +1905,23 @@ async function main() {
   }
   await waitFor(
     () => evaluate(`![...document.querySelectorAll('button')].find((button) => button.textContent.includes('Conferir respostas')).disabled`),
-    "sorting panel 2 check button enabled",
+    "sorting group 2 check button enabled",
   );
   await clickText("Conferir respostas");
-  await waitFor(() => hasText("Ver resultado"), "sorting panel 2 checked");
+  await waitFor(() => hasText("Próximo grupo"), "sorting group 2 checked");
+  await clickText("Próximo grupo");
+  await waitFor(() => hasText("Grupo 3 de 3"), "sorting station third group load");
+  for (let slotIndex = 0; slotIndex < 4; slotIndex += 1) {
+    const placedBefore = await evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length`);
+    await click(".sorting-word-bank .sorting-word-card");
+    await evaluate(`document.querySelectorAll('.sorting-target-choice')[${slotIndex}].click()`);
+    await waitFor(
+      () => evaluate(`document.querySelectorAll('.sorting-slot .sorting-word-card').length === ${placedBefore + 1}`),
+      `sorting group 3 click fallback places word in slot ${slotIndex}`,
+    );
+  }
+  await clickText("Conferir respostas");
+  await waitFor(() => hasText("Ver resultado"), "sorting group 3 checked");
   await clickText("Ver resultado");
   await waitFor(() => hasText("RODADA CONCLUÍDA"), "sorting station result screen");
   const sortingResult = await evaluate(`(() => {
@@ -1789,26 +1936,104 @@ async function main() {
     `Sorting station result screen failed: ${JSON.stringify(sortingResult)}`,
   );
   await clickText("Jogar novamente");
-  await waitFor(() => hasText("Painel 1 de 2"), "sorting station restart");
-  // ---- Cruzando palavras: valid deterministic board, letters consistent ----
+  await waitFor(() => hasText("Grupo 1 de 3"), "sorting station restart");
+  // ---- Cruzando palavras: valid hidden-letter grid, physical and virtual keyboard ----
+  for (const [width, height] of [
+    [1440, 900],
+    [768, 1024],
+    [390, 844],
+  ]) {
+    await setViewport(width, height);
+    await navigate("/jogos/cruzando-palavras");
+    await waitFor(
+      () => evaluate(`document.querySelectorAll('.crossword-cell.filled input').length > 0`),
+      `crossword load ${width}x${height}`,
+    );
+    await assertNoOverflow(`/jogos/cruzando-palavras ${width}x${height}`);
+    screenshots.push(await screenshot(`crossword-board-${width}x${height}`));
+  }
+  await setViewport(1366, 768);
   await navigate("/jogos/cruzando-palavras");
-  await waitFor(() => hasText("de"), "crossword load");
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.crossword-cell.filled input').length > 0`),
+    "crossword functional load",
+  );
   const crosswordState = await evaluate(`(() => {
-    const cells = [...document.querySelectorAll('.crossword-cell.filled')];
+    const inputs = [...document.querySelectorAll('.crossword-cell.filled input')];
     const clues = document.querySelectorAll('.crossword-clue').length;
-    return { filledCells: cells.length, clues };
+    return {
+      cells: inputs.length,
+      clues,
+      revealedLetters: inputs.filter((input) => input.value).length,
+      gridCells: document.querySelectorAll('[role="gridcell"]').length,
+      virtualKeys: document.querySelectorAll('.crossword-keyboard button').length,
+    };
   })()`);
-  assert(crosswordState.clues >= 1 && crosswordState.clues <= 8, `Crossword clue count out of range: ${crosswordState.clues}`);
-  assert(crosswordState.filledCells > 0, "Crossword board has no filled cells");
-  const firstClueAnswerLength = await evaluate(`(() => {
-    const input = document.querySelector('.crossword-clue-input input');
-    return input ? input.maxLength : 0;
+  assert(
+    crosswordState.clues >= 2 &&
+      crosswordState.clues <= 8 &&
+      crosswordState.cells > 0 &&
+      crosswordState.revealedLetters === 0 &&
+      crosswordState.gridCells === crosswordState.cells &&
+      crosswordState.virtualKeys === 27,
+    `Crossword interactive contract failed: ${JSON.stringify(crosswordState)}`,
+  );
+  const crosswordFocused = await evaluate(`(() => {
+    const input = document.querySelector('.crossword-cell.filled input');
+    input?.focus();
+    return document.activeElement === input;
   })()`);
-  assert(firstClueAnswerLength > 0, "Crossword first clue input has no maxLength");
+  assert(crosswordFocused, "Crossword first cell should accept keyboard focus");
+  await send(
+    "Input.dispatchKeyEvent",
+    { type: "keyDown", key: "A", code: "KeyA", text: "A", unmodifiedText: "A" },
+    sessionId,
+  );
+  await send("Input.dispatchKeyEvent", { type: "keyUp", key: "A", code: "KeyA" }, sessionId);
+  await waitFor(
+    () => evaluate(`document.querySelector('.crossword-cell.filled input')?.value === "A"`),
+    "Crossword physical keyboard should enter a letter in the focused cell",
+  );
+  const crosswordClueCount = crosswordState.clues;
+  for (let clueIndex = 0; clueIndex < crosswordClueCount; clueIndex += 1) {
+    await evaluate(`document.querySelectorAll('.crossword-clue-select')[${clueIndex}]?.click()`);
+    const missingLetters = await evaluate(`(() => {
+      const clue = document.querySelectorAll('.crossword-clue')[${clueIndex}];
+      const clueId = clue.id;
+      return [...document.querySelectorAll('.crossword-cell.filled input')]
+        .filter((input) => input.getAttribute('aria-describedby')?.split(' ').includes(clueId) && !input.value)
+        .length;
+    })()`);
+    for (let letterIndex = 0; letterIndex < missingLetters; letterIndex += 1) {
+      await evaluate(`document.querySelector('.crossword-keyboard button[aria-label="Letra X"]')?.click()`);
+    }
+    await waitFor(
+      () => evaluate(`!document.querySelectorAll('.crossword-check-word')[${clueIndex}]?.disabled`),
+      `crossword clue ${clueIndex + 1} becomes checkable`,
+    );
+    await evaluate(`document.querySelectorAll('.crossword-check-word')[${clueIndex}]?.click()`);
+    await waitFor(
+      () => evaluate(`Boolean(document.querySelectorAll('.crossword-clue')[${clueIndex}]?.querySelector('.crossword-result'))`),
+      `crossword clue ${clueIndex + 1} records an outcome`,
+    );
+  }
+  await clickText("Ver resultado");
+  await waitFor(() => hasText("RODADA CONCLUÍDA"), "crossword result screen");
 
-  // ---- Ouvido afiado: three confirmed modes only, no crash without speech ----
+  // ---- Ouvido afiado: all three modes, sound-disabled fallback and mixed persistence ----
+  await evaluate(`localStorage.setItem('ingles-em-jogo-sound-enabled', 'false')`);
   await navigate("/jogos/ouvido-afiado");
   await waitFor(() => hasText("Desafio 1 de 10"), "listening ear load");
+  await waitFor(
+    () =>
+      evaluate(`document.querySelector('.listening-ear-play')?.disabled === true &&
+        document.body.innerText.includes('O som está desativado')`),
+    "listening ear exposes text fallback when sound is disabled",
+  );
+  await evaluate(`(() => {
+    localStorage.setItem('ingles-em-jogo-sound-enabled', 'true');
+    window.dispatchEvent(new CustomEvent('ingles-em-jogo-sound-change'));
+  })()`);
   const listeningModesSeen = new Set();
   for (let round = 1; round <= 10; round += 1) {
     await waitFor(() => hasText(`Desafio ${round} de 10`), `listening ear challenge ${round}`);
@@ -1851,23 +2076,36 @@ async function main() {
       }
       await clickText("Confirmar frase");
     }
-    await waitFor(() => hasText("Resposta:"), `listening ear feedback ${round}`);
+    await waitFor(
+      () => evaluate(`Boolean(document.querySelector('.listening-ear-card .answer-feedback'))`),
+      `listening ear feedback ${round}`,
+    );
     const isLast = round === 10;
     await clickText(isLast ? "Ver resultado" : "Continuar");
   }
   const allowedListeningModes = new Set(["select-image", "type-word", "assemble-sentence"]);
   assert(
-    listeningModesSeen.size >= 1 &&
+    listeningModesSeen.size === 3 &&
       [...listeningModesSeen].every((mode) => allowedListeningModes.has(mode)),
-    `Listening ear should use only confirmed modes across a round, saw: ${[...listeningModesSeen]}`,
+    `Listening ear should exercise all three confirmed modes, saw: ${[...listeningModesSeen]}`,
   );
   await waitFor(() => hasText("RODADA CONCLUÍDA"), "listening ear result screen");
-  const noSpeechRecognitionApi = await evaluate(
-    `typeof window.SpeechRecognition === 'undefined' && typeof window.webkitSpeechRecognition !== 'undefined'`,
+  await waitFor(
+    () =>
+      evaluate(`(async () => {
+        const { getGameSessions } = await import('/src/services/progress/localProgress.ts');
+        const sessions = await getGameSessions();
+        return sessions.some((session) =>
+          session.gameId === 'listening_ear' &&
+          session.contentDomains?.includes('grammar') &&
+          session.contentDomains?.includes('vocabulary')
+        );
+      })()`),
+    "listening ear persists both canonical content domains",
   );
   assert(
-    noSpeechRecognitionApi || true,
-    "Listening ear must not depend on SpeechRecognition (informational check; API presence alone is not a violation)",
+    (await evaluate(`document.querySelectorAll('[aria-label*="microfone"], [aria-label*="gravar"]').length`)) === 0,
+    "Listening ear must not expose speech recognition or recording controls",
   );
 
   // ---- Contra o relógio: mixed mechanics, individual timers, timeout transition ----
@@ -1886,6 +2124,25 @@ async function main() {
       };
     })()`);
     const timerText = await evaluate(`document.querySelector('.beat-clock-timer')?.getAttribute('aria-label') ?? ''`);
+    const currentKind = kindMarkers.hasWordOptions
+      ? "word_challenge"
+      : kindMarkers.hasTypingInput
+        ? "sentence_typing"
+        : kindMarkers.hasUnscramble
+          ? "sentence_builder"
+          : "error_hunt";
+    beatClockKindsSeen.add(currentKind);
+    const expectedSeconds = {
+      word_challenge: 10,
+      sentence_typing: 20,
+      sentence_builder: 10,
+      error_hunt: 20,
+    }[currentKind];
+    const displayedSeconds = parseInt(timerText, 10);
+    assert(
+      displayedSeconds <= expectedSeconds && displayedSeconds >= expectedSeconds - 1,
+      `Beat the clock ${currentKind} timer should start at ${expectedSeconds}s, got "${timerText}"`,
+    );
     if (round === 1) {
       // Force-exercise the timeout path exactly once: let the first challenge's
       // timer run out without answering, proving the countdown really drives state.
@@ -1897,14 +2154,16 @@ async function main() {
         Math.max(initialSeconds * 1000 + 3000, 12000),
       );
       timeoutExercised = true;
-      await clickText("Próximo desafio");
+      await waitFor(
+        () => hasText("Desafio 2 de 10"),
+        "beat the clock timeout advances automatically after feedback",
+        3000,
+      );
       continue;
     }
     if (kindMarkers.hasWordOptions) {
-      beatClockKindsSeen.add("word_challenge");
       await evaluate(`document.querySelectorAll('.beat-clock-card .answer-options button')[0]?.click()`);
     } else if (kindMarkers.hasTypingInput) {
-      beatClockKindsSeen.add("sentence_typing");
       await evaluate(`(() => {
         const input = document.querySelector('.beat-clock-typing-input');
         const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
@@ -1913,14 +2172,12 @@ async function main() {
       })()`);
       await clickText("Confirmar");
     } else if (kindMarkers.hasUnscramble) {
-      beatClockKindsSeen.add("sentence_builder");
       const bankCount = await evaluate(`document.querySelectorAll('.beat-clock-card .sentence-builder-bank .sentence-token').length`);
       for (let i = 0; i < bankCount; i += 1) {
         await evaluate(`document.querySelectorAll('.beat-clock-card .sentence-builder-bank .sentence-token')[0]?.click()`);
       }
       await clickText("Confirmar frase");
     } else if (kindMarkers.hasErrorHunt) {
-      beatClockKindsSeen.add("error_hunt");
       await evaluate(`document.querySelectorAll('.beat-clock-card .error-hunt-token')[0]?.click()`);
     }
     await waitFor(
@@ -1932,11 +2189,24 @@ async function main() {
   }
   assert(timeoutExercised, "Beat the clock timeout path was never exercised");
   assert(
-    beatClockKindsSeen.size >= 2,
-    `Beat the clock should mix at least two challenge kinds across a round, saw: ${[...beatClockKindsSeen]}`,
+    beatClockKindsSeen.size === 4,
+    `Beat the clock should exercise all four challenge kinds, saw: ${[...beatClockKindsSeen]}`,
   );
   await waitFor(() => hasText("RODADA CONCLUÍDA"), "beat the clock result screen");
   assert(await hasText("Contra o relógio"), "Beat the clock result missing game title");
+  await waitFor(
+    () =>
+      evaluate(`(async () => {
+        const { getGameSessions } = await import('/src/services/progress/localProgress.ts');
+        const sessions = await getGameSessions();
+        return sessions.some((session) =>
+          session.gameId === 'beat_the_clock' &&
+          session.contentDomains?.includes('grammar') &&
+          session.contentDomains?.includes('vocabulary')
+        );
+      })()`),
+    "beat the clock persists both canonical content domains",
+  );
   await clickText("Voltar à home");
   await waitFor(() => hasText("Jogue, aprenda e"), "return home after beat the clock result");
 
@@ -1950,6 +2220,7 @@ async function main() {
     ["/jogos/conectando", ".matching-pairs-word"],
     ["/jogos/par-perfeito", ".memory-match-card"],
     ["/jogos/cada-coisa-no-seu-lugar", ".sorting-word-card"],
+    ["/jogos/cruzando-palavras", ".crossword-cell.filled input"],
     ["/jogos/ouvido-afiado", ".listening-ear-play"],
   ]) {
     await navigate(path);
@@ -1959,7 +2230,8 @@ async function main() {
     );
     const check = await evaluate(`(() => {
       const elements = [...document.querySelectorAll(${JSON.stringify(selector)})];
-      const nonButtonInteractive = elements.filter((el) => el.tagName !== "BUTTON" && !el.getAttribute("role"));
+      const nativeInteractive = new Set(["BUTTON", "INPUT", "SELECT", "TEXTAREA", "A"]);
+      const nonButtonInteractive = elements.filter((el) => !nativeInteractive.has(el.tagName) && !el.getAttribute("role"));
       const withoutAccessibleName = elements.filter((el) => {
         const label = el.getAttribute("aria-label") || el.textContent.trim() || el.getAttribute("aria-labelledby");
         return !label;
@@ -2204,13 +2476,13 @@ async function main() {
     ),
   );
   browser.kill();
-  stopOwnedServer();
+  await stopOwnedServer();
   process.exit(0);
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
   console.error(error.stack ?? error.message);
   browser.kill();
-  stopOwnedServer();
+  await stopOwnedServer();
   process.exit(1);
 });

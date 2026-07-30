@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-07-30 (Fase 1 do loop de jogos v1)
+Atualizado em: 2026-07-30 (Fase 2 do loop de jogos v1)
 
 ## Estado Atual
 
@@ -23,7 +23,7 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Package name `ingles-em-jogo` e metadata atualizada.
 - Fundação compartilhada de jogos: catálogo central, matriz de compatibilidade, seleção determinística de conteúdo, engine de sessão, XP/missão/streak idempotentes, adapters de Gramática (`present_tobe`) e Vocabulário (`body`).
 - Roadmap canônico dos 13 jogos em `docs/IMPLEMENTATION_MAP.md`, com fronteira React–Phaser e gates por fase.
-- Suite pura com `node:test`: 9 testes para catálogo, compatibilidade, seleção, rodada, resultado e conclusão persistente.
+- Suite pura com `node:test`: 15 testes para catálogo, compatibilidade, seleção, rodada, deadline, adapters DOM, gerador de palavras cruzadas, resultado e conclusão persistente.
 - Conclusão de jogo serializada e idempotente, com duas tentativas automáticas, retry visível e a mesma `sessionId`.
 - Os nove jogos oficiais funcionais com o escopo `present_tobe` + `body`.
 - Cards da página de Jogos com as nove imagens aprovadas integradas no topo, usando versões de produção WebP 800x450 em `src/assets/game-card-images/cards/`; os masters 1600x900 permanecem preservados.
@@ -32,15 +32,15 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 
 Os nove jogos do catálogo oficial estão funcionais nesta fase, usando exclusivamente `present_tobe` (Gramática) e `body` (Vocabulário) como conteúdo:
 
-- Monte a frase — reordenar tokens da frase correta (117 questões elegíveis de 130).
-- Caça ao erro — tocar no token corrompido por um distrator revisado (114 elegíveis).
+- Monte a frase — reordenar tokens da frase correta (110 questões elegíveis de 130, após exclusão conservadora de fragmentos e ordenações ambíguas).
+- Caça ao erro — tocar na palavra corrompida por um distrator revisado (115 elegíveis); pontuação é texto não interativo.
 - Contra o relógio — mistura das quatro mecânicas com timers individuais (10s/20s/10s/20s).
-- Cada coisa no seu lugar — arrastar/tocar cartões de palavras para seis slots de imagens correspondentes, em dois painéis de seis pares.
+- Cada coisa no seu lugar — arrastar/tocar cartões de palavras para quatro slots de imagens correspondentes, em três grupos anatômicos revisados.
 - Palavra secreta — Hangman tradicional, pista em português, 5 erros, teclado físico e virtual.
 - Conectando — consolidado localmente na branch `feat/loop-jogos-v1`: tabuleiro responsivo e compacto com seis palavras e seis imagens, ligação por linha gestual e fallback por clique/teclado.
-- Cruzando palavras — tabuleiro gerado deterministicamente (até 8 palavras, usa menos quando necessário).
-- Par perfeito — jogo da memória com cartas de palavra e imagem em board responsivo ampliado.
-- Ouvido afiado — três modos: ouvir e selecionar imagem, ouvir e digitar, ouvir e montar frase.
+- Cruzando palavras — tabuleiro interativo gerado deterministicamente (até 8 palavras), sem letras reveladas e com validação de colisões, teclado físico/virtual e pistas associadas.
+- Par perfeito — jogo da memória com cartas de palavra e imagem em board responsivo ampliado, bloqueio durante conferência e timers limpos.
+- Ouvido afiado — três modos: ouvir e selecionar imagem, ouvir e digitar, ouvir e montar frase; indisponibilidade ou preferência de som desligada exibe fallback textual.
 
 `Conectando` é o nome aprovado para associação entre palavra em inglês e imagem.
 
@@ -107,7 +107,7 @@ O smoke deve cobrir 360x800, 390x844, 412x915, 768x1024, 1000x800, 1024x768, 136
 
 ## Smoke test: bloqueio resolvido
 
-O bloqueio anterior (`node scripts/smokeUi.mjs` não alcançava `127.0.0.1:5173`) tinha causa raiz confirmada: o script assumia um servidor Vite externo já rodando, mas processos iniciados em invocações de terminal separadas não eram acessíveis entre si neste ambiente. `scripts/smokeUi.mjs` agora inicia e gerencia seu próprio servidor Vite (reaproveitando um já ativo em `127.0.0.1:5173` quando existir) e encerra apenas o servidor que ele mesmo criou. O Edge headless também passou a rodar com `--disable-extensions` para eliminar ruído de uma extensão do perfil do sistema que gerava exceções não relacionadas ao produto.
+O bloqueio anterior (`node scripts/smokeUi.mjs` não alcançava `127.0.0.1:5173`) tinha causa raiz confirmada: o script assumia um servidor Vite externo já rodando, mas processos iniciados em invocações de terminal separadas não eram acessíveis entre si neste ambiente. `scripts/smokeUi.mjs` agora reserva uma porta local livre por execução, inicia e gerencia seu próprio servidor Vite isolado e aguarda seu encerramento. O Edge headless também passou a rodar com `--disable-extensions` para eliminar ruído de uma extensão do perfil do sistema que gerava exceções não relacionadas ao produto.
 
 O smoke agora cobre fluxo funcional completo dos nove jogos, timers individuais do Contra o relógio, persistência/XP/missão/streak idempotentes e checagens estruturais de acessibilidade, além dos fluxos já existentes. Passou em execuções consecutivas com `browserErrors: 0`.
 
@@ -120,7 +120,7 @@ O smoke agora cobre fluxo funcional completo dos nove jogos, timers individuais 
 - As hitboxes dos alvos não se sobrepõem; o smoke confirma um drop correto próximo à borda. No desktop, as colunas foram centralizadas e as linhas encurtadas.
 - As screenshots de catálogo, Conectando e Par perfeito foram abertas e inspecionadas em 1440x900, 768x1024 e 390x844.
 - Gate técnico aprovado em 2026-07-30: conteúdo, TypeScript, lint, build, smoke completo e `git diff --check`.
-- O build ainda reporta chunk inicial de cerca de 535 kB; code-splitting permanece obrigatório antes da introdução do Phaser.
+- O build reporta chunk inicial de cerca de 545 kB; code-splitting permanece obrigatório antes da introdução do Phaser.
 
 ## Fase 1 — roadmap e fundação
 
@@ -133,3 +133,16 @@ O smoke agora cobre fluxo funcional completo dos nove jogos, timers individuais 
 - O smoke cobre a regressão gestual do Conectando com touch real, mouse, clique, teclado, `pointercancel` e drop próximo à borda.
 - Gate técnico e revisão aprovados em 2026-07-30: 9/9 testes puros, smoke completo em nove viewports e `browserErrors: 0`; evidências em `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-ePzXdk`.
 - `npm audit` reporta duas ocorrências altas da mesma advisory de CSRF em modo RSC do React Router; a aplicação é uma SPA Vite e não usa RSC Actions, mas a atualização compatível permanece uma decisão aberta.
+
+## Fase 2 — nove jogos DOM
+
+- Os adapters materializam as 130 questões canônicas; Monte a frase exclui cinco ordenações semanticamente ambíguas e Caça ao erro exclui um caso de concordância contextual.
+- Contra o relógio garante os quatro tipos por rodada, usa deadline monotônico, liquida cada desafio uma vez e avança automaticamente após timeout; Contra o relógio e Ouvido afiado persistem ambos os domínios canônicos.
+- Cada coisa no seu lugar usa três grupos de quatro, suporta mouse, touch, clique e teclado, não atribui em `pointercancel`/`touchcancel` e não aninha controles interativos.
+- Palavra secreta evita contagem repetida, anuncia o padrão e as letras tentadas e reorganiza as 26 teclas sem overflow em 360 px.
+- Cruzando palavras não revela respostas, rejeita colisões inválidas em 200 seeds e oferece inputs, pistas e teclado virtual acessíveis.
+- Par perfeito limpa timers em restart/unmount, bloqueia interação durante a conferência e registra exatamente um primeiro outcome por par.
+- O smoke percorre rodadas completas dos nove jogos, estados de erro/timeout, som desligado, persistência mista e cancelamentos físicos, com `browserErrors: 0`.
+- Duas execuções consecutivas do smoke passaram em servidores isolados, incluindo touch físico da Classificação sem fallback sintético.
+- Capturas inspecionadas em 1440x900, 768x1024 e 390x844 para catálogo, Conectando, Par perfeito, Classificação e Palavras Cruzadas; Palavra secreta também foi inspecionada em 360x800. Evidência final: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-Ei5wvR`.
+- Gate técnico e revisão independente aprovados em 2026-07-30; nenhum bloqueio remanescente para o checkpoint local da Fase 2.

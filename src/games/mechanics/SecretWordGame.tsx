@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import AppIcon from "../../components/AppIcon";
@@ -37,13 +37,22 @@ export default function SecretWordGame() {
   const [wordFinished, setWordFinished] = useState(false);
   const [roundState, setRoundState] = useState<GameRoundState>(() => createRoundState("secret_word"));
   const [finished, setFinished] = useState(false);
+  const guessedRef = useRef<Set<string>>(new Set());
   const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("secret_word", "vocabulary");
 
   const challenge = challenges[index];
   const letters = challenge ? normalizedLetters(challenge.answer) : [];
   const solved = letters.length > 0 && letters.every((letter) => letter === " " || letter === "-" || guessed.has(letter));
+  const spokenPattern = letters
+    .map((letter) => {
+      if (letter === " ") return "espaço";
+      if (letter === "-") return "hífen";
+      return guessed.has(letter) || wordFinished ? letter : "letra oculta";
+    })
+    .join(", ");
 
   useEffect(() => {
+    guessedRef.current = new Set();
     setGuessed(new Set());
     setMistakes(0);
     setWordFinished(false);
@@ -60,25 +69,28 @@ export default function SecretWordGame() {
     }
   }, [challenge, mistakes, solved, wordFinished]);
 
-  function guessLetter(letter: string) {
-    if (!challenge || wordFinished || guessed.has(letter)) return;
-    setGuessed((current) => new Set(current).add(letter));
-    if (!letters.includes(letter)) {
+  const guessLetter = useCallback((letter: string) => {
+    if (!challenge || wordFinished || guessedRef.current.has(letter)) return;
+    const nextGuessed = new Set(guessedRef.current).add(letter);
+    guessedRef.current = nextGuessed;
+    setGuessed(nextGuessed);
+    if (!normalizedLetters(challenge.answer).includes(letter)) {
       setMistakes((current) => current + 1);
     }
-  }
+  }, [challenge, wordFinished]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
+      if (event.repeat) return;
       const letter = event.key.toUpperCase();
       if (letter.length === 1 && letter >= "A" && letter <= "Z") {
+        event.preventDefault();
         guessLetter(letter);
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [challenge, wordFinished, guessed]);
+  }, [guessLetter]);
 
   if (!challenge && !finished) {
     return (
@@ -135,7 +147,13 @@ export default function SecretWordGame() {
           <h1>{challenge.clue}</h1>
         </div>
 
-        <div className="secret-word-letters" aria-label="Palavra a descobrir">
+        <div
+          aria-label={`Palavra a descobrir: ${spokenPattern}. Letras tentadas: ${
+            [...guessed].sort().join(", ") || "nenhuma"
+          }`}
+          aria-live="polite"
+          className="secret-word-letters"
+        >
           {letters.map((letter, letterIndex) => {
             const isSpacer = letter === " " || letter === "-";
             const revealed = isSpacer || guessed.has(letter) || wordFinished;

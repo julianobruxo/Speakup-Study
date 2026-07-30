@@ -23,6 +23,7 @@ export function generateCrossword(challenges: CrosswordEntryChallenge[]): Crossw
   if (challenges.length === 0) return { width: 0, height: 0, placements: [] };
 
   const cells = new Map<string, string>();
+  const cellDirections = new Map<string, Set<PlacedWord["direction"]>>();
   const placements: PlacedWord[] = [];
 
   function key(row: number, col: number) {
@@ -30,13 +31,39 @@ export function generateCrossword(challenges: CrosswordEntryChallenge[]): Crossw
   }
 
   function canPlace(word: string, row: number, col: number, direction: "across" | "down"): boolean {
+    const beforeRow = direction === "down" ? row - 1 : row;
+    const beforeCol = direction === "across" ? col - 1 : col;
+    const afterRow = direction === "down" ? row + word.length : row;
+    const afterCol = direction === "across" ? col + word.length : col;
+    if (cells.has(key(beforeRow, beforeCol)) || cells.has(key(afterRow, afterCol))) {
+      return false;
+    }
+
+    let intersections = 0;
     for (let i = 0; i < word.length; i += 1) {
       const r = direction === "down" ? row + i : row;
       const c = direction === "across" ? col + i : col;
       const existing = cells.get(key(r, c));
-      if (existing && existing !== word[i]) return false;
+      const directions = cellDirections.get(key(r, c));
+      if (existing) {
+        if (
+          existing !== word[i] ||
+          directions?.has(direction) ||
+          (directions?.size ?? 0) >= 2
+        ) {
+          return false;
+        }
+        intersections += 1;
+        continue;
+      }
+
+      const sideA =
+        direction === "across" ? key(r - 1, c) : key(r, c - 1);
+      const sideB =
+        direction === "across" ? key(r + 1, c) : key(r, c + 1);
+      if (cells.has(sideA) || cells.has(sideB)) return false;
     }
-    return true;
+    return intersections === 1;
   }
 
   function place(challenge: CrosswordEntryChallenge, row: number, col: number, direction: "across" | "down") {
@@ -44,7 +71,11 @@ export function generateCrossword(challenges: CrosswordEntryChallenge[]): Crossw
     for (let i = 0; i < word.length; i += 1) {
       const r = direction === "down" ? row + i : row;
       const c = direction === "across" ? col + i : col;
-      cells.set(key(r, c), word[i]);
+      const cellKey = key(r, c);
+      cells.set(cellKey, word[i]);
+      const directions = cellDirections.get(cellKey) ?? new Set();
+      directions.add(direction);
+      cellDirections.set(cellKey, directions);
     }
     placements.push({ challenge, row, col, direction });
   }

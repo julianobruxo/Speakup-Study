@@ -1,4 +1,4 @@
-import { getVocabularyEntriesByCategory } from "../../content/data/vocabulary";
+import { getVocabularyEntriesByCategory } from "../../content/data/vocabulary.ts";
 import type { VocabularyEntry } from "../../content/model/content";
 import type {
   MatchingPairChallenge,

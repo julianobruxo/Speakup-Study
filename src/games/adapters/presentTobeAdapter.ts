@@ -1,6 +1,16 @@
-import { PRESENT_TOBE_QUESTIONS } from "../../content/data/presentTobeQuestions";
+import { PRESENT_TOBE_QUESTIONS } from "../../content/data/presentTobeQuestions.ts";
 import type { GrammarPracticeQuestion } from "../../content/model/content";
 import type { ErrorHuntChallenge, SentenceBuilderChallenge } from "../core/challengeTypes";
+
+const SENTENCE_BUILDER_EXCLUDED_IDS = new Set([
+  "present_tobe_easy_003",
+  "present_tobe_easy_031",
+  "present_tobe_medium_036",
+  "present_tobe_medium_047",
+  "present_tobe_medium_070",
+]);
+
+const ERROR_HUNT_EXCLUDED_IDS = new Set(["present_tobe_medium_018"]);
 
 /**
  * Questions whose correct answer is a two-clause short-answer fragment
@@ -35,6 +45,10 @@ function tokenize(sentence: string): string[] {
     .filter(Boolean);
 }
 
+export function isSelectableErrorToken(token: string): boolean {
+  return /[A-Za-z]/.test(token);
+}
+
 /**
  * A tokenized sentence is ambiguous for reordering when it contains repeated
  * non-trivial tokens (same word appearing twice) — the learner could produce
@@ -64,13 +78,17 @@ function hasAmbiguousOrdering(tokens: string[]): boolean {
  */
 export function getSentenceBuilderQuestions(): GrammarPracticeQuestion[] {
   return PRESENT_TOBE_QUESTIONS.filter(
-    (question) => !isShortAnswerFragment(question) && !hasAmbiguousOrdering(tokenize(materializeSentence(question))),
+    (question) =>
+      !SENTENCE_BUILDER_EXCLUDED_IDS.has(question.id) &&
+      !isShortAnswerFragment(question) &&
+      !hasAmbiguousOrdering(tokenize(materializeSentence(question))),
   );
 }
 
 export function toSentenceBuilderChallenge(
   question: GrammarPracticeQuestion,
 ): SentenceBuilderChallenge | null {
+  if (SENTENCE_BUILDER_EXCLUDED_IDS.has(question.id)) return null;
   const materialized = materializeSentence(question);
   const tokens = tokenize(materialized);
   if (hasAmbiguousOrdering(tokens)) return null;
@@ -94,6 +112,7 @@ export function toSentenceBuilderChallenge(
  * one token or produce an unequal-length sentence instead of a single error.
  */
 export function toErrorHuntChallenge(question: GrammarPracticeQuestion): ErrorHuntChallenge | null {
+  if (ERROR_HUNT_EXCLUDED_IDS.has(question.id)) return null;
   const answers = splitAnswers(question.correctAnswer);
   const distractor = question.options.find((option) => option !== question.correctAnswer);
   if (!distractor) return null;
@@ -144,6 +163,9 @@ export function toErrorHuntChallenge(question: GrammarPracticeQuestion): ErrorHu
  */
 export function getErrorHuntQuestions(): GrammarPracticeQuestion[] {
   return PRESENT_TOBE_QUESTIONS.filter(
-    (question) => !isShortAnswerFragment(question) && toErrorHuntChallenge(question) !== null,
+    (question) =>
+      !ERROR_HUNT_EXCLUDED_IDS.has(question.id) &&
+      !isShortAnswerFragment(question) &&
+      toErrorHuntChallenge(question) !== null,
   );
 }

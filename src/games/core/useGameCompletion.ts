@@ -10,20 +10,28 @@ import { recordGameRoundEngagement } from "../../services/progress/engagement";
  * pipeline once. A terminal error is exposed to the result UI instead of
  * becoming an unhandled rejection.
  */
-export function useGameCompletion(gameId: GameId, contentDomain: ContentDomain) {
+export function useGameCompletion(
+  gameId: GameId,
+  contentDomain: ContentDomain | readonly ContentDomain[],
+) {
   const [completionError, setCompletionError] = useState<Error | null>(null);
   const generationRef = useRef(0);
   const lastResultRef = useRef<GameRoundResult | null>(null);
   const coordinatorRef = useRef<CompletionCoordinator<GameRoundResult> | null>(null);
 
   if (!coordinatorRef.current) {
+    const contentDomains = [
+      ...new Set(Array.isArray(contentDomain) ? contentDomain : [contentDomain]),
+    ];
+    const primaryContentDomain = contentDomains[0];
     coordinatorRef.current = createCompletionCoordinator({
       createSessionId: () => crypto.randomUUID(),
       persist: async (sessionId, result) => {
         await saveGameSession({
           sessionId,
           gameId,
-          contentDomain,
+          contentDomain: primaryContentDomain,
+          contentDomains,
           totalChallenges: result.totalChallenges,
           correctCount: result.correctCount,
           xpEarned: result.xpEarned,
@@ -33,7 +41,7 @@ export function useGameCompletion(gameId: GameId, contentDomain: ContentDomain) 
 
         await recordGameRoundEngagement(
           sessionId,
-          contentDomain,
+          contentDomains,
           result.xpEarned,
           result.totalChallenges,
           new Date(result.completedAt),

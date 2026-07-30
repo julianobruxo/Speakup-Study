@@ -121,6 +121,7 @@ export interface GameSessionRecord {
   sessionId: string;
   gameId: string;
   contentDomain: "grammar" | "vocabulary";
+  contentDomains?: ("grammar" | "vocabulary")[];
   totalChallenges: number;
   correctCount: number;
   xpEarned: number;

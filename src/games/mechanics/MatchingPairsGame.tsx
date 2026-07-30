@@ -316,11 +316,18 @@ export default function MatchingPairsGame() {
   function selectWord(wordId: string) {
     if (connections[wordId] || roundComplete) return;
     const word = challengeById(wordId);
+    const willSelect = selectedWordId !== wordId;
     clearWrongTimer();
     setWrongAttempt(null);
     setFeedbackTone(null);
-    setSelectedWordId((current) => (current === wordId ? null : wordId));
-    if (word) setLiveMessage(`${word.term} selecionada. Escolha a imagem correspondente.`);
+    setSelectedWordId(willSelect ? wordId : null);
+    if (word) {
+      setLiveMessage(
+        willSelect
+          ? `${word.term} selecionada. Escolha a imagem correspondente.`
+          : `${word.term} não está mais selecionada.`,
+      );
+    }
   }
 
   function selectWordFromClick(wordId: string, clickDetail: number) {

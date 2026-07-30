@@ -3,10 +3,17 @@ import { useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import AppIcon from "../../components/AppIcon";
 import { PrimaryButton } from "../../components/AppShell";
-import { isPronunciationAvailable, speakEnglish } from "../../services/audio/pronunciation";
+import {
+  cancelPronunciation,
+  isPronunciationAvailable,
+  speakEnglish,
+} from "../../services/audio/pronunciation";
+import {
+  isSoundEnabled,
+  SOUND_PREFERENCE_EVENT,
+} from "../../services/audio/sound";
 import { buildListeningChallenges } from "../adapters/listeningAdapter";
 import { ROUND_SIZES } from "../core/roundConfig";
-import { selectChallenges } from "../core/selectChallenges";
 import { shuffleWithSeed } from "../core/shuffle";
 import { createRoundState, finalizeRound, recordOutcome, type GameRoundState } from "../core/sessionEngine";
 import { useGameCompletion } from "../core/useGameCompletion";
@@ -15,22 +22,27 @@ import { GameResultScreen } from "../components/GameResultScreen";
 import { VisualAsset } from "../assets/visualResolver";
 
 const roundSize = ROUND_SIZES.listening_ear.count;
-const speechAvailable = isPronunciationAvailable();
 
 export default function ListeningEarGame() {
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const [seed, setSeed] = useState(() => Date.now());
-  const challenges = useMemo(() => selectChallenges(buildListeningChallenges(seed), roundSize, seed), [seed]);
+  const challenges = useMemo(() => buildListeningChallenges(seed, roundSize), [seed]);
   const [index, setIndex] = useState(0);
   const [typedAnswer, setTypedAnswer] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [placed, setPlaced] = useState<string[]>([]);
   const [bank, setBank] = useState<string[]>([]);
   const [checked, setChecked] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(isSoundEnabled);
   const [roundState, setRoundState] = useState<GameRoundState>(() => createRoundState("listening_ear"));
   const [finished, setFinished] = useState(false);
-  const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("listening_ear", "vocabulary");
+  const { complete, completionError, resetSession, retryCompletion } = useGameCompletion(
+    "listening_ear",
+    ["grammar", "vocabulary"],
+  );
+  const speechAvailable = isPronunciationAvailable();
+  const speechUsable = speechAvailable && soundEnabled;
 
   const challenge = challenges[index];
 
@@ -43,8 +55,19 @@ export default function ListeningEarGame() {
       setBank(shuffleWithSeed(challenge.tokens, seed + index * 31));
       setPlaced([]);
     }
-    if (speechAvailable) speakEnglish(challenge.audioText);
-  }, [challenge, index, seed]);
+    if (speechUsable) speakEnglish(challenge.audioText);
+    return cancelPronunciation;
+  }, [challenge, index, seed, speechUsable]);
+
+  useEffect(() => {
+    function syncSoundPreference() {
+      const enabled = isSoundEnabled();
+      setSoundEnabled(enabled);
+      if (!enabled) cancelPronunciation();
+    }
+    window.addEventListener(SOUND_PREFERENCE_EVENT, syncSoundPreference);
+    return () => window.removeEventListener(SOUND_PREFERENCE_EVENT, syncSoundPreference);
+  }, []);
 
   if (!challenge && !finished) {
     return (
@@ -55,7 +78,7 @@ export default function ListeningEarGame() {
   }
 
   function replayAudio() {
-    if (challenge && speechAvailable) speakEnglish(challenge.audioText);
+    if (challenge && speechUsable) speakEnglish(challenge.audioText);
   }
 
   function submitTypeWord() {
@@ -105,6 +128,14 @@ export default function ListeningEarGame() {
     setIndex((current) => current + 1);
   }
 
+  const responseCorrect =
+    checked &&
+    ((challenge.mode === "type-word" &&
+      typedAnswer.trim().toLowerCase() === challenge.expectedWord?.toLowerCase()) ||
+      (challenge.mode === "select-image" && selectedImage === challenge.visualKey) ||
+      (challenge.mode === "assemble-sentence" &&
+        placed.join(" ") === challenge.correctOrder?.join(" ")));
+
   if (finished) {
     const result = finalizeRound(roundState);
     return (
@@ -141,22 +172,23 @@ export default function ListeningEarGame() {
           <button
             aria-label="Ouvir novamente"
             className="listening-ear-play"
-            disabled={!speechAvailable}
+            disabled={!speechUsable}
             onClick={replayAudio}
             type="button"
           >
             <AppIcon name="volume" size={26} />
             <span>Ouvir</span>
           </button>
-          {!speechAvailable && (
+          {!speechUsable && (
             <p className="speech-fallback">
-              A pronúncia por voz não está disponível neste navegador. O texto do desafio aparece
-              abaixo para continuar a prática.
+              {speechAvailable
+                ? "O som está desativado. O texto do desafio aparece abaixo para continuar a prática."
+                : "A pronúncia por voz não está disponível neste navegador. O texto do desafio aparece abaixo para continuar a prática."}
             </p>
           )}
         </div>
 
-        {!speechAvailable && challenge.mode !== "assemble-sentence" && (
+        {!speechUsable && challenge.mode !== "assemble-sentence" && (
           <p className="listening-ear-text-fallback">{challenge.audioText}</p>
         )}
 
@@ -249,22 +281,15 @@ export default function ListeningEarGame() {
 
         {checked && (
           <div
-            className={`answer-feedback ${
-              (challenge.mode === "type-word" &&
-                typedAnswer.trim().toLowerCase() === challenge.expectedWord?.toLowerCase()) ||
-              (challenge.mode === "select-image" && selectedImage === challenge.visualKey) ||
-              (challenge.mode === "assemble-sentence" && placed.join(" ") === challenge.correctOrder?.join(" "))
-                ? "correct"
-                : "wrong"
-            }`}
+            className={`answer-feedback ${responseCorrect ? "correct" : "wrong"}`}
             role="status"
             aria-live="polite"
           >
             <span className="feedback-icon">
-              <AppIcon name="check" size={20} />
+              <AppIcon name={responseCorrect ? "check" : "close"} size={20} />
             </span>
             <div>
-              <strong>Resposta:</strong>
+              <strong>{responseCorrect ? "Correto!" : "Resposta correta:"}</strong>
               <p>{challenge.audioText}</p>
             </div>
           </div>

@@ -480,7 +480,10 @@ export async function recordFlashcardCompletion(
  */
 export async function recordGameRoundEngagement(
   sessionId: string,
-  contentDomain: "grammar" | "vocabulary",
+  contentDomain:
+    | "grammar"
+    | "vocabulary"
+    | readonly ("grammar" | "vocabulary")[],
   xpEarned: number,
   totalChallenges: number,
   completedAt = new Date(),
@@ -494,8 +497,9 @@ export async function recordGameRoundEngagement(
     if (state.dailyMission.date !== date) state.dailyMission = newMission(date);
     grantXp(state, xpEarned, date);
     state.dailyMission.gameValidChallengesResolved += totalChallenges;
-    if (contentDomain === "grammar") state.dailyMission.gameGrammarCompleted = true;
-    if (contentDomain === "vocabulary") state.dailyMission.gameVocabularyCompleted = true;
+    const contentDomains = Array.isArray(contentDomain) ? contentDomain : [contentDomain];
+    if (contentDomains.includes("grammar")) state.dailyMission.gameGrammarCompleted = true;
+    if (contentDomains.includes("vocabulary")) state.dailyMission.gameVocabularyCompleted = true;
     if (totalChallenges >= 5) recordActiveDay(state, date);
     completeMissionIfReady(state, date);
   });

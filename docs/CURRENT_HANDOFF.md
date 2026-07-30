@@ -10,7 +10,7 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 
 ## Estado Funcional
 
-- Home game-like com missão diária, meta semanal, caminho de aprendizagem, Liga Safira local e jogos bloqueados.
+- Home game-like com missão diária, meta semanal, caminho de aprendizagem, Liga Safira local e atalhos para jogos funcionais.
 - Estudar como biblioteca com Gramática, Vocabulário e revisão de erros.
 - Gramática funcional apenas em Present TO BE, com avanço automático em 2 segundos após acerto.
 - Vocabulário funcional apenas em Partes do corpo.
@@ -35,7 +35,7 @@ Partes do corpo:
 - ilustrações locais;
 - pronúncia via Web Speech API;
 - swipe, teclado e som.
-- Cada coisa no seu lugar usa associação palavra-imagem com dois painéis de seis pares, fotos locais e fallback por toque/teclado.
+- Cada coisa no seu lugar usa associação palavra-imagem em três grupos anatômicos de quatro pares, fotos locais e interação por drag, toque, clique e teclado.
 
 Planejado: Past TO BE, Simple Present, Present Continuous, Be Going To, Simple Past, There TO BE, Prepositions e demais categorias de Vocabulário.
 
@@ -102,7 +102,7 @@ node scripts/smokeUi.mjs
 
 O smoke cobre nove viewports: 360x800, 390x844, 412x915, 768x1024, 1000x800, 1024x768, 1366x768, 1440x900 e 1920x1080.
 
-Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lint, build, smoke completo e `git diff --check`. As capturas de catálogo, Conectando e Par perfeito foram inspecionadas em 1440x900, 768x1024 e 390x844. O build atual mantém um aviso de chunk inicial de cerca de 535 kB, que será tratado por code-splitting antes do Phaser.
+Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lint, build, smoke completo e `git diff --check`. As capturas de catálogo, Conectando e Par perfeito foram inspecionadas em 1440x900, 768x1024 e 390x844. O build atual mantém um aviso de chunk inicial de cerca de 545 kB, que será tratado por code-splitting antes do Phaser.
 
 ### Relatório da Fase 0
 
@@ -127,6 +127,19 @@ Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lin
 - Evidências: smoke verde em nove viewports, todas as rotas, `browserErrors: 0`, com capturas em `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-ePzXdk`.
 - Dependências: nenhuma adicionada; o lockfile recebeu somente o metadata de engine; Node mínimo documentado como `>=22.18`.
 - Risco conhecido: `npm audit` aponta a advisory `GHSA-qwww-vcr4-c8h2` no React Router em modo RSC. Este SPA Vite não usa RSC Actions; não foi aplicado downgrade ou `audit fix`.
+
+### Relatório da Fase 2
+
+- Objetivo: auditar e fechar as nove mecânicas DOM antes da introdução do Phaser.
+- Conteúdo: 130 questões materializadas; 110 elegíveis para Monte a frase após exclusões conservadoras e 115 para Caça ao erro após remover uma ambiguidade contextual.
+- Mecânicas: quatro tipos garantidos em Contra o relógio, três modos em Ouvido afiado, três grupos de quatro na Classificação, crossword interativo sem respostas expostas e memória protegida contra timers antigos.
+- Invariantes: somente o primeiro outcome por desafio/par, deadlines monotônicos, conclusão mista em Gramática e Vocabulário e nenhum ganho duplicado por retry.
+- Interação e acessibilidade: mouse, touch, clique e teclado; cancelamentos neutros; pontuação não clicável; fallback textual quando TTS não pode tocar; Palavra secreta sem overflow em 360 px e com padrão anunciado.
+- Testes: 15 testes puros e duas execuções consecutivas do smoke completo dos nove jogos em nove viewports, incluindo deadline exato, rodadas completas, timeout automático, restart, resize, persistência e touch físico sem fallback sintético, com `browserErrors: 0`.
+- Infraestrutura do smoke: cada execução reserva uma porta local livre, inicia um Vite isolado e aguarda seu encerramento, sem reutilizar processos externos.
+- Evidências visuais: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-Ei5wvR`, com capturas adicionais de Palavra secreta, Classificação e Palavras Cruzadas.
+- Revisão: Dalton revalidou o lifecycle do drag, o touch físico sem fallback, o servidor isolado e a pontuação acessível; checkpoint da Fase 2 aprovado sem bloqueios remanescentes.
+- Dependências: nenhuma adicionada ou alterada nesta fase; Phaser e code-splitting continuam reservados à Fase 3.
 
 ## Git
 

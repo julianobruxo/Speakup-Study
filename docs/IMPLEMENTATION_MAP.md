@@ -23,7 +23,7 @@ Conteúdo autorizado:
 |---|---|---|---|
 | 0. Consolidar baseline | concluída | nenhuma | checkpoint local `1a64659` |
 | 1. Roadmap e fundação | concluída | Fase 0 | contratos, testes e revisão verdes |
-| 2. Fechar nove jogos DOM | pendente | Fase 1 | nove rodadas completas, `browserErrors: 0` |
+| 2. Fechar nove jogos DOM | concluída | Fase 1 | nove rodadas completas, `browserErrors: 0` |
 | 3. Code-splitting e bridge Phaser | pendente | Fase 2 | Phaser isolado, mount/unmount limpo |
 | 4. Bubble Shooter | pendente | Fase 3 | arcade completo e modo DOM simplificado |
 | 5. Corte a palavra | pendente | Fase 4 | gesto confiável e performance mobile |
@@ -45,7 +45,7 @@ Conteúdo autorizado:
 | missão, streak e XP | `engagement.ts` | idempotência por `sessionId` |
 | conclusão React | `completionCoordinator.ts`, `useGameCompletion.ts` | fila entre sessões, duas tentativas automáticas e retry visível |
 | assets | `visualResolver.tsx` | resolução central por `visualKey` |
-| testes puros | `tests/gamesFoundation.test.mjs` | `node:test`, sem dependência nova |
+| testes puros | `tests/gamesFoundation.test.mjs`, `tests/domGameContracts.test.mjs` | 15 testes com `node:test`, sem dependência nova |
 | smoke funcional/visual | `scripts/smokeUi.mjs` | a suite cobre nove viewports e verifica `browserErrors` |
 
 ## Fase 1 — critérios
@@ -72,11 +72,10 @@ Ordem de fechamento:
 8. Par perfeito — bloqueio durante animação e timers sem corrida;
 9. Ouvido afiado — três modos, TTS disponível/indisponível e cleanup.
 
-Pendências transversais desta fase:
+Critérios transversais desta fase:
 
 - atribuir corretamente Gramática e Vocabulário em rodadas mistas;
-- consumir catálogo/compatibilidade nos fluxos jogo-first e content-first;
-- garantir que nenhuma carta apareça como `Em breve`;
+- remover rótulos falsos de `Em breve` dos nove jogos e atalhos funcionais;
 - ampliar smoke por estado crítico sem enfraquecer assertions.
 
 ## Fase 3 — fronteira React–Phaser
@@ -107,6 +106,14 @@ Phaser mantém apenas:
 - **Corte a palavra:** trilha interpolada, colisão confiável, alvos/distratores, progressão e modo DOM.
 - **Ninja:** corrida automática em 6A–6E; velocidade não substitui conhecimento.
 - **Corrida individual:** três faixas, portais, swipe/toque, boost e desaceleração; nenhum código multiplayer.
+
+## Fase 8 — integração dos 13 jogos
+
+- consumir catálogo e compatibilidade no fluxo game-first;
+- oferecer o fluxo content-first a partir das áreas de Gramática e Vocabulário;
+- configurar conteúdo e rodada antes de iniciar cada jogo;
+- manter links diretos válidos com defaults canônicos;
+- validar navegação, persistência e resultado nos dois fluxos.
 
 ## Gates por checkpoint
 

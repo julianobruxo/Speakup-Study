@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { PrimaryButton } from "../../components/AppShell";
@@ -40,12 +40,21 @@ export default function MemoryMatchGame() {
   const [matchedPairIds, setMatchedPairIds] = useState<Set<string>>(new Set());
   const [flipped, setFlipped] = useState<string[]>([]);
   const [isChecking, setIsChecking] = useState(false);
+  const [liveMessage, setLiveMessage] = useState("");
   const [roundState, setRoundState] = useState<GameRoundState>(() => createRoundState("memory_match"));
   const [finished, setFinished] = useState(false);
+  const checkTimerRef = useRef<number | null>(null);
   const { complete, completionError, resetSession, retryCompletion } = useGameCompletion("memory_match", "vocabulary");
 
   const totalPairs = cards.length / 2;
   const allMatched = matchedPairIds.size === totalPairs && totalPairs > 0;
+  const clearCheckTimer = useCallback(() => {
+    if (checkTimerRef.current === null) return;
+    window.clearTimeout(checkTimerRef.current);
+    checkTimerRef.current = null;
+  }, []);
+
+  useEffect(() => clearCheckTimer, [clearCheckTimer]);
 
   useEffect(() => {
     if (allMatched && !finished) {
@@ -69,16 +78,26 @@ export default function MemoryMatchGame() {
       const second = cards.find((item) => item.cardId === secondId)!;
       const isMatch = first.pairId === second.pairId && first.kind !== second.kind;
 
-      window.setTimeout(() => {
+      clearCheckTimer();
+      checkTimerRef.current = window.setTimeout(() => {
         if (isMatch) {
           setMatchedPairIds((current) => new Set(current).add(first.pairId));
           setRoundState((current) => recordOutcome(current, first.pairId, true));
+          setLiveMessage(`Par correto: ${first.challenge.term}.`);
         } else {
-          setRoundState((current) => recordOutcome(current, `${firstId}:${secondId}`, false));
+          setRoundState((current) =>
+            recordOutcome(
+              recordOutcome(current, first.pairId, false),
+              second.pairId,
+              false,
+            ),
+          );
+          setLiveMessage("Essas cartas não formam um par.");
         }
         setFlipped([]);
         setIsChecking(false);
-      }, 700);
+        checkTimerRef.current = null;
+      }, reduceMotion ? 120 : 700);
     }
   }
 
@@ -92,10 +111,13 @@ export default function MemoryMatchGame() {
         onHome={() => navigate("/")}
         onRetryPersistence={retryCompletion}
         onPlayAgain={() => {
+          clearCheckTimer();
           resetSession();
           setSeed(Date.now());
           setMatchedPairIds(new Set());
           setFlipped([]);
+          setIsChecking(false);
+          setLiveMessage("");
           setRoundState(createRoundState("memory_match"));
           setFinished(false);
         }}
@@ -129,7 +151,10 @@ export default function MemoryMatchGame() {
               }
               aria-pressed={isFlipped}
               className={`memory-match-card ${isFlipped ? "is-flipped" : ""} ${isMatched ? "is-matched" : ""}`}
-              disabled={isMatched}
+              data-card-id={card.cardId}
+              data-card-kind={card.kind}
+              data-pair-id={card.pairId}
+              disabled={isMatched || isChecking}
               key={card.cardId}
               onClick={() => flipCard(card)}
               type="button"
@@ -149,12 +174,20 @@ export default function MemoryMatchGame() {
         </div>
       </div>
 
+      <p aria-live="polite" className="sr-only">
+        {liveMessage}
+      </p>
+
       <div className="session-action">
         <PrimaryButton
+          disabled={isChecking}
           onClick={() => {
+            clearCheckTimer();
             setSeed(Date.now());
             setMatchedPairIds(new Set());
             setFlipped([]);
+            setIsChecking(false);
+            setLiveMessage("");
             setRoundState(createRoundState("memory_match"));
           }}
           variant="secondary"

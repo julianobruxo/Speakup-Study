@@ -72,13 +72,13 @@ export default function VocabularyCategoryPage() {
         >
           Estudar com flashcards
         </PrimaryButton>
-        <div className="locked-action" aria-label="Praticar: em breve">
-          <AppIcon name="lock" />
-          <div>
-            <strong>Praticar</strong>
-            <span>Em breve</span>
-          </div>
-        </div>
+        <PrimaryButton
+          icon={<AppIcon name="game" size={19} />}
+          onClick={() => navigate("/jogos")}
+          variant="secondary"
+        >
+          Praticar em jogos
+        </PrimaryButton>
       </AppShell>
     );
   }
