@@ -209,6 +209,17 @@ Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lin
 - Edge headless: o smoke novo foi implementado para clique incorreto, teclado correto e conclusão, mas as execuções completas pararam em oscilações conhecidas fora desse fluxo. A assertion não foi relaxada e, por orientação explícita de Juliano, novos ciclos no Edge foram deixados para depois.
 - Revisões: pareceres técnico e pedagógico/acessível aprovaram o delta após correções de foco, salto em resize/reduced motion, feedback legível, conclusão confirmada por outcomes React e resposta confrontada com o banco canônico.
 
+### Relatório da Fase 6C
+
+- Objetivo: adicionar três vidas, score, combo, avanço após erro e recuperação parcial sem antecipar conteúdo final, XP ou persistência.
+- Rodada provisória: cinco questões fáceis canônicas e determinísticas; a quantidade final e as cinco faixas pedagógicas permanecem para medição na 6D.
+- Ownership: React calcula e guarda vidas, score, combo, outcomes e tentativas. Phaser recebe `remainingLives` e `runEnded` opcionais apenas para apresentar feedback, avançar ou interromper a cena.
+- Recuperação: o terceiro erro mantém resposta correta e explicação por 4,5 segundos; depois, o jogador restaura três vidas e continua somente com os desafios restantes, preservando score e outcomes.
+- Acessibilidade: perdas de vida entram no anúncio textual, o estado de recuperação não depende de cor, o botão tem alvo nativo e o foco retorna ao Canvas remantado. O smoke também cobre touch, teclado, overflow e feedback fatal.
+- Testes e gates: 39 testes puros, conteúdo, TypeScript, lint, build, split Phaser e `git diff --check` verdes.
+- Navegador: `scripts/smokeUi.mjs` aceita `SMOKE_BROWSER` e mantém Edge como padrão. A execução única no Chrome percorreu as rotas anteriores e parou no primeiro clique Canvas do Ninja por coordenadas; nenhuma exceção da aplicação foi emitida e, conforme orientação explícita, não houve repetição de ciclos de compatibilidade.
+- Visual: estados iniciais em 1440x900 e 768x1024 foram abertos e aprovados; o CLI do Chrome no Windows não produziu uma largura interna móvel confiável, por isso a evidência CDP de 390x844 da 6A continua sendo a referência móvel desta subfase.
+
 ## Git
 
 - Branch: `feat/loop-jogos-v1`.

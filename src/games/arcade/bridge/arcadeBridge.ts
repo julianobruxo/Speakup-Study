@@ -35,8 +35,13 @@ export interface ArcadeAnswer {
   answeredAt: string;
 }
 
+export interface ArcadeAnswerReceipt extends ChallengeOutcome {
+  remainingLives?: number;
+  runEnded?: boolean;
+}
+
 export interface ArcadeSceneEvents {
-  onAnswer: (answer: ArcadeAnswer) => ChallengeOutcome | null;
+  onAnswer: (answer: ArcadeAnswer) => ArcadeAnswerReceipt | null;
   onReady: () => void;
   onRuntimeState: (state: ArcadeSceneRuntimeState) => void;
 }
@@ -62,6 +67,7 @@ export interface ArcadeSceneRuntimeState {
   shotSnapColumn?: number;
   shotSnapRow?: number;
   runnerDistance?: number;
+  runEnded?: boolean;
   tweenCount: number;
   trailPointCount?: number;
   trackPoolSize?: number;

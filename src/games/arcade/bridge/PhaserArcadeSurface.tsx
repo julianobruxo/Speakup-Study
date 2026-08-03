@@ -2,17 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import {
   ARCADE_RUNTIME_DESTROYED_EVENT,
   type ArcadeAnswer,
+  type ArcadeAnswerReceipt,
   type ArcadeSceneFactory,
   type ArcadeSceneRuntimeState,
   type PreparedArcadeRound,
 } from "./arcadeBridge";
-import type { ChallengeOutcome } from "../../core/sessionEngine";
 
 interface PhaserArcadeSurfaceProps {
   ariaLabel?: string;
   className?: string;
   interactive?: boolean;
-  onAnswer: (answer: ArcadeAnswer) => ChallengeOutcome | null;
+  onAnswer: (answer: ArcadeAnswer) => ArcadeAnswerReceipt | null;
   onRuntimeState?: (state: ArcadeSceneRuntimeState) => void;
   paused: boolean;
   reducedMotion: boolean;
@@ -331,6 +331,7 @@ export function PhaserArcadeSurface({
       data-runtime-render-resolution={runtimeDiagnostics.renderResolution}
       data-runtime-reduced-motion={runtimeDiagnostics.reducedMotion}
       data-runtime-runner-distance={runtimeDiagnostics.runnerDistance}
+      data-runtime-run-ended={runtimeDiagnostics.runEnded}
       data-runtime-removed-group-size={runtimeDiagnostics.removedGroupSize}
       data-runtime-resize-deferred={runtimeDiagnostics.resizeDeferred}
       data-runtime-selected-choice-id={runtimeDiagnostics.selectedChoiceId}

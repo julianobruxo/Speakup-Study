@@ -27,7 +27,7 @@ Conteúdo autorizado:
 | 3. Code-splitting e bridge Phaser | concluída | Fase 2 | Phaser isolado, mount/unmount limpo e revisão aprovada |
 | 4. Bubble Shooter | concluída | Fase 3 | arcade completo e modo DOM simplificado |
 | 5. Corte a palavra | concluída | Fase 4 | gesto confiável, modos Canvas/DOM e gate aprovado |
-| 6. Ninja | em andamento — 6A e 6B concluídas | Fase 5 | subfases 6A–6E verdes |
+| 6. Ninja | em andamento — 6A, 6B e 6C concluídas | Fase 5 | subfases 6A–6E verdes |
 | 7. Corrida individual | pendente | Fase 6 | experiência single-player completa |
 | 8. Integração dos 13 jogos | pendente | Fase 7 | dois fluxos de entrada completos |
 | 9. Release candidate | pendente | Fase 8 | auditoria final sem regressões conhecidas |
@@ -113,7 +113,7 @@ Phaser mantém apenas:
 
 - **6A concluída:** rota lazy direta, personagem, auto-run, câmera, cenário procedural, três camadas de parallax, pooling, resize, pausa, movimento reduzido e teardown. Ainda sem card público, conteúdo, outcome ou persistência.
 - **6B concluída:** três questões canônicas, placas/opções, salto por clique/toque ou teclado, feedback e uma progressão funcional sem timeout.
-- **6C pendente:** três vidas, recuperação, game over parcial, transições, score e combo.
+- **6C concluída:** cinco desafios provisórios, três vidas, recuperação, game over parcial, transições, score e combo sob ownership React.
 - **6D pendente:** cinco faixas pedagógicas e decisão medida da duração mobile.
 - **6E pendente:** modo simplificado, controles alternativos, som, acessibilidade e polimento final.
 

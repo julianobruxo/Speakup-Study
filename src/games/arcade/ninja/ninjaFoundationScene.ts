@@ -22,7 +22,7 @@ interface SignVisual {
   panel: Phaser.GameObjects.Rectangle;
 }
 
-type NinjaPhase = "running" | "decision" | "jumping" | "feedback" | "complete";
+type NinjaPhase = "running" | "decision" | "jumping" | "feedback" | "game_over" | "complete";
 
 const TEXTURE_SIZE = 720;
 
@@ -64,6 +64,7 @@ export const createNinjaFoundationScene: ArcadeSceneFactory = (
     private jumpTween?: Phaser.Tweens.Tween;
     private pendingSign?: SignVisual;
     private lastOutcomeCorrect?: boolean;
+    private pendingGameOver = false;
     private statusText?: Phaser.GameObjects.Text;
     private challengeIndex = 0;
 
@@ -398,6 +399,7 @@ export const createNinjaFoundationScene: ArcadeSceneFactory = (
         ?.setColor(outcome.correct ? "#23705b" : "#8d1d30")
         .setText(outcome.correct ? "Correto!" : `Resposta: ${correctLabel}`);
       this.emitRuntimeState({ lastAnswerCorrect: outcome.correct });
+      this.pendingGameOver = Boolean(outcome.runEnded);
       if (this.reducedMotion) this.scheduleAdvance();
     }
 
@@ -406,6 +408,13 @@ export const createNinjaFoundationScene: ArcadeSceneFactory = (
       this.transitionTimer?.remove(false);
       const feedbackDelay = this.lastOutcomeCorrect === false ? 4_500 : 1_200;
       this.transitionTimer = this.time.delayedCall(feedbackDelay, () => {
+        if (this.pendingGameOver) {
+          this.pendingGameOver = false;
+          this.phase = "game_over";
+          this.statusText?.setColor("#8d1d30").setText("Recupere suas vidas para continuar.");
+          this.emitRuntimeState();
+          return;
+        }
         this.challengeIndex += 1;
         this.clearSigns();
         if (this.challengeIndex >= settings.round.challenges.length) {
@@ -563,6 +572,7 @@ export const createNinjaFoundationScene: ArcadeSceneFactory = (
         renderResolution: settings.renderResolution,
         reducedMotion: this.reducedMotion,
         runnerDistance: Math.max(0, Math.round((runner?.x ?? 0) - this.runnerStartX)),
+        runEnded: this.phase === "game_over",
         selectedChoiceId: this.signs[this.selectedSignIndex]?.choiceId,
         trackPoolSize: this.track.length,
         tweenCount: this.tweens.getTweens().length,

@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-08-03 (Fase 6B do loop de jogos v1)
+Atualizado em: 2026-08-03 (Fase 6C do loop de jogos v1)
 
 ## Estado Atual
 
@@ -23,10 +23,10 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Package name `ingles-em-jogo` e metadata atualizada.
 - Fundação compartilhada de jogos: catálogo central, matriz de compatibilidade, seleção determinística de conteúdo, engine de sessão, XP/missão/streak idempotentes, adapters de Gramática (`present_tobe`) e Vocabulário (`body`).
 - Roadmap canônico dos 13 jogos em `docs/IMPLEMENTATION_MAP.md`, com fronteira React–Phaser e gates por fase.
-- Suite pura com `node:test`: 35 testes para fundação, contratos DOM, bridge arcade, Bubble Shooter, Corte a palavra, Ninja, resultado e conclusão persistente.
+- Suite pura com `node:test`: 39 testes para fundação, contratos DOM, bridge arcade, Bubble Shooter, Corte a palavra, Ninja, resultado e conclusão persistente.
 - Conclusão de jogo serializada e idempotente, com duas tentativas automáticas, retry visível e a mesma `sessionId`.
 - Onze jogos oficiais funcionais com o escopo `present_tobe` + `body`, incluindo Bubble Shooter e Corte a palavra em Canvas e modo DOM simplificado.
-- Ninja em implementação incremental: após a fundação 6A, a subfase 6B adiciona três questões fáceis canônicas e determinísticas de `present_tobe`, placas, salto por clique/toque ou teclado, feedback e uma progressão funcional; o jogo ainda não está publicado no catálogo.
+- Ninja em implementação incremental: após a fundação 6A e a primeira progressão 6B, a subfase 6C adiciona cinco questões provisórias, três vidas, score, combo, recuperação e game over parcial; o jogo ainda não está publicado no catálogo.
 - Cards da página de Jogos com as nove imagens aprovadas integradas no topo e previews locais dos dois arcades; os masters 1600x900 permanecem preservados.
 
 ## Jogos
@@ -214,3 +214,14 @@ O smoke agora cobre fluxo funcional completo dos onze jogos, a fundação técni
 - Gate técnico verde: 35 testes, conteúdo, TypeScript, lint, build, split Phaser e `git diff --check`.
 - O smoke ampliado cobre a progressão, mas a execução completa foi interrompida duas vezes por oscilações conhecidas do Edge headless fora do fluxo novo: primeiro numa expectativa antiga de retomada já corrigida e depois no lifecycle compartilhado de visibility. Por orientação de Juliano, não houve repetição adicional nem enfraquecimento da assertion.
 - Revisões independentes técnica e pedagógica/acessível resultaram em `APPROVE` após fechar foco do teclado, salto em resize/reduced motion, duração do feedback, ownership da conclusão e oráculo canônico do teste.
+
+## Fase 6C — vidas e recuperação do Ninja
+
+- A progressão provisória cresceu para cinco questões fáceis, únicas e determinísticas, preparando um game over parcial real sem definir ainda a duração final da 6D.
+- React controla três vidas, score, combo, outcomes e tentativas. Cada erro perde uma vida e zera o combo; acertos valem 100 pontos mais bônus limitado, sem alterar XP global.
+- Erros comuns avançam automaticamente depois dos 4,5 segundos de feedback. Ao perder a terceira vida, a cena preserva o mesmo feedback antes de interromper a tentativa.
+- `Recuperar e continuar` restaura três vidas, preserva score e outcomes e remonta o Canvas somente com os desafios restantes; o foco volta ao host interativo.
+- A bridge ganhou somente campos opcionais no receipt para vidas e encerramento da tentativa. Phaser não calcula score, vidas, conteúdo ou conclusão.
+- Testes puros verdes: 39/39, incluindo game over parcial, recuperação, conclusão com última vida e teto do bônus de combo. Conteúdo, TypeScript, lint, build, split Phaser e `git diff --check` também estão verdes.
+- O smoke contém assertions para mouse, touch, teclado, feedback fatal, zero vidas, score preservado, overflow, foco após recuperação e conclusão. Uma execução única com Chrome, selecionado por `SMOKE_BROWSER`, chegou ao Ninja e parou na injeção do primeiro clique por coordenadas; por orientação de Juliano, não houve novo ciclo de compatibilidade no Edge ou Chrome.
+- Capturas iniciais de Chrome em 1440x900 e 768x1024 foram abertas e inspecionadas em `C:\Users\User\AppData\Local\Temp\ninja-6c-f896e69f092548f2ab4ee57330a692b8`; a captura estreita por `--window-size` não representa viewport móvel real no Windows, então a evidência móvel válida permanece a captura CDP da 6A.

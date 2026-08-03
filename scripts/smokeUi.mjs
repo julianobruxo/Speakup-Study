@@ -7,7 +7,8 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PROJECT_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const EDGE = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
+const DEFAULT_BROWSER = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
+const BROWSER = process.env.SMOKE_BROWSER || DEFAULT_BROWSER;
 const HOST = "127.0.0.1";
 
 function getAvailablePort() {
@@ -102,13 +103,13 @@ async function stopOwnedServer() {
   });
 }
 
-if (!existsSync(EDGE)) {
-  console.error(`Microsoft Edge not found at expected path: ${EDGE}`);
+if (!existsSync(BROWSER)) {
+  console.error(`Smoke browser not found at expected path: ${BROWSER}`);
   process.exit(1);
 }
 
 const browser = spawn(
-  EDGE,
+  BROWSER,
   [
     "--headless=new",
     "--disable-gpu",
@@ -1645,7 +1646,7 @@ async function main() {
     sessionId,
   );
 
-  // ---- Ninja 6A: auto-run, camera, parallax foundation, pooling and lifecycle ----
+  // ---- Ninja 6C: foundation lifecycle, answers, lives and partial recovery ----
   for (const [width, height] of [[1440, 900], [768, 1024], [390, 844], [360, 800]]) {
     await setViewport(width, height);
     await navigate("/jogos/ninja?seed=2026");
@@ -1773,6 +1774,23 @@ async function main() {
     await send("Input.dispatchMouseEvent", { type: "mousePressed", button: "left", clickCount: 1, ...point }, sessionId);
     await send("Input.dispatchMouseEvent", { type: "mouseReleased", button: "left", clickCount: 1, ...point }, sessionId);
   };
+  const tapNinjaSign = async (index) => {
+    const point = await evaluate(`(() => {
+      const rect = document.querySelector('.ninja-foundation-canvas').getBoundingClientRect();
+      const logicalGround = Math.min(rect.height - 76, Math.max(300, rect.height * 0.76));
+      return {
+        x: rect.left + rect.width * ((${index} + 0.5) / 3),
+        y: rect.top + Math.max(145, logicalGround - 122),
+      };
+    })()`);
+    await send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 }, sessionId);
+    await send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ ...point, id: 71, radiusX: 6, radiusY: 6 }],
+    }, sessionId);
+    await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }, sessionId);
+    await send("Emulation.setTouchEmulationEnabled", { enabled: false }, sessionId);
+  };
   const first = ninjaRound.challenges[0];
   const wrongIndex = first.choices.findIndex((choice) => choice.id !== first.correctChoiceId);
   await clickNinjaSign(wrongIndex);
@@ -1803,16 +1821,57 @@ async function main() {
     "Ninja advances to third sign challenge",
   );
   const third = ninjaRound.challenges[2];
-  const thirdCorrectIndex = third.choices.findIndex((choice) => choice.id === third.correctChoiceId);
-  await clickNinjaSign(thirdCorrectIndex);
-  await waitFor(() => hasText("Progressão concluída!"), "Ninja completes the 6B progression", 12000);
+  const thirdWrongIndex = third.choices.findIndex((choice) => choice.id !== third.correctChoiceId);
+  await tapNinjaSign(thirdWrongIndex);
+  await waitFor(
+    () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeChallengeIndex === '3'`),
+    "Ninja automatically recovers after a second error",
+    12000,
+  );
+  const fourth = ninjaRound.challenges[3];
+  const fourthWrongIndex = fourth.choices.findIndex((choice) => choice.id !== fourth.correctChoiceId);
+  await clickNinjaSign(fourthWrongIndex);
+  await waitFor(
+    () => hasText("Você ficou sem vidas. Recupere para continuar."),
+    "Ninja preserves the fatal error feedback",
+  );
+  await waitFor(
+    () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeRunEnded === 'true'`),
+    "Ninja stops after losing all three lives",
+  );
+  assert(await hasText("0 vidas"), "Ninja did not expose zero remaining lives");
+  assert(await hasText("100 pontos"), "Ninja did not preserve score at partial game over");
+  await assertNoOverflow("Ninja partial game over 390x844");
+  screenshots.push(await screenshot("ninja-partial-game-over-390x844"));
+  await evaluate(`document.querySelector('.ninja-recovery .primary-button')?.focus()`);
+  await pressKey("Enter");
+  await waitFor(
+    () => evaluate(`(() => {
+      const surface = document.querySelector('.ninja-foundation-canvas');
+      return surface?.dataset.arcadeReady === 'true' &&
+        surface?.dataset.runtimeRunEnded === 'false' &&
+        Boolean(surface?.dataset.runtimeSelectedChoiceId);
+    })()`),
+    "Ninja recovers with the remaining challenge",
+    20000,
+  );
+  assert(await hasText("3 vidas"), "Ninja did not restore three lives on recovery");
+  assert(await hasText("100 pontos"), "Ninja recovery reset the preserved score");
+  assert(
+    await evaluate(`document.activeElement?.classList.contains('ninja-foundation-canvas')`),
+    "Ninja recovery did not return keyboard focus to the Canvas",
+  );
+  const fifth = ninjaRound.challenges[4];
+  const fifthCorrectIndex = fifth.choices.findIndex((choice) => choice.id === fifth.correctChoiceId);
+  await clickNinjaSign(fifthCorrectIndex);
+  await waitFor(() => hasText("Progressão concluída!"), "Ninja completes the 6C progression", 12000);
   assert(
     await evaluate(`document.querySelectorAll('.ninja-foundation-canvas canvas').length === 1`),
-    "Ninja progression remounted its Canvas",
+    "Ninja recovery left more than one Canvas mounted",
   );
   screenshots.push(await screenshot("ninja-progression-complete-390x844"));
   await navigateSpa("/jogos");
-  await waitFor(() => evaluate(`document.querySelectorAll('canvas').length === 0`), "Ninja 6B teardown");
+  await waitFor(() => evaluate(`document.querySelectorAll('canvas').length === 0`), "Ninja 6C teardown");
 
   await send(
     "Emulation.setEmulatedMedia",

@@ -9,14 +9,19 @@ import {
   recycleNinjaTrackPool,
 } from "../src/games/arcade/ninja/ninjaFoundationModel.ts";
 import { createNinjaFoundationRound } from "../src/games/arcade/ninja/ninjaRound.ts";
+import {
+  createNinjaProgress,
+  recoverNinjaProgress,
+  settleNinjaProgress,
+} from "../src/games/arcade/ninja/ninjaProgressModel.ts";
 
-test("Ninja 6B prepares three deterministic canonical grammar challenges", () => {
+test("Ninja prepares five deterministic canonical grammar challenges", () => {
   const first = createNinjaFoundationRound(2026);
   const second = createNinjaFoundationRound(2026);
   assert.deepEqual(first, second);
   assert.equal(first.gameId, "ninja");
-  assert.equal(first.challenges.length, 3);
-  assert.equal(new Set(first.challenges.map((challenge) => challenge.id)).size, 3);
+  assert.equal(first.challenges.length, 5);
+  assert.equal(new Set(first.challenges.map((challenge) => challenge.id)).size, 5);
   first.challenges.forEach((challenge) => {
     assert.equal(challenge.choices.length, 3);
     assert.equal(new Set(challenge.choices.map((choice) => choice.id)).size, 3);
@@ -29,6 +34,52 @@ test("Ninja 6B prepares three deterministic canonical grammar challenges", () =>
       (choice) => choice.id === challenge.correctChoiceId,
     );
     assert.equal(correctChoice?.label, canonical?.correctAnswer);
+  });
+});
+
+test("Ninja lives, score and combo progress without affecting round ownership", () => {
+  let progress = createNinjaProgress();
+  assert.deepEqual(progress, { combo: 0, gameOver: false, lives: 3, score: 0 });
+
+  progress = settleNinjaProgress(progress, true, false);
+  assert.deepEqual(progress, { combo: 1, gameOver: false, lives: 3, score: 100 });
+  progress = settleNinjaProgress(progress, true, false);
+  assert.deepEqual(progress, { combo: 2, gameOver: false, lives: 3, score: 225 });
+  progress = settleNinjaProgress(progress, false, false);
+  assert.deepEqual(progress, { combo: 0, gameOver: false, lives: 2, score: 225 });
+});
+
+test("Ninja enters partial game over and recovers without losing score", () => {
+  let progress = createNinjaProgress();
+  progress = settleNinjaProgress(progress, true, false);
+  progress = settleNinjaProgress(progress, false, false);
+  progress = settleNinjaProgress(progress, false, false);
+  progress = settleNinjaProgress(progress, false, false);
+  assert.deepEqual(progress, { combo: 0, gameOver: true, lives: 0, score: 100 });
+
+  const recovered = recoverNinjaProgress(progress);
+  assert.deepEqual(recovered, { combo: 0, gameOver: false, lives: 3, score: 100 });
+});
+
+test("Ninja lets round completion win over a final lost life", () => {
+  const final = settleNinjaProgress(
+    { combo: 2, gameOver: false, lives: 1, score: 300 },
+    false,
+    true,
+  );
+  assert.deepEqual(final, { combo: 0, gameOver: false, lives: 0, score: 300 });
+});
+
+test("Ninja caps the score bonus while allowing the combo to keep growing", () => {
+  let progress = createNinjaProgress();
+  for (let index = 0; index < 6; index += 1) {
+    progress = settleNinjaProgress(progress, true, false);
+  }
+  assert.deepEqual(progress, {
+    combo: 6,
+    gameOver: false,
+    lives: 3,
+    score: 950,
   });
 });
 

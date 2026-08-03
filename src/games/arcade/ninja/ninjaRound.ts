@@ -3,7 +3,7 @@ import { selectChallenges } from "../../core/selectChallenges.ts";
 import { shuffleWithSeed } from "../../core/shuffle.ts";
 import type { PreparedArcadeRound } from "../bridge/arcadeBridge";
 
-export const NINJA_FOUNDATION_CHALLENGE_COUNT = 3;
+export const NINJA_FOUNDATION_CHALLENGE_COUNT = 5;
 
 export function createNinjaFoundationRound(seed: number): PreparedArcadeRound {
   const easyQuestions = PRESENT_TOBE_QUESTIONS.filter(
