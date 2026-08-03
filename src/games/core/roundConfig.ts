@@ -19,6 +19,7 @@ export const ROUND_SIZES: Record<GameId, RoundSizeConfig> = {
   bubble_shooter: { count: 6, label: "6 lançamentos" },
   word_slice: { count: 8, label: "8 cortes" },
   ninja: { count: 10, label: "10 placas em 5 fases" },
+  solo_race: { count: 10, label: "10 portais" },
 };
 
 export const BEAT_THE_CLOCK_TIMERS_MS = {

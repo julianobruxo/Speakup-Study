@@ -33,6 +33,7 @@ test("catalog declares the nine DOM games and two arcades with central round siz
     assert.equal(game.defaultRoundSize, ROUND_SIZES[game.id].count);
   }
   assert.deepEqual(ROUND_SIZES.ninja, { count: 10, label: "10 placas em 5 fases" });
+  assert.deepEqual(ROUND_SIZES.solo_race, { count: 10, label: "10 portais" });
 });
 
 test("compatibility is limited to the canonical rollout content", () => {
@@ -73,6 +74,7 @@ test("compatibility is limited to the canonical rollout content", () => {
   assert.deepEqual(getCompatibleContent("bubble_shooter"), [vocabulary]);
   assert.deepEqual(getCompatibleContent("word_slice"), [vocabulary]);
   assert.deepEqual(getCompatibleContent("ninja"), [grammar]);
+  assert.deepEqual(getCompatibleContent("solo_race"), [grammar, vocabulary]);
 });
 
 test("seeded shuffle and selection are deterministic, immutable and duplicate-free", () => {

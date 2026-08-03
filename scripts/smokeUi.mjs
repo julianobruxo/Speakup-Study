@@ -283,6 +283,9 @@ async function main() {
   const hasText = (text) =>
     evaluate(`document.body.innerText.includes(${JSON.stringify(text)})`);
 
+  const hasTextCI = (text) =>
+    evaluate(`document.body.innerText.toLowerCase().includes(${JSON.stringify(text.toLowerCase())})`);
+
   const click = async (selector) => {
     const clicked = await evaluate(`(() => {
       const element = document.querySelector(${JSON.stringify(selector)});
@@ -1794,7 +1797,7 @@ async function main() {
     await send("Emulation.setTouchEmulationEnabled", { enabled: false }, sessionId);
   };
   const first = ninjaRound.challenges[0];
-  assert(await hasText("Fase 1/5 · Base afirmativa"), "Ninja does not expose its first stage");
+  assert(await hasTextCI("Fase 1/5 · Base afirmativa"), "Ninja does not expose its first stage");
   const wrongIndex = first.choices.findIndex((choice) => choice.id !== first.correctChoiceId);
   await clickNinjaSign(wrongIndex);
   await waitFor(
@@ -1823,7 +1826,7 @@ async function main() {
     () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeChallengeIndex === '2'`),
     "Ninja advances to third sign challenge",
   );
-  assert(await hasText("Fase 2/5 · Frases simples"), "Ninja does not expose its second stage");
+  assert(await hasTextCI("Fase 2/5 · Frases simples"), "Ninja does not expose its second stage");
   const third = ninjaRound.challenges[2];
   const thirdWrongIndex = third.choices.findIndex((choice) => choice.id !== third.correctChoiceId);
   await tapNinjaSign(thirdWrongIndex);
@@ -1854,7 +1857,7 @@ async function main() {
   assert(await hasText("3 vidas"), "Ninja did not restore three lives on recovery");
   assert(await hasText("0 pontos"), "Ninja recovery reset the preserved score");
   assert(
-    await hasText("Fase 2/5 · Frases simples"),
+    await hasTextCI("Fase 2/5 · Frases simples"),
     "Ninja recovery lost the current stage",
   );
   assert(
@@ -1873,7 +1876,7 @@ async function main() {
       12000,
     );
     if (challengeIndex === 8) {
-      assert(await hasText("Fase 5/5 · Mistura final"), "Ninja does not expose its final stage");
+      assert(await hasTextCI("Fase 5/5 · Mistura final"), "Ninja does not expose its final stage");
     }
     const challenge = ninjaRound.challenges[challengeIndex];
     const correctIndex = challenge.choices.findIndex(
@@ -2050,6 +2053,191 @@ async function main() {
   screenshots.push(await screenshot("ninja-dom-result-390x844"));
   await navigateSpa("/jogos");
 
+  // ---- Corrida individual: lanes, keyboard, touch, swipe, DOM and persistence ----
+  await setViewport(390, 844);
+  await navigate("/jogos/corrida-individual?seed=2026");
+  await waitFor(
+    () => evaluate(`document.querySelector('.solo-race-canvas')?.dataset.arcadeReady === 'true'`),
+    "Solo race Canvas mounts",
+  );
+  await waitFor(
+    () => evaluate(`document.querySelector('.solo-race-canvas')?.dataset.runtimePortalProgress === '1'`),
+    "Solo race reaches its decision zone",
+  );
+  const soloRaceRound = await evaluate(`(async () => {
+    const { createSoloRaceRound } = await import('/src/games/arcade/soloRace/soloRaceRound.ts');
+    return createSoloRaceRound(2026, 'grammar');
+  })()`);
+  assert(soloRaceRound.challenges.length === 10, "Solo race did not prepare ten portals");
+  assert(
+    await evaluate(`document.querySelectorAll('[aria-live]').length === 1`),
+    "Solo race must expose one live region",
+  );
+  await assertNoOverflow("Solo race active Canvas 390x844");
+  screenshots.push(await screenshot("solo-race-canvas-initial-390x844"));
+
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  assert(await hasText("0 pts"), "Solo race accepted a passive answer");
+  const raceBounds = await evaluate(`(() => {
+    const bounds = document.querySelector('.solo-race-canvas').getBoundingClientRect();
+    return { left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height };
+  })()`);
+  await send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: raceBounds.left + raceBounds.width / 2, y: raceBounds.top + raceBounds.height * 0.48 }],
+  }, sessionId);
+  await send("Input.dispatchTouchEvent", {
+    type: "touchMove",
+    touchPoints: [{ x: raceBounds.left + raceBounds.width / 2 + 4, y: raceBounds.top + raceBounds.height * 0.68 }],
+  }, sessionId);
+  await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }, sessionId);
+  await new Promise((resolve) => setTimeout(resolve, 180));
+  assert(await hasText("0 pts"), "Solo race resolved a predominantly vertical gesture");
+
+  await evaluate(`document.querySelector('.solo-race-canvas')?.focus()`);
+  const firstCorrectLane = soloRaceRound.challenges[0].choices.findIndex(
+    (choice) => choice.id === soloRaceRound.challenges[0].correctChoiceId,
+  );
+  for (let step = 0; step < Math.abs(firstCorrectLane - 1); step += 1) {
+    await pressKey(firstCorrectLane < 1 ? "ArrowLeft" : "ArrowRight");
+  }
+  await pressKey("Enter");
+  await waitFor(
+    () => evaluate(`document.querySelector('.game-progress')?.getAttribute('aria-valuenow') === '10'`),
+    "Solo race keyboard answer is recorded",
+  );
+  assert(await hasText("Boost ativado"), "Solo race correct boost was not announced");
+
+  await waitFor(
+    () => evaluate(`document.querySelector('.solo-race-canvas')?.dataset.runtimeChallengeIndex === '1' && document.querySelector('.solo-race-canvas')?.dataset.runtimePortalProgress === '1'`),
+    "Solo race second portal set is ready",
+    12000,
+  );
+  const secondCorrectLane = soloRaceRound.challenges[1].choices.findIndex(
+    (choice) => choice.id === soloRaceRound.challenges[1].correctChoiceId,
+  );
+  const secondX = raceBounds.left + raceBounds.width * ((secondCorrectLane + 0.5) / 3);
+  const raceTouchY = raceBounds.top + raceBounds.height * 0.48;
+  await send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: secondX, y: raceTouchY }],
+  }, sessionId);
+  await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }, sessionId);
+  await waitFor(
+    () => evaluate(`document.querySelector('.game-progress')?.getAttribute('aria-valuenow') === '20'`),
+    "Solo race touch answer is recorded",
+  );
+
+  await waitFor(
+    () => evaluate(`document.querySelector('.solo-race-canvas')?.dataset.runtimeChallengeIndex === '2' && document.querySelector('.solo-race-canvas')?.dataset.runtimePortalProgress === '1'`),
+    "Solo race third portal set is ready",
+    12000,
+  );
+  const thirdCorrectLane = soloRaceRound.challenges[2].choices.findIndex(
+    (choice) => choice.id === soloRaceRound.challenges[2].correctChoiceId,
+  );
+  const swipeStartLane = thirdCorrectLane === 0 ? 1 : thirdCorrectLane - 1;
+  let selectedLane = Number(await evaluate(`document.querySelector('.solo-race-canvas')?.dataset.runtimeLaneIndex`));
+  while (selectedLane !== swipeStartLane) {
+    await pressKey(selectedLane < swipeStartLane ? "ArrowRight" : "ArrowLeft");
+    selectedLane += selectedLane < swipeStartLane ? 1 : -1;
+  }
+  const swipeStartX = raceBounds.left + raceBounds.width * ((swipeStartLane + 0.5) / 3);
+  const swipeEndX = raceBounds.left + raceBounds.width * ((thirdCorrectLane + 0.5) / 3);
+  await send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: swipeStartX, y: raceTouchY }],
+  }, sessionId);
+  await send("Input.dispatchTouchEvent", {
+    type: "touchMove",
+    touchPoints: [{ x: swipeEndX, y: raceTouchY + 2 }],
+  }, sessionId);
+  await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }, sessionId);
+  await waitFor(
+    () => evaluate(`document.querySelector('.game-progress')?.getAttribute('aria-valuenow') === '30'`),
+    "Solo race swipe answer is recorded",
+  );
+  assert(
+    await evaluate(`Number(document.querySelector('.solo-race-canvas')?.dataset.runtimeSpeedMultiplier) > 1`),
+    "Solo race combo did not preserve boosted speed",
+  );
+  await navigateSpa("/jogos");
+  await waitFor(() => evaluate(`document.querySelectorAll('canvas').length === 0`), "Solo race Canvas teardown");
+
+  await send(
+    "Emulation.setEmulatedMedia",
+    { features: [{ name: "prefers-reduced-motion", value: "reduce" }] },
+    sessionId,
+  );
+  await navigate("/jogos/corrida-individual?seed=2026");
+  await waitFor(
+    () => evaluate(`document.querySelector('.solo-race-canvas')?.dataset.arcadeReady === 'true'`),
+    "Solo race reduced-motion Canvas mounts",
+  );
+  assert(
+    await evaluate(`(() => {
+      const surface = document.querySelector('.solo-race-canvas');
+      return surface?.dataset.runtimeReducedMotion === 'true' &&
+        surface?.dataset.runtimePortalProgress === '1' &&
+        surface?.dataset.runtimeTweenCount === '0' &&
+        surface?.dataset.runtimeAutoRunning === 'false';
+    })()`),
+    "Solo race reduced motion still advances scenery",
+  );
+  screenshots.push(await screenshot("solo-race-reduced-motion-390x844"));
+  await navigateSpa("/jogos");
+  await send(
+    "Emulation.setEmulatedMedia",
+    { features: [{ name: "prefers-reduced-motion", value: "no-preference" }] },
+    sessionId,
+  );
+
+  await navigate("/jogos/corrida-individual?seed=2026&mode=dom");
+  await waitFor(() => evaluate(`Boolean(document.querySelector('.solo-race-dom'))`), "Solo race DOM mounts");
+  assert(await evaluate(`document.querySelectorAll('canvas').length === 0`), "Solo race DOM mounted Canvas");
+  await assertNoOverflow("Solo race DOM active board 390x844");
+  screenshots.push(await screenshot("solo-race-dom-initial-390x844"));
+  for (let challengeIndex = 0; challengeIndex < soloRaceRound.challenges.length; challengeIndex += 1) {
+    const challenge = soloRaceRound.challenges[challengeIndex];
+    await waitFor(
+      () => evaluate(`document.querySelector('.solo-race-dom')?.dataset.challengeIndex === '${challengeIndex}'`),
+      `Solo race DOM challenge ${challengeIndex + 1} is ready`,
+      12000,
+    );
+    if (challengeIndex > 0) {
+      assert(
+        await evaluate(`document.activeElement?.classList.contains('solo-race-dom-prompt')`),
+        `Solo race DOM challenge ${challengeIndex + 1} did not receive focus`,
+      );
+    }
+    await click(`.solo-race-dom-lanes button[data-choice-id="${challenge.correctChoiceId}"]`);
+  }
+  await waitFor(() => hasText("Você completou Corrida individual."), "Solo race DOM completes", 15000);
+  assert(await hasText("1750"), "Solo race perfect score is incorrect");
+  assert(await hasText("+60"), "Solo race XP cap is incorrect");
+  await waitFor(
+    () => evaluate(`(async () => {
+      const { getGameSessions } = await import('/src/services/progress/localProgress.ts');
+      const sessions = await getGameSessions();
+      return sessions.some((session) =>
+        session.gameId === 'solo_race' &&
+        session.contentDomain === 'grammar' &&
+        session.totalChallenges === 10 &&
+        session.correctCount === 10 &&
+        session.score === 1750
+      );
+    })()`),
+    "Solo race DOM result persists",
+  );
+  assert(await evaluate(`document.activeElement?.matches('.result-hero h1')`), "Solo race result did not receive focus");
+  screenshots.push(await screenshot("solo-race-result-390x844"));
+
+  await navigate("/jogos/corrida-individual?seed=2026&mode=dom&content=body");
+  await waitFor(() => hasText("Qual palavra em inglês significa"), "Solo race vocabulary route");
+  assert(await evaluate(`document.querySelectorAll('canvas').length === 0`), "Solo race vocabulary DOM mounted Canvas");
+  assert(await hasText("Vocabulário"), "Solo race vocabulary domain is not exposed");
+  await assertNoOverflow("Solo race vocabulary DOM 390x844");
+
   await setViewport(1366, 768);
   const routeChecks = [
     ["/", "Jogue, aprenda e"],
@@ -2072,6 +2260,7 @@ async function main() {
     ["/jogos/bubble-shooter", "Bubble Shooter"],
     ["/jogos/corte-a-palavra", "Corte a palavra"],
     ["/jogos/ninja", "Ninja"],
+    ["/jogos/corrida-individual", "Corrida individual"],
   ];
   for (const [path, text] of routeChecks) {
     await navigate(path);

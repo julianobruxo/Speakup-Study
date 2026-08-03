@@ -25,6 +25,7 @@ const ArcadeBridgeLabPage = lazy(() => import("./games/arcade/bridge/ArcadeBridg
 const BubbleShooterGame = lazy(() => import("./games/arcade/bubbleShooter/BubbleShooterGame"));
 const WordSliceGame = lazy(() => import("./games/arcade/wordSlice/WordSliceGame"));
 const NinjaFoundationGame = lazy(() => import("./games/arcade/ninja/NinjaFoundationGame"));
+const SoloRaceGame = lazy(() => import("./games/arcade/soloRace/SoloRaceGame"));
 
 function RouteLoading() {
   return (
@@ -72,6 +73,7 @@ export default function App() {
         <Route path="/jogos/bubble-shooter" element={<BubbleShooterGame />} />
         <Route path="/jogos/corte-a-palavra" element={<WordSliceGame />} />
         <Route path="/jogos/ninja" element={<NinjaFoundationGame />} />
+        <Route path="/jogos/corrida-individual" element={<SoloRaceGame />} />
         <Route path="/progresso" element={<ProgressPage />} />
         <Route path="/perfil" element={<ProfilePage />} />
 

@@ -16,7 +16,7 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Vocabulário funcional apenas em Partes do corpo.
 - Progresso com atividade semanal, conquistas, revisão e métricas locais.
 - Perfil local editável, preferências e reset local confirmado.
-- Jogos: onze jogos publicados no catálogo com `present_tobe` + `body`; Ninja está completo em Canvas e DOM na rota direta, aguardando publicação conjunta na Fase 8, e Corrida individual permanece para a Fase 7.
+- Jogos: onze jogos publicados no catálogo com `present_tobe` + `body`; Ninja e Corrida individual estão completos em Canvas e DOM nas rotas diretas, ambos aguardando publicação conjunta no catálogo na Fase 8.
 - Página de Jogos: onze cards, com nove thumbnails aprovadas e previews locais dos dois arcades; versões WebP 800x450 e masters 1600x900 permanecem preservados.
 
 ## Conteúdo
@@ -65,6 +65,8 @@ Onze jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramá
 - Ouvido afiado.
 - Bubble Shooter.
 - Corte a palavra.
+- Ninja (rota direta, aguardando publicação na Fase 8).
+- Corrida individual (rota direta, aguardando publicação na Fase 8).
 
 `Conectando` é o nome aprovado para associação entre palavra em inglês e imagem. A branch local `feat/loop-jogos-v1` preserva e consolida a nova experiência, com seis palavras e seis imagens no mesmo tabuleiro responsivo e compacto, linhas por Pointer Events, fallback por clique/teclado e somente o primeiro outcome por palavra. `Par perfeito` também preserva o ajuste local de largura/densidade do board, sem mudança de mecânica.
 
@@ -81,6 +83,7 @@ Onze jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramá
 - `/jogos`: catálogo de onze jogos.
 - `/jogos/monte-a-frase`, `/jogos/caca-ao-erro`, `/jogos/contra-o-relogio`, `/jogos/cada-coisa-no-seu-lugar`, `/jogos/palavra-secreta`, `/jogos/conectando`, `/jogos/cruzando-palavras`, `/jogos/par-perfeito`, `/jogos/ouvido-afiado`, `/jogos/bubble-shooter`, `/jogos/corte-a-palavra`: jogos individuais.
 - `/jogos/ninja`: Ninja completo com 10 placas em cinco fases, Canvas e DOM simplificado, vidas, recuperação, resultado e persistência; ainda não publicado no catálogo.
+- `/jogos/corrida-individual`: Corrida individual completa com 10 portais, Canvas e DOM simplificado, HUD de score/combo/velocidade, resultado e persistência; ainda não publicada no catálogo.
 - `/progresso`: progresso local.
 - `/perfil`: perfil local.
 
@@ -241,6 +244,21 @@ Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lin
 - Visual: Canvas e DOM foram abertos e inspecionados em 1440x900 e 768x1024 em `C:\Users\User\AppData\Local\Temp\ninja-6e-3920d6352981458bbadf02c91968ae41`; a captura CDP 390x844 aprovada na 6A continua como referência móvel válida.
 - Revisão: ownership/persistência recebeu `APPROVE` após a correção da janela de finalização. A revisão acessível solicitou foco/anúncios e cobertura DOM adicionais; as correções foram aplicadas e reenviadas para parecer final.
 - Publicação: a rota direta está completa, mas o card e o fluxo content-first permanecem deliberadamente para a Fase 8, quando os 13 jogos serão integrados em conjunto.
+
+### Relatório da Fase 7
+
+- Objetivo: entregar Corrida individual como quarto e último arcade do catálogo v1, encerrando a lista de mecânicas antes da integração da Fase 8.
+- Contexto: a implementação já existia no worktree, não commitada, ao início desta sessão. A investigação confirmou que era trabalho coerente e completo (não um rascunho), então o foco desta sessão foi validar, corrigir um defeito de harness encontrado durante a validação e preparar o checkpoint — não reimplementar.
+- Rodada: 10 desafios determinísticos, compatíveis com `present_tobe` (Gramática) e `body` (Vocabulário) via adapters existentes, sem bancos duplicados.
+- Mecânica: três faixas com portais de resposta em perspectiva, veículo renderizado, ponteiro/swipe (limiar 42 px) e teclado (setas + Enter/Espaço); acerto acelera e soma combo, erro desacelera dois níveis e zera o combo.
+- Fronteira: React prepara e valida a rodada, computa progressão de score/velocidade e persiste resultado/XP/missão/streak; Phaser cuida somente de renderização, posicionamento de portais/veículo e captura de gesto.
+- Acessibilidade: modo DOM equivalente sem carregar Phaser, uma live region, foco restaurado a cada desafio; movimento reduzido zera tweens e mantém os portais na zona de decisão.
+- Testes: 5 novos testes puros (`tests/soloRace.test.mjs`), total do projeto em 47; conteúdo, TypeScript, lint, build, `verifyPhaserSplit` (5 rotas arcade) e `git diff --check` verdes.
+- Validação funcional: como o smoke completo (`scripts/smokeUi.mjs`) trava dentro do fluxo pré-existente do Ninja antes de alcançar a seção nova, a Corrida individual foi validada de forma independente por inspeção direta do DOM via protocolo de depuração remota do Chrome — Canvas, DOM, movimento reduzido e domínio de vocabulário todos completaram rodadas perfeitas de 10/10 com 1.750 pontos e +60 XP, sem overflow horizontal em 390×844.
+- Defeito de harness corrigido: quatro asserções em `scripts/smokeUi.mjs`, já existentes no checkpoint `756593c` (Fase 6, Ninja), comparavam o rótulo de fase do Ninja contra `document.body.innerText` de forma sensível a maiúsculas/minúsculas, mas o CSS transforma esse texto em maiúsculas — um falso negativo do harness, não uma regressão de produto. Corrigido com um helper `hasTextCI` dedicado, aplicado apenas às quatro asserções afetadas.
+- Risco residual aceito, não resolvido: a suíte completa do smoke trava mais adiante em `pressKey` sobre o Canvas do Ninja (`Timeout: Ninja keyboard jump resolves an incorrect sign`), a mesma classe de instabilidade de injeção de teclado/clique já documentada e adiada nas Fases 6B–6D. Não afeta a Corrida individual. Confirmado por orientação explícita que não deveria consumir mais ciclos nesta sessão.
+- Navegador: Edge permanece fora do escopo; a validação usou Chrome via `SMOKE_BROWSER`, sem alterar o padrão do script.
+- Revisão: nenhuma revisão de subagente foi acionada nesta sessão; a validação foi feita diretamente pelo agente principal via CDP e pelos gates automatizados.
 
 ## Git
 

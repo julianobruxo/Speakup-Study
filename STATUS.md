@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-08-03 (Fase 6E do loop de jogos v1)
+Atualizado em: 2026-08-03 (Fase 7 do loop de jogos v1 — Corrida individual)
 
 ## Estado Atual
 
@@ -23,10 +23,11 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Package name `ingles-em-jogo` e metadata atualizada.
 - Fundação compartilhada de jogos: catálogo central, matriz de compatibilidade, seleção determinística de conteúdo, engine de sessão, XP/missão/streak idempotentes, adapters de Gramática (`present_tobe`) e Vocabulário (`body`).
 - Roadmap canônico dos 13 jogos em `docs/IMPLEMENTATION_MAP.md`, com fronteira React–Phaser e gates por fase.
-- Suite pura com `node:test`: 42 testes para fundação, contratos DOM, bridge arcade, Bubble Shooter, Corte a palavra, Ninja, resultado e conclusão persistente.
+- Suite pura com `node:test`: 47 testes para fundação, contratos DOM, bridge arcade, Bubble Shooter, Corte a palavra, Ninja, Corrida individual, resultado e conclusão persistente.
 - Conclusão de jogo serializada e idempotente, com duas tentativas automáticas, retry visível e a mesma `sessionId`.
 - Onze jogos oficiais funcionais com o escopo `present_tobe` + `body`, incluindo Bubble Shooter e Corte a palavra em Canvas e modo DOM simplificado.
 - Ninja concluído na rota direta: 10 desafios em cinco faixas pedagógicas, modos Canvas e DOM simplificado, vidas, score, combo, recuperação, resultado, persistência e XP; a publicação no catálogo permanece reservada à integração da Fase 8.
+- Corrida individual concluída na rota direta: 10 portais de resposta compatíveis com `present_tobe` e `body`, três faixas com perspectiva, veículo, HUD de score/combo/velocidade, controles por ponteiro/swipe/teclado, modo DOM equivalente, movimento reduzido e XP idempotente; a publicação no catálogo também fica para a Fase 8.
 - Cards da página de Jogos com as nove imagens aprovadas integradas no topo e previews locais dos dois arcades; os masters 1600x900 permanecem preservados.
 
 ## Jogos
@@ -247,3 +248,19 @@ O smoke agora cobre fluxo funcional completo dos onze jogos, a fundação técni
 - Gate técnico: 42 testes puros, conteúdo, TypeScript, lint, build, split Phaser e `git diff --check` verdes. A suíte de navegador não foi repetida nesta subfase por orientação explícita de deixar os problemas pequenos do driver para depois; nenhuma assertion foi removida ou relaxada.
 - Evidências abertas e inspecionadas: `C:\Users\User\AppData\Local\Temp\ninja-6e-3920d6352981458bbadf02c91968ae41`, com Canvas e DOM em 1440x900 e 768x1024. A referência móvel CDP válida permanece a captura 390x844 da 6A, complementada pelas checagens de overflow da suíte.
 - Revisão de ownership/persistência aprovada após antecipar a finalização; a revisão acessível foi reaberta após as correções de anúncio, foco e cobertura DOM.
+
+## Fase 7 — Corrida individual
+
+- Quarto e último arcade do catálogo v1, na rota lazy direta `/jogos/corrida-individual`, sem card público ainda (mesmo padrão do Ninja antes da Fase 8).
+- Rodada de 10 desafios, compatível com `present_tobe` (Gramática, padrão) e `body` (Vocabulário, via `?content=body`), sem duplicar bancos canônicos.
+- Cena: pista com perspectiva de fuga, horizonte, prédios e sol, três faixas com portais de resposta (glow, moldura, rótulo `FAIXA N`), veículo com sombra/carroceria/cockpit/faróis, HUD de score/combo/velocidade textual (`Recuperando` → `Aquecendo` → `Ritmo` → `Boost` → `Turbo`).
+- Interação: ponteiro/toque por posição ou swipe horizontal com limiar de 42 px, teclado com setas e confirmação por Enter/Espaço; toque vertical ou ambíguo é ignorado.
+- Progressão: acerto aumenta a velocidade e soma 100 pontos mais bônus de combo (limitado); erro reduz dois níveis de velocidade e zera o combo, sem penalidade de pontos. XP global permanece fixo em +5 por acerto e +10 pela conclusão, com teto de 60 XP.
+- Modo DOM equivalente resolve a mesma rodada preparada por React sem carregar Phaser, com uma única live region, foco restaurado no enunciado a cada desafio e controles nativos.
+- Movimento reduzido zera contagem de tweens, mantém os portais já na zona de decisão e imobiliza o offset da pista.
+- Testes: 5 novos testes puros em `tests/soloRace.test.mjs` — determinismo de rodada gramatical e vocabular (10 desafios únicos, 3 alternativas cada), helpers de faixa/swipe, progressão de score/velocidade e ordenação estável do layout de perspectiva. Total do projeto: 47 testes puros, todos verdes.
+- Gate técnico verde: `node scripts/validateContent.mjs`, `npx tsc -b`, `npm run lint`, `npm run build` (chunk próprio de 20,63 kB, entry principal em 482,11 kB, alinhado ao baseline pós Fase 3), `node scripts/verifyPhaserSplit.mjs` (5 rotas arcade lazy, 1 chunk Phaser, sem preload) e `git diff --check` (limpo).
+- Validação funcional: Canvas, modo DOM, movimento reduzido e domínio de vocabulário confirmados por inspeção direta do DOM via protocolo de depuração remota do Chrome — rodada perfeita de 10/10, 1.750 pontos e +60 XP em Canvas e DOM, sem overflow horizontal em 390×844.
+- Defeito de harness identificado e corrigido: quatro asserções pré-existentes em `scripts/smokeUi.mjs` (herdadas do checkpoint `756593c`, Fase 6) comparavam o rótulo de fase do Ninja (`Fase N/5 · ...`) contra `document.body.innerText` de forma sensível a maiúsculas/minúsculas, mas o CSS aplica `text-transform: uppercase` ao rótulo — um falso negativo, não uma regressão de produto. Corrigido com um helper dedicado `hasTextCI` aplicado somente às quatro asserções afetadas; nenhuma asserção foi removida, generalizada ou enfraquecida.
+- Risco residual conhecido, não resolvido nesta sessão: a suíte completa `smokeUi.mjs` no Chrome ainda trava mais adiante dentro do próprio fluxo pré-existente do Ninja (`Timeout: Ninja keyboard jump resolves an incorrect sign`, em `pressKey` sobre o Canvas). É a mesma classe de instabilidade de injeção de teclado/clique no Canvas já registrada e deliberadamente adiada nas Fases 6B–6D; não afeta a Corrida individual, que foi validada de forma independente.
+- Edge permanece fora do escopo desta sessão; a validação usou Chrome via `SMOKE_BROWSER`, sem alterar o padrão do script nem seu harness além da correção pontual acima.

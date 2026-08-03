@@ -43,8 +43,10 @@ export interface ArcadeAnswer {
 }
 
 export interface ArcadeAnswerReceipt extends ChallengeOutcome {
+  combo?: number;
   remainingLives?: number;
   runEnded?: boolean;
+  speedMultiplier?: number;
 }
 
 export interface ArcadeSceneEvents {
@@ -62,6 +64,7 @@ export interface ArcadeSceneRuntimeState {
   disconnectedDropped?: number;
   impactId?: string;
   gestureActive?: boolean;
+  laneIndex?: number;
   lastSlicedChoiceId?: string;
   lastAnswerCorrect?: boolean;
   pooledReuseCount?: number;
@@ -75,11 +78,13 @@ export interface ArcadeSceneRuntimeState {
   shotSnapRow?: number;
   runnerDistance?: number;
   runEnded?: boolean;
+  speedMultiplier?: number;
   tweenCount: number;
   trailPointCount?: number;
   trackPoolSize?: number;
   wallBounceCount?: number;
   waveIndex?: number;
+  portalProgress?: number;
 }
 
 export interface ArcadeSceneSettings {

@@ -28,7 +28,7 @@ Conteúdo autorizado:
 | 4. Bubble Shooter | concluída | Fase 3 | arcade completo e modo DOM simplificado |
 | 5. Corte a palavra | concluída | Fase 4 | gesto confiável, modos Canvas/DOM e gate aprovado |
 | 6. Ninja | concluída — 6A a 6E | Fase 5 | modos Canvas/DOM, persistência, acessibilidade e revisões verdes |
-| 7. Corrida individual | pendente | Fase 6 | experiência single-player completa |
+| 7. Corrida individual | concluída | Fase 6 | experiência single-player completa |
 | 8. Integração dos 13 jogos | pendente | Fase 7 | dois fluxos de entrada completos |
 | 9. Release candidate | pendente | Fase 8 | auditoria final sem regressões conhecidas |
 
@@ -36,7 +36,7 @@ Conteúdo autorizado:
 
 | Contrato | Fonte | Estado |
 |---|---|---|
-| catálogo e compatibilidade | `src/games/core/catalog.ts` | onze jogos publicados; Ninja preparado para publicação na Fase 8 e Corrida pendente |
+| catálogo e compatibilidade | `src/games/core/catalog.ts` | onze jogos publicados; Ninja e Corrida individual preparados para publicação conjunta na Fase 8 |
 | configuração de rodada e XP | `src/games/core/roundConfig.ts` | centralizada |
 | seleção e seed | `selectChallenges.ts`, `shuffle.ts` | determinística, sem repetição |
 | payloads | `challengeTypes.ts`, `arcadeBridge.ts` | contratos DOM e bridge arcade validados pela camada React |
@@ -45,10 +45,10 @@ Conteúdo autorizado:
 | missão, streak e XP | `engagement.ts` | idempotência por `sessionId` |
 | conclusão React | `completionCoordinator.ts`, `useGameCompletion.ts` | fila entre sessões, duas tentativas automáticas e retry visível |
 | assets | `visualResolver.tsx` | resolução central por `visualKey` |
-| testes puros | `tests/gamesFoundation.test.mjs`, `tests/domGameContracts.test.mjs`, `tests/arcadeBridge.test.mjs`, `tests/bubbleShooter.test.mjs`, `tests/wordSlice.test.mjs`, `tests/ninjaFoundation.test.mjs` | 42 testes com `node:test` |
-| smoke funcional/visual | `scripts/smokeUi.mjs` | a suite cobre nove viewports e verifica `browserErrors` |
-| bridge arcade | `src/games/arcade/bridge` | rodada preparada e outcome validado por React; cena técnica e três arcades completos em chunks sob demanda |
-| isolamento Phaser | `scripts/verifyPhaserSplit.mjs` | manifest comprova chunk sob demanda sem preload no entry |
+| testes puros | `tests/gamesFoundation.test.mjs`, `tests/domGameContracts.test.mjs`, `tests/arcadeBridge.test.mjs`, `tests/bubbleShooter.test.mjs`, `tests/wordSlice.test.mjs`, `tests/ninjaFoundation.test.mjs`, `tests/soloRace.test.mjs` | 47 testes com `node:test` |
+| smoke funcional/visual | `scripts/smokeUi.mjs` | a suite cobre nove viewports e verifica `browserErrors`; cobertura de Corrida individual adicionada (Canvas, DOM, reduced motion, teclado/touch/swipe) |
+| bridge arcade | `src/games/arcade/bridge` | rodada preparada e outcome validado por React; cena técnica e quatro arcades completos em chunks sob demanda |
+| isolamento Phaser | `scripts/verifyPhaserSplit.mjs` | manifest comprova chunk sob demanda sem preload no entry; 5 rotas arcade lazy |
 
 ## Fase 1 — critérios
 
@@ -116,6 +116,21 @@ Phaser mantém apenas:
 - **6C concluída:** cinco desafios provisórios, três vidas, recuperação, game over parcial, transições, score e combo sob ownership React.
 - **6D concluída:** 10 desafios em cinco faixas pedagógicas, timing centralizado e medição mobile instrumentada sem aumento de velocidade.
 - **6E concluída:** modo DOM equivalente, controles alternativos, som global, movimento reduzido, foco/anúncios, resultado persistente e polimento responsivo.
+
+### Fase 7 — Corrida individual
+
+- Rota lazy direta `/jogos/corrida-individual`, sem card público no catálogo ainda (mesmo padrão do Ninja antes da Fase 8).
+- Rodada de 10 desafios, compatível com `present_tobe` (Gramática) e `body` (Vocabulário) via `?content=body`/`?domain=vocabulary`.
+- Três faixas com portais de resposta em perspectiva, veículo renderizado, HUD de score/combo/velocidade (`Recuperando` → `Aquecendo` → `Ritmo` → `Boost` → `Turbo`).
+- Controles por ponteiro, swipe horizontal com limiar de 42 px e teclado (setas + Enter/Espaço).
+- Acerto aumenta velocidade e score com bônus de combo; erro reduz dois níveis de velocidade e zera o combo. Score seguido de XP global fixo (+5/+10, teto de 60).
+- Modo DOM equivalente sem carregar Phaser, com uma live region e foco restaurado a cada desafio.
+- Movimento reduzido zera tweens e mantém os portais já na zona de decisão.
+- Testes: 5 novos testes puros (`tests/soloRace.test.mjs`) cobrindo determinismo de rodada (gramática e vocabulário), lane helpers, progressão de score/velocidade e layout de perspectiva.
+- Gate técnico verde: 47 testes puros no total, conteúdo, TypeScript, lint, build, `verifyPhaserSplit` (5 rotas arcade lazy) e `git diff --check`.
+- Validação funcional: Canvas, modo DOM, movimento reduzido e domínio de vocabulário confirmados via inspeção direta do DOM/CDP (mouse em Canvas, clique em DOM), com rodada perfeita de 10/10, 1750 pontos e +60 XP em ambos os modos, sem overflow horizontal em 390×844.
+- Defeito de harness corrigido: quatro asserções de `scripts/smokeUi.mjs` comparavam o rótulo de fase do Ninja (`Fase N/5 · ...`) com `document.body.innerText` de forma case-sensitive, mas o CSS aplica `text-transform: uppercase` ao rótulo. Isso gerava falso negativo pré-existente (desde o checkpoint `756593c`, Fase 6), não relacionado à Corrida individual. Corrigido com um novo helper `hasTextCI` aplicado somente às quatro asserções afetadas; nenhuma asserção foi removida ou generalizada.
+- Risco residual conhecido: a suíte completa `smokeUi.mjs` ainda trava mais adiante, dentro do próprio fluxo do Ninja, em `pressKey("Enter")`/`ArrowRight` sobre o Canvas (`Timeout: Ninja keyboard jump resolves an incorrect sign`). É a mesma classe de instabilidade de injeção de teclado/clique no Canvas já documentada e deliberadamente adiada nas Fases 6B–6D; não é uma regressão da Corrida individual e não foi investigada a fundo nesta sessão por orientação explícita de manter o escopo.
 
 ## Fase 8 — integração dos 13 jogos
 

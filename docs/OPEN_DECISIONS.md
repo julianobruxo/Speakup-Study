@@ -51,7 +51,7 @@ Atualizado em: 2026-08-03
    - Corrida individual.
 
    `Conectando` é o nome aprovado para associação entre palavra em inglês e imagem.
-   Os nove jogos DOM, Bubble Shooter e Corte a palavra estão funcionais; Ninja e Corrida individual seguem nas Fases 6–7 do roadmap canônico.
+   Os nove jogos DOM, Bubble Shooter, Corte a palavra, Ninja e Corrida individual estão funcionais em Canvas e DOM; os dois últimos aguardam publicação conjunta no catálogo na Fase 8 do roadmap canônico.
 
 9. Repositório
 

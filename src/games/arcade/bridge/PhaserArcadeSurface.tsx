@@ -321,6 +321,7 @@ export function PhaserArcadeSurface({
       data-runtime-disconnected-dropped={runtimeDiagnostics.disconnectedDropped}
       data-runtime-impact-id={runtimeDiagnostics.impactId}
       data-runtime-gesture-active={runtimeDiagnostics.gestureActive}
+      data-runtime-lane-index={runtimeDiagnostics.laneIndex}
       data-runtime-last-sliced-choice-id={runtimeDiagnostics.lastSlicedChoiceId}
       data-runtime-last-answer={runtimeDiagnostics.lastAnswerCorrect === undefined
         ? undefined
@@ -332,6 +333,7 @@ export function PhaserArcadeSurface({
       data-runtime-reduced-motion={runtimeDiagnostics.reducedMotion}
       data-runtime-runner-distance={runtimeDiagnostics.runnerDistance}
       data-runtime-run-ended={runtimeDiagnostics.runEnded}
+      data-runtime-speed-multiplier={runtimeDiagnostics.speedMultiplier}
       data-runtime-removed-group-size={runtimeDiagnostics.removedGroupSize}
       data-runtime-resize-deferred={runtimeDiagnostics.resizeDeferred}
       data-runtime-selected-choice-id={runtimeDiagnostics.selectedChoiceId}
@@ -344,6 +346,7 @@ export function PhaserArcadeSurface({
       data-runtime-track-pool-size={runtimeDiagnostics.trackPoolSize}
       data-runtime-wall-bounce-count={runtimeDiagnostics.wallBounceCount}
       data-runtime-wave-index={runtimeDiagnostics.waveIndex}
+      data-runtime-portal-progress={runtimeDiagnostics.portalProgress}
       ref={containerRef}
       role={interactive ? "application" : "img"}
       tabIndex={interactive ? 0 : undefined}

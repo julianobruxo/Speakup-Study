@@ -12,7 +12,8 @@ export type GameId =
   | "listening_ear"
   | "bubble_shooter"
   | "word_slice"
-  | "ninja";
+  | "ninja"
+  | "solo_race";
 
 export type ContentDomain = "grammar" | "vocabulary";
 
@@ -149,6 +150,7 @@ const COMPATIBILITY: Record<GameId, ContentSelector["domain"][]> = {
   bubble_shooter: ["vocabulary"],
   word_slice: ["vocabulary"],
   ninja: ["grammar"],
+  solo_race: ["grammar", "vocabulary"],
 };
 
 export function isGameCompatibleWithContent(
