@@ -26,8 +26,8 @@ import { shuffleWithSeed } from "../src/games/core/shuffle.ts";
 const grammar = { domain: "grammar", grammarTopicId: "present_tobe" };
 const vocabulary = { domain: "vocabulary", vocabularyCategoryId: "body" };
 
-test("catalog declares the nine DOM games and Bubble Shooter with central round sizes", () => {
-  assert.equal(GAME_CATALOG.length, 10);
+test("catalog declares the nine DOM games and two arcades with central round sizes", () => {
+  assert.equal(GAME_CATALOG.length, 11);
   assert.equal(new Set(GAME_CATALOG.map((game) => game.id)).size, GAME_CATALOG.length);
   for (const game of GAME_CATALOG) {
     assert.equal(game.defaultRoundSize, ROUND_SIZES[game.id].count);
@@ -51,6 +51,7 @@ test("compatibility is limited to the canonical rollout content", () => {
       "memory_match",
       "listening_ear",
       "bubble_shooter",
+      "word_slice",
     ],
   );
   assert.equal(
@@ -69,6 +70,7 @@ test("compatibility is limited to the canonical rollout content", () => {
   );
   assert.deepEqual(getCompatibleContent("matching_pairs"), [vocabulary]);
   assert.deepEqual(getCompatibleContent("bubble_shooter"), [vocabulary]);
+  assert.deepEqual(getCompatibleContent("word_slice"), [vocabulary]);
 });
 
 test("seeded shuffle and selection are deterministic, immutable and duplicate-free", () => {

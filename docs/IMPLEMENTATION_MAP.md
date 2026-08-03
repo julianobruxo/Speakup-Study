@@ -26,7 +26,7 @@ Conteúdo autorizado:
 | 2. Fechar nove jogos DOM | concluída | Fase 1 | nove rodadas completas, `browserErrors: 0` |
 | 3. Code-splitting e bridge Phaser | concluída | Fase 2 | Phaser isolado, mount/unmount limpo e revisão aprovada |
 | 4. Bubble Shooter | concluída | Fase 3 | arcade completo e modo DOM simplificado |
-| 5. Corte a palavra | pendente | Fase 4 | gesto confiável e performance mobile |
+| 5. Corte a palavra | concluída | Fase 4 | gesto confiável, modos Canvas/DOM e gate aprovado |
 | 6. Ninja | pendente | Fase 5 | subfases 6A–6E verdes |
 | 7. Corrida individual | pendente | Fase 6 | experiência single-player completa |
 | 8. Integração dos 13 jogos | pendente | Fase 7 | dois fluxos de entrada completos |
@@ -36,7 +36,7 @@ Conteúdo autorizado:
 
 | Contrato | Fonte | Estado |
 |---|---|---|
-| catálogo e compatibilidade | `src/games/core/catalog.ts` | dez jogos funcionais; três arcades entram nas próximas fases |
+| catálogo e compatibilidade | `src/games/core/catalog.ts` | onze jogos funcionais; dois arcades entram nas próximas fases |
 | configuração de rodada e XP | `src/games/core/roundConfig.ts` | centralizada |
 | seleção e seed | `selectChallenges.ts`, `shuffle.ts` | determinística, sem repetição |
 | payloads | `challengeTypes.ts`, `arcadeBridge.ts` | contratos DOM e bridge arcade validados pela camada React |
@@ -45,9 +45,9 @@ Conteúdo autorizado:
 | missão, streak e XP | `engagement.ts` | idempotência por `sessionId` |
 | conclusão React | `completionCoordinator.ts`, `useGameCompletion.ts` | fila entre sessões, duas tentativas automáticas e retry visível |
 | assets | `visualResolver.tsx` | resolução central por `visualKey` |
-| testes puros | `tests/gamesFoundation.test.mjs`, `tests/domGameContracts.test.mjs`, `tests/arcadeBridge.test.mjs`, `tests/bubbleShooter.test.mjs` | 26 testes com `node:test` |
+| testes puros | `tests/gamesFoundation.test.mjs`, `tests/domGameContracts.test.mjs`, `tests/arcadeBridge.test.mjs`, `tests/bubbleShooter.test.mjs`, `tests/wordSlice.test.mjs` | 31 testes com `node:test` |
 | smoke funcional/visual | `scripts/smokeUi.mjs` | a suite cobre nove viewports e verifica `browserErrors` |
-| bridge arcade | `src/games/arcade/bridge` | rodada preparada e outcome validado por React; cena técnica e Bubble Shooter em chunk sob demanda |
+| bridge arcade | `src/games/arcade/bridge` | rodada preparada e outcome validado por React; cena técnica, Bubble Shooter e Corte a palavra em chunks sob demanda |
 | isolamento Phaser | `scripts/verifyPhaserSplit.mjs` | manifest comprova chunk sob demanda sem preload no entry |
 
 ## Fase 1 — critérios

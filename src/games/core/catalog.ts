@@ -10,7 +10,8 @@ export type GameId =
   | "crossword"
   | "memory_match"
   | "listening_ear"
-  | "bubble_shooter";
+  | "bubble_shooter"
+  | "word_slice";
 
 export type ContentDomain = "grammar" | "vocabulary";
 
@@ -110,6 +111,14 @@ export const GAME_CATALOG: GameCatalogEntry[] = [
     defaultRoundSize: 6,
     supportsDragAndDrop: false,
   },
+  {
+    id: "word_slice",
+    title: "Corte a palavra",
+    description: "Corte a palavra em inglês que corresponde à pista.",
+    compatibleDomains: ["vocabulary"],
+    defaultRoundSize: 8,
+    supportsDragAndDrop: true,
+  },
 ];
 
 export function getGameById(id: GameId): GameCatalogEntry | undefined {
@@ -137,6 +146,7 @@ const COMPATIBILITY: Record<GameId, ContentSelector["domain"][]> = {
   memory_match: ["vocabulary"],
   listening_ear: ["grammar", "vocabulary"],
   bubble_shooter: ["vocabulary"],
+  word_slice: ["vocabulary"],
 };
 
 export function isGameCompatibleWithContent(

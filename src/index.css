@@ -383,6 +383,219 @@
   }
 }
 
+.word-slice-game {
+  width: min(100%, 1240px);
+  margin: 0 auto;
+}
+
+.word-slice-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.word-slice-toolbar .arcade-mode-switch {
+  margin-right: 0;
+}
+
+.word-slice-toolbar .arcade-mode-switch button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.word-slice-score {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  margin-left: auto;
+  color: #69738d;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.word-slice-score strong {
+  color: #17234b;
+  font-size: 15px;
+}
+
+.icon-button.word-slice-pause-button {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+}
+
+.word-slice-canvas {
+  height: clamp(470px, calc(100vh - 205px), 680px);
+  outline: 0;
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
+.word-slice-canvas:focus-visible {
+  border-color: #36c6d9;
+  box-shadow: 0 0 0 4px rgba(54, 198, 217, 0.24);
+}
+
+.word-slice-canvas canvas {
+  touch-action: none;
+}
+
+.word-slice-status {
+  min-height: 42px;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 8px 12px;
+  color: #17234b;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.word-slice-dom {
+  min-height: clamp(470px, calc(100vh - 205px), 680px);
+  display: grid;
+  align-content: center;
+  gap: 24px;
+  padding: 34px;
+  color: #ffffff;
+  text-align: center;
+  background: #101a42;
+  border: 1px solid #24366d;
+  border-radius: 8px;
+}
+
+.word-slice-dom-heading {
+  display: grid;
+  gap: 5px;
+}
+
+.word-slice-dom-heading span {
+  color: #7de5ef;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.word-slice-dom-heading h2,
+.word-slice-dom-prompt {
+  margin: 0;
+}
+
+.word-slice-dom-heading h2 {
+  font-size: 16px;
+}
+
+.word-slice-dom-prompt {
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.word-slice-dom-prompt:focus {
+  outline: 3px solid #f5b642;
+  outline-offset: 6px;
+}
+
+.word-slice-dom-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.word-slice-dom-choices button {
+  min-height: 96px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  padding: 12px;
+  color: #17234b;
+  background: #ffffff;
+  border: 2px solid #7de5ef;
+  border-radius: 8px;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.word-slice-dom-choices button:focus {
+  border-color: #f5b642;
+  box-shadow: 0 0 0 3px #f5b642;
+  outline: 3px solid #f5b642;
+  outline-offset: 3px;
+}
+
+.word-slice-dom-choices button:disabled {
+  opacity: 0.68;
+}
+
+.word-slice-dom-mark {
+  width: 38px;
+  height: 3px;
+  background: #b42f50;
+  border-radius: 2px;
+  box-shadow: 0 -6px 0 -1px #7de5ef;
+  transform: rotate(-18deg);
+}
+
+.word-slice-dom-feedback {
+  min-height: 24px;
+  color: #aeb8d2;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.word-slice-dom-feedback.is-correct {
+  color: #7de5ef;
+}
+
+.word-slice-dom-feedback.is-incorrect {
+  color: #ffd2dc;
+}
+
+@media (max-width: 560px) {
+  .word-slice-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .word-slice-toolbar .arcade-mode-switch {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .word-slice-score {
+    justify-content: space-between;
+    margin-left: 0;
+  }
+
+  .word-slice-canvas {
+    height: 510px;
+  }
+
+  .word-slice-dom {
+    min-height: 510px;
+    gap: 18px;
+    padding: 24px 14px;
+  }
+
+  .word-slice-dom-prompt {
+    font-size: 19px;
+  }
+
+  .word-slice-dom-choices {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .word-slice-dom-choices button {
+    min-height: 68px;
+    grid-template-columns: 44px 1fr;
+    justify-items: start;
+    text-align: left;
+  }
+}
+
 :root {
   /* Marca — navy e vinho continuam dominantes; branco e a base. */
   --navy: #17234b;
@@ -6546,6 +6759,55 @@ html[data-animations="off"] *::after {
   bottom: 23%;
   background: #7de5ef;
   transform: translateX(-50%);
+}
+
+.word-slice-card-preview {
+  background: #101a42;
+}
+
+.slice-preview-word {
+  position: absolute;
+  min-width: 24%;
+  padding: 9px 12px;
+  color: #17234b;
+  background: #f7f9ff;
+  border: 2px solid rgba(255, 255, 255, 0.88);
+  border-radius: 999px;
+  box-shadow: 0 8px 18px rgba(5, 10, 30, 0.28);
+  font-size: 10px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.slice-preview-word.word-one {
+  top: 14%;
+  left: 10%;
+  background: #36c6d9;
+}
+
+.slice-preview-word.word-two {
+  top: 42%;
+  right: 13%;
+  color: #ffffff;
+  background: #8b6cf6;
+}
+
+.slice-preview-word.word-three {
+  bottom: 13%;
+  left: 28%;
+  background: #f5b642;
+}
+
+.slice-preview-trail {
+  position: absolute;
+  width: 48%;
+  height: 5px;
+  top: 48%;
+  left: 27%;
+  background: #7de5ef;
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.75), 0 0 14px #7de5ef;
+  transform: rotate(-25deg);
 }
 
 .games-page .quick-game-card:hover .game-card-image,

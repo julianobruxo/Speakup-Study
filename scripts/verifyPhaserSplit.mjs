@@ -10,14 +10,16 @@ const manifest = JSON.parse(
 const entries = Object.entries(manifest);
 const appEntry = entries.find(([, chunk]) => chunk.isEntry);
 const arcadeEntries = entries.filter(([source]) =>
-  source.endsWith("ArcadeBridgeLabPage.tsx") || source.endsWith("BubbleShooterGame.tsx")
+  source.endsWith("ArcadeBridgeLabPage.tsx") ||
+  source.endsWith("BubbleShooterGame.tsx") ||
+  source.endsWith("WordSliceGame.tsx")
 );
 const phaserEntries = entries.filter(
   ([source]) => /(^|[\\/])node_modules[\\/]phaser[\\/]/i.test(source),
 );
 
 assert(appEntry, "Vite manifest is missing the application entry.");
-assert(arcadeEntries.length === 2, "Vite manifest is missing a lazy arcade route.");
+assert(arcadeEntries.length === 3, "Vite manifest is missing a lazy arcade route.");
 assert(phaserEntries.length === 1, `Expected one Phaser chunk, found ${phaserEntries.length}.`);
 
 function collectStaticImports(source, collected = new Set()) {

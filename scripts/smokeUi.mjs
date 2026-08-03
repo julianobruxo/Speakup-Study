@@ -738,6 +738,72 @@ async function main() {
     await resetAllLocalData();
   })()`);
 
+  await navigate("/jogos/corte-a-palavra?mode=dom&seed=2026");
+  const wordSliceDomState = await evaluate(`({
+    canvasCount: document.querySelectorAll('canvas').length,
+    choiceCount: document.querySelectorAll('.word-slice-dom-choices button').length,
+    minChoiceHeight: Math.min(...[...document.querySelectorAll('.word-slice-dom-choices button')].map((button) => button.getBoundingClientRect().height)),
+    minChoiceWidth: Math.min(...[...document.querySelectorAll('.word-slice-dom-choices button')].map((button) => button.getBoundingClientRect().width)),
+    phaserLoaded: performance.getEntriesByType('resource').some((entry) => entry.name.toLowerCase().includes('/deps/phaser.js'))
+  })`);
+  assert(
+    wordSliceDomState.canvasCount === 0 &&
+      wordSliceDomState.choiceCount === 3 &&
+      wordSliceDomState.minChoiceHeight >= 44 &&
+      wordSliceDomState.minChoiceWidth >= 44 &&
+      !wordSliceDomState.phaserLoaded,
+    `Corte a palavra DOM mode loaded Phaser or rendered incorrectly: ${JSON.stringify(wordSliceDomState)}`,
+  );
+  await assertNoOverflow("/jogos/corte-a-palavra DOM 390x844");
+  screenshots.push(await screenshot("word-slice-dom-390x844"));
+  for (let challengeIndex = 0; challengeIndex < 8; challengeIndex += 1) {
+    const correctChoiceId = await evaluate(`(async () => {
+      const { createWordSliceRound } = await import('/src/games/arcade/wordSlice/wordSliceRound.ts');
+      return createWordSliceRound(2026).challenges[${challengeIndex}].correctChoiceId;
+    })()`);
+    const focused = await evaluate(`(() => {
+      const button = document.querySelector('[data-choice-id="${correctChoiceId}"]');
+      button?.focus();
+      return document.activeElement === button;
+    })()`);
+    assert(focused, `Corte a palavra DOM choice ${challengeIndex + 1} was not focusable`);
+    await pressKey(" ");
+    if (challengeIndex === 0) {
+      await waitFor(() => hasText("Corte certeiro!"), "Corte a palavra DOM feedback");
+      screenshots.push(await screenshot("word-slice-dom-correct-390x844"));
+    }
+    if (challengeIndex < 7) {
+      await waitFor(
+        () => evaluate(`document.querySelector('.word-slice-dom')?.dataset.challengeIndex === '${challengeIndex + 1}'`),
+        `Corte a palavra DOM advances to challenge ${challengeIndex + 2}`,
+      );
+      assert(
+        await evaluate(`document.activeElement?.classList.contains('word-slice-dom-prompt')`),
+        `Corte a palavra DOM did not restore focus for challenge ${challengeIndex + 2}`,
+      );
+    }
+  }
+  await waitFor(
+    () => evaluate(`Boolean(document.querySelector('.game-result-page'))`),
+    "Corte a palavra DOM result",
+    12000,
+  );
+  const wordSliceDomPersistence = await evaluate(`(async () => {
+    const { getGameSessions } = await import('/src/services/progress/localProgress.ts');
+    const sessions = await getGameSessions();
+    return sessions.find((item) => item.gameId === 'word_slice');
+  })()`);
+  assert(
+    wordSliceDomPersistence?.correctCount === 8 &&
+      wordSliceDomPersistence.totalChallenges === 8 &&
+      wordSliceDomPersistence.xpEarned === 50,
+    `Corte a palavra DOM persistence failed: ${JSON.stringify(wordSliceDomPersistence)}`,
+  );
+  await evaluate(`(async () => {
+    const { resetAllLocalData } = await import('/src/services/progress/engagement.ts');
+    await resetAllLocalData();
+  })()`);
+
   for (const [width, height] of [[1440, 900], [768, 1024], [390, 844], [360, 800]]) {
     await setViewport(width, height);
     await navigate("/jogos/bridge-tecnica");
@@ -1221,6 +1287,360 @@ async function main() {
   );
   await send("Emulation.setEmulatedMedia", { features: [] }, sessionId);
 
+  for (const [width, height] of [[1440, 900], [768, 1024], [390, 844], [360, 800]]) {
+    await setViewport(width, height);
+    await navigate("/jogos/corte-a-palavra?seed=2026");
+    await waitFor(
+      () => evaluate(`document.querySelector('.word-slice-canvas')?.dataset.arcadeReady === 'true'`),
+      `Corte a palavra ready at ${width}x${height}`,
+      20000,
+    );
+    const wordSliceLayout = await evaluate(`(() => {
+      const surface = document.querySelector('.word-slice-canvas');
+      return {
+        activeObjects: Number(surface?.dataset.runtimeActiveObjectCount ?? 0),
+        canvasCount: surface?.querySelectorAll('canvas').length ?? 0,
+        height: surface?.clientHeight ?? 0,
+        minControlSize: Math.min(...[...document.querySelectorAll('.game-play-page .icon-button, .arcade-mode-switch button')].flatMap((control) => {
+          const rect = control.getBoundingClientRect();
+          return [rect.width, rect.height];
+        })),
+        width: surface?.clientWidth ?? 0,
+      };
+    })()`);
+    assert(
+      wordSliceLayout.canvasCount === 1 &&
+        wordSliceLayout.activeObjects === 3 &&
+        wordSliceLayout.width > 0 &&
+        wordSliceLayout.height >= 470 &&
+        wordSliceLayout.minControlSize >= 44,
+      `Corte a palavra initial board failed at ${width}x${height}: ${JSON.stringify(wordSliceLayout)}`,
+    );
+    await assertNoOverflow(`/jogos/corte-a-palavra ${width}x${height}`);
+    screenshots.push(await screenshot(`word-slice-${width}x${height}`));
+  }
+
+  await setViewport(390, 844);
+  await navigate("/jogos/corte-a-palavra?seed=2026");
+  await waitFor(
+    () => evaluate(`document.querySelector('.word-slice-canvas')?.dataset.arcadeReady === 'true'`),
+    "Corte a palavra ready for gesture checks",
+    20000,
+  );
+  const wordSliceSurfaceRect = await evaluate(`(() => {
+    const rect = document.querySelector('.word-slice-canvas').getBoundingClientRect();
+    return { left: rect.left, right: rect.right, top: rect.top };
+  })()`);
+  await send("Input.dispatchMouseEvent", {
+    type: "mousePressed",
+    x: wordSliceSurfaceRect.left + 18,
+    y: wordSliceSurfaceRect.top + 92,
+    button: "left",
+    clickCount: 1,
+  }, sessionId);
+  await send("Input.dispatchMouseEvent", {
+    type: "mouseMoved",
+    x: wordSliceSurfaceRect.left + 48,
+    y: wordSliceSurfaceRect.top + 92,
+    button: "left",
+    buttons: 1,
+  }, sessionId);
+  await waitFor(
+    () => evaluate(`(() => {
+      const surface = document.querySelector('.word-slice-canvas');
+      return surface?.dataset.runtimeGestureActive === 'true' &&
+        Number(surface?.dataset.runtimeTrailPointCount ?? 0) > 1;
+    })()`),
+    "Corte a palavra draws an armed trail",
+  );
+  screenshots.push(await screenshot("word-slice-trail-390x844"));
+  await evaluate(`document.querySelector('.word-slice-pause-button')?.click()`);
+  await waitFor(
+    () => evaluate(`(() => {
+      const surface = document.querySelector('.word-slice-canvas');
+      return surface?.dataset.runtimePaused === 'true' &&
+        surface?.dataset.runtimeGestureActive === 'false';
+    })()`),
+    "Corte a palavra cancels an active gesture on pause",
+  );
+  await send("Input.dispatchMouseEvent", {
+    type: "mouseReleased",
+    x: wordSliceSurfaceRect.left + 48,
+    y: wordSliceSurfaceRect.top + 92,
+    button: "left",
+    clickCount: 1,
+  }, sessionId);
+  await evaluate(`document.querySelector('.word-slice-pause-button')?.click()`);
+  await waitFor(
+    () => evaluate(`document.querySelector('.word-slice-canvas')?.dataset.runtimePaused === 'false'`),
+    "Corte a palavra resumes after gesture cancellation",
+  );
+
+  const resizeGestureRect = await evaluate(`(() => {
+    const rect = document.querySelector('.word-slice-canvas').getBoundingClientRect();
+    return { left: rect.left, top: rect.top };
+  })()`);
+  await send("Input.dispatchMouseEvent", {
+    type: "mousePressed",
+    x: resizeGestureRect.left + 18,
+    y: resizeGestureRect.top + 92,
+    button: "left",
+    clickCount: 1,
+  }, sessionId);
+  await send("Input.dispatchMouseEvent", {
+    type: "mouseMoved",
+    x: resizeGestureRect.left + 48,
+    y: resizeGestureRect.top + 92,
+    button: "left",
+    buttons: 1,
+  }, sessionId);
+  await waitFor(
+    () => evaluate(`document.querySelector('.word-slice-canvas')?.dataset.runtimeGestureActive === 'true'`),
+    "Corte a palavra starts a gesture before resize",
+  );
+  await setViewport(412, 915);
+  await waitFor(
+    () => evaluate(`(() => {
+      const surface = document.querySelector('.word-slice-canvas');
+      return surface?.dataset.runtimeGestureActive === 'false' &&
+        surface?.dataset.runtimeWaveIndex === '0' &&
+        surface?.dataset.runtimeActiveObjectCount === '3';
+    })()`),
+    "Corte a palavra cancels only the gesture on resize",
+  );
+  await send("Input.dispatchMouseEvent", {
+    type: "mouseReleased",
+    x: resizeGestureRect.left + 48,
+    y: resizeGestureRect.top + 92,
+    button: "left",
+    clickCount: 1,
+  }, sessionId);
+  await setViewport(390, 844);
+
+  const getWordSliceLane = async (challengeIndex, chooseCorrect) => evaluate(`(async () => {
+    const { createWordSliceRound } = await import('/src/games/arcade/wordSlice/wordSliceRound.ts');
+    const challenge = createWordSliceRound(2026).challenges[${challengeIndex}];
+    const correctIndex = challenge.choices.findIndex((choice) => choice.id === challenge.correctChoiceId);
+    const choiceIndex = ${chooseCorrect} ? correctIndex : (correctIndex + 1) % challenge.choices.length;
+    const surface = document.querySelector('.word-slice-canvas');
+    const rect = surface.getBoundingClientRect();
+    const radius = Math.min(48, Math.max(34, surface.clientWidth * 0.09));
+    const boardTop = 112 + radius;
+    const boardBottom = surface.clientHeight - 70 - radius;
+    const laneGap = Math.max(0, (boardBottom - boardTop) / 2);
+    return {
+      choiceId: challenge.choices[choiceIndex].id,
+      x1: rect.left + 8,
+      x2: rect.right - 8,
+      y: rect.top + boardTop + laneGap * choiceIndex,
+    };
+  })()`);
+
+  const neutralLane = await getWordSliceLane(0, false);
+  await send("Input.dispatchMouseEvent", {
+    type: "mousePressed",
+    x: neutralLane.x1,
+    y: neutralLane.y,
+    button: "left",
+    clickCount: 1,
+  }, sessionId);
+  await send("Input.dispatchMouseEvent", {
+    type: "mouseReleased",
+    x: neutralLane.x1,
+    y: neutralLane.y,
+    button: "left",
+    clickCount: 1,
+  }, sessionId);
+  await send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: neutralLane.x1, y: neutralLane.y, radiusX: 4, radiusY: 4, force: 1, id: 71 }],
+  }, sessionId);
+  await send("Input.dispatchTouchEvent", { type: "touchCancel", touchPoints: [] }, sessionId);
+  await delay(180);
+  assert(
+    await evaluate(`document.querySelector('.word-slice-canvas')?.dataset.runtimeWaveIndex === '0'`),
+    "Corte a palavra tap or pointer cancel must not resolve a challenge",
+  );
+
+  const swipeWordSliceLane = async (lane, inputType) => {
+    if (inputType === "touch") {
+      await send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ x: lane.x1, y: lane.y, radiusX: 4, radiusY: 4, force: 1, id: 72 }],
+      }, sessionId);
+      for (const progress of [0.25, 0.5, 0.75, 1]) {
+        await send("Input.dispatchTouchEvent", {
+          type: "touchMove",
+          touchPoints: [{
+            x: lane.x1 + (lane.x2 - lane.x1) * progress,
+            y: lane.y,
+            radiusX: 4,
+            radiusY: 4,
+            force: 1,
+            id: 72,
+          }],
+        }, sessionId);
+        await delay(24);
+      }
+      await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }, sessionId);
+      return;
+    }
+    await send("Input.dispatchMouseEvent", {
+      type: "mousePressed",
+      x: lane.x1,
+      y: lane.y,
+      button: "left",
+      clickCount: 1,
+      pointerType: inputType,
+    }, sessionId);
+    await send("Input.dispatchMouseEvent", {
+      type: "mouseMoved",
+      x: lane.x2,
+      y: lane.y,
+      button: "left",
+      buttons: 1,
+      pointerType: inputType,
+    }, sessionId);
+    await send("Input.dispatchMouseEvent", {
+      type: "mouseReleased",
+      x: lane.x2,
+      y: lane.y,
+      button: "left",
+      clickCount: 1,
+      pointerType: inputType,
+    }, sessionId);
+  };
+
+  for (const interaction of [
+    { challengeIndex: 0, correct: true, inputType: "mouse" },
+    { challengeIndex: 1, correct: false, inputType: "touch" },
+    { challengeIndex: 2, correct: true, inputType: "pen" },
+  ]) {
+    const lane = await getWordSliceLane(interaction.challengeIndex, interaction.correct);
+    await swipeWordSliceLane(lane, interaction.inputType);
+    await waitFor(
+      () => evaluate(`document.querySelector('.word-slice-canvas')?.dataset.runtimeLastSlicedChoiceId === '${lane.choiceId}'`),
+      `Corte a palavra accepts ${interaction.inputType} slice ${interaction.challengeIndex + 1}`,
+    );
+    if (interaction.challengeIndex === 1) {
+      assert(
+        await evaluate(`document.querySelector('.word-slice-canvas')?.dataset.runtimeLastAnswer === 'incorrect'`),
+        "Corte a palavra applies an incorrect-slice penalty",
+      );
+      const expectedCorrectLabel = await evaluate(`(async () => {
+        const { createWordSliceRound } = await import('/src/games/arcade/wordSlice/wordSliceRound.ts');
+        const challenge = createWordSliceRound(2026).challenges[1];
+        return challenge.choices.find((choice) => choice.id === challenge.correctChoiceId).label;
+      })()`);
+      assert(
+        await evaluate(`(() => {
+          const status = document.querySelector('.word-slice-status')?.textContent ?? '';
+          return status.includes('Menos 25 pontos') && status.includes('${expectedCorrectLabel}');
+        })()`),
+        "Corte a palavra exposes the correct answer in the React live region",
+      );
+      screenshots.push(await screenshot("word-slice-incorrect-390x844"));
+    }
+    await waitFor(
+      () => evaluate(`document.querySelector('.word-slice-canvas')?.dataset.runtimeWaveIndex === '${interaction.challengeIndex + 1}'`),
+      `Corte a palavra advances to wave ${interaction.challengeIndex + 2}`,
+    );
+    if (interaction.challengeIndex === 1) {
+      await waitFor(
+        () => evaluate(`document.querySelector('.word-slice-status')?.textContent.trim() === 'Próxima palavra.'`),
+        "Corte a palavra clears stale feedback on the next wave",
+      );
+    }
+  }
+
+  await evaluate(`document.querySelector('.word-slice-canvas')?.focus()`);
+  const pressWordSliceKey = async (key, code, virtualKeyCode) => {
+    await send("Input.dispatchKeyEvent", {
+      type: "rawKeyDown",
+      key,
+      code,
+      windowsVirtualKeyCode: virtualKeyCode,
+      nativeVirtualKeyCode: virtualKeyCode,
+    }, sessionId);
+    await send("Input.dispatchKeyEvent", {
+      type: "keyUp",
+      key,
+      code,
+      windowsVirtualKeyCode: virtualKeyCode,
+      nativeVirtualKeyCode: virtualKeyCode,
+    }, sessionId);
+  };
+  for (let challengeIndex = 3; challengeIndex < 8; challengeIndex += 1) {
+    const keyboardTarget = await evaluate(`(async () => {
+      const { createWordSliceRound } = await import('/src/games/arcade/wordSlice/wordSliceRound.ts');
+      const challenge = createWordSliceRound(2026).challenges[${challengeIndex}];
+      return {
+        choiceId: challenge.correctChoiceId,
+        index: challenge.choices.findIndex((choice) => choice.id === challenge.correctChoiceId),
+      };
+    })()`);
+    for (let index = 0; index < keyboardTarget.index; index += 1) {
+      await pressWordSliceKey("ArrowDown", "ArrowDown", 40);
+      await delay(50);
+    }
+    await waitFor(
+      () => evaluate(`document.querySelector('.word-slice-canvas')?.dataset.runtimeSelectedChoiceId === '${keyboardTarget.choiceId}'`),
+      `Corte a palavra keyboard selects target ${challengeIndex + 1}`,
+    );
+    await pressWordSliceKey(" ", "Space", 32);
+    if (challengeIndex < 7) {
+      await waitFor(
+        () => evaluate(`document.querySelector('.word-slice-canvas')?.dataset.runtimeWaveIndex === '${challengeIndex + 1}'`),
+        `Corte a palavra keyboard advances to wave ${challengeIndex + 2}`,
+      );
+    }
+  }
+  await waitFor(
+    () => evaluate(`Boolean(document.querySelector('.game-result-page'))`),
+    "Corte a palavra Canvas result",
+    12000,
+  );
+  const wordSliceCanvasResult = await evaluate(`(async () => {
+    const { getGameSessions } = await import('/src/services/progress/localProgress.ts');
+    const sessions = await getGameSessions();
+    return sessions.find((item) => item.gameId === 'word_slice');
+  })()`);
+  assert(
+    wordSliceCanvasResult?.correctCount === 7 &&
+      wordSliceCanvasResult.totalChallenges === 8 &&
+      wordSliceCanvasResult.xpEarned === 45 &&
+      wordSliceCanvasResult.score === 1235,
+    `Corte a palavra Canvas persistence failed: ${JSON.stringify(wordSliceCanvasResult)}`,
+  );
+  screenshots.push(await screenshot("word-slice-result-390x844"));
+  await evaluate(`(async () => {
+    const { resetAllLocalData } = await import('/src/services/progress/engagement.ts');
+    await resetAllLocalData();
+  })()`);
+
+  await send(
+    "Emulation.setEmulatedMedia",
+    { features: [{ name: "prefers-reduced-motion", value: "reduce" }] },
+    sessionId,
+  );
+  await navigate("/jogos/corte-a-palavra?seed=2026");
+  await waitFor(
+    () => evaluate(`(() => {
+      const surface = document.querySelector('.word-slice-canvas');
+      return surface?.dataset.runtimeReducedMotion === 'true' &&
+        surface?.dataset.runtimeTweenCount === '0';
+    })()`),
+    "Corte a palavra respects reduced motion",
+    20000,
+  );
+  screenshots.push(await screenshot("word-slice-reduced-motion-390x844"));
+  await navigateSpa("/jogos");
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('canvas').length === 0`),
+    "Corte a palavra destroys its canvas on exit",
+  );
+  await send("Emulation.setEmulatedMedia", { features: [] }, sessionId);
+
   await setViewport(1366, 768);
   const routeChecks = [
     ["/", "Jogue, aprenda e"],
@@ -1241,6 +1661,7 @@ async function main() {
     ["/jogos/ouvido-afiado", "Ouvido afiado"],
     ["/jogos/contra-o-relogio", "Contra o relógio"],
     ["/jogos/bubble-shooter", "Bubble Shooter"],
+    ["/jogos/corte-a-palavra", "Corte a palavra"],
   ];
   for (const [path, text] of routeChecks) {
     await navigate(path);
@@ -1280,6 +1701,7 @@ async function main() {
       "Par perfeito",
       "Ouvido afiado",
       "Bubble Shooter",
+      "Corte a palavra",
     ];
     const cards = [...document.querySelectorAll('.quick-game-card')];
     const images = [...document.querySelectorAll('.quick-game-card .game-card-image')];
@@ -1318,15 +1740,17 @@ async function main() {
       })),
       patternCount: document.querySelectorAll('.game-card-pattern').length,
       arcadePreviewCount: document.querySelectorAll('.arcade-card-preview').length,
+      wordSlicePreviewCount: document.querySelectorAll('.word-slice-card-preview').length,
       everyButton: cards.every((card) => card.tagName === 'BUTTON'),
       titleMatches: expectedTitles.every((title, index) => cards[index]?.innerText.includes(title)),
       sortingDescription: cards[3]?.innerText.includes("Arraste cada palavra até a imagem correspondente."),
     };
   })()`);
   assert(
-    gameCardImageState.cardCount === 10 &&
+    gameCardImageState.cardCount === 11 &&
       gameCardImageState.imageCount === 9 &&
       gameCardImageState.arcadePreviewCount === 1 &&
+      gameCardImageState.wordSlicePreviewCount === 1 &&
       gameCardImageState.everyButton &&
       gameCardImageState.titleMatches &&
       gameCardImageState.sortingDescription &&
@@ -1368,7 +1792,7 @@ async function main() {
     await setViewport(width, height);
     await navigate("/jogos");
     await waitFor(
-      () => evaluate(`document.querySelectorAll('.quick-game-card').length === 10`),
+      () => evaluate(`document.querySelectorAll('.quick-game-card').length === 11`),
       `games grid ${width}x${height}`,
     );
     await assertNoOverflow(`/jogos ${width}x${height}`);
@@ -1391,21 +1815,31 @@ async function main() {
     screenshots.push(await screenshot(`games-refined-${width}x${height}`));
     if (width === 1440 || width === 390) {
       await evaluate(`document.querySelector('.quick-game-card:last-child')?.scrollIntoView({ block: 'center' })`);
-      const bubbleCardState = await evaluate(`(() => {
-        const card = document.querySelector('.quick-game-card:last-child');
-        const preview = card?.querySelector('.arcade-card-preview');
-        const rect = card?.getBoundingClientRect();
+      const arcadeCardState = await evaluate(`(() => {
+        const cards = [...document.querySelectorAll('.quick-game-card')];
+        const bubbleCard = cards.find((card) => card.innerText.includes('Bubble Shooter'));
+        const wordSliceCard = cards.find((card) => card.innerText.includes('Corte a palavra'));
+        const bubbleRect = bubbleCard?.getBoundingClientRect();
+        const wordSliceRect = wordSliceCard?.getBoundingClientRect();
         return {
-          preview: Boolean(preview),
-          title: card?.querySelector('.game-card-copy strong')?.textContent.trim(),
-          visible: Boolean(rect && rect.top < innerHeight && rect.bottom > 0),
+          bubblePreview: Boolean(bubbleCard?.querySelector('.arcade-card-preview')),
+          bubbleTitle: bubbleCard?.querySelector('.game-card-copy strong')?.textContent.trim(),
+          bubbleVisible: Boolean(bubbleRect && bubbleRect.top < innerHeight && bubbleRect.bottom > 0),
+          wordSlicePreview: Boolean(wordSliceCard?.querySelector('.word-slice-card-preview')),
+          wordSliceTitle: wordSliceCard?.querySelector('.game-card-copy strong')?.textContent.trim(),
+          wordSliceVisible: Boolean(wordSliceRect && wordSliceRect.top < innerHeight && wordSliceRect.bottom > 0),
         };
       })()`);
       assert(
-        bubbleCardState.preview && bubbleCardState.title === "Bubble Shooter" && bubbleCardState.visible,
-        `Bubble Shooter catalog card failed at ${width}x${height}: ${JSON.stringify(bubbleCardState)}`,
+        arcadeCardState.bubblePreview &&
+          arcadeCardState.bubbleTitle === "Bubble Shooter" &&
+          arcadeCardState.bubbleVisible &&
+          arcadeCardState.wordSlicePreview &&
+          arcadeCardState.wordSliceTitle === "Corte a palavra" &&
+          arcadeCardState.wordSliceVisible,
+        `Arcade catalog cards failed at ${width}x${height}: ${JSON.stringify(arcadeCardState)}`,
       );
-      screenshots.push(await screenshot(`games-bubble-card-${width}x${height}`));
+      screenshots.push(await screenshot(`games-arcade-cards-${width}x${height}`));
       await evaluate(`window.scrollTo(0, 0)`);
     }
   }
@@ -1426,7 +1860,7 @@ async function main() {
   );
   await navigate("/jogos");
   await waitFor(
-    () => evaluate(`document.querySelectorAll('.quick-game-card').length === 10`),
+    () => evaluate(`document.querySelectorAll('.quick-game-card').length === 11`),
     "game cards ready for direct navigation",
   );
   await evaluate(`document.querySelectorAll('.quick-game-card')[3]?.click()`);

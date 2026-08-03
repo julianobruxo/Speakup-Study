@@ -41,20 +41,26 @@ export interface ArcadeSceneEvents {
 }
 
 export interface ArcadeSceneRuntimeState {
+  activeObjectCount?: number;
   boardBubbleCount?: number;
   challengeIndex?: number;
   disconnectedDropped?: number;
   impactId?: string;
+  gestureActive?: boolean;
+  lastSlicedChoiceId?: string;
   lastAnswerCorrect?: boolean;
   removedGroupSize?: number;
   resizeDeferred?: boolean;
+  selectedChoiceId?: string;
   renderResolution: number;
   reducedMotion: boolean;
   shotInFlight?: boolean;
   shotSnapColumn?: number;
   shotSnapRow?: number;
   tweenCount: number;
+  trailPointCount?: number;
   wallBounceCount?: number;
+  waveIndex?: number;
 }
 
 export interface ArcadeSceneSettings {

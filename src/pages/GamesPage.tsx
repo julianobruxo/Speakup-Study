@@ -95,6 +95,15 @@ const games = [
     tone: "violet",
     route: "/jogos/bubble-shooter",
   },
+  {
+    icon: "sparkles" as const,
+    title: "Corte a palavra",
+    copy: "Faça um corte preciso na palavra que corresponde à pista.",
+    image: null,
+    preview: "word-slice",
+    tone: "coral",
+    route: "/jogos/corte-a-palavra",
+  },
 ];
 
 export default function GamesPage() {
@@ -136,13 +145,22 @@ export default function GamesPage() {
                 />
               </span>
             ) : (
-              <span aria-hidden="true" className="game-card-image-wrap arcade-card-preview">
-                <span className="arcade-preview-bubble bubble-one">HEAD</span>
-                <span className="arcade-preview-bubble bubble-two">EYE</span>
-                <span className="arcade-preview-bubble bubble-three">HAND</span>
-                <span className="arcade-preview-shot" />
-                <span className="arcade-preview-aim" />
-              </span>
+              game.preview === "word-slice" ? (
+                <span aria-hidden="true" className="game-card-image-wrap word-slice-card-preview">
+                  <span className="slice-preview-word word-one">SHOULDER</span>
+                  <span className="slice-preview-word word-two">KNEE</span>
+                  <span className="slice-preview-word word-three">HAND</span>
+                  <span className="slice-preview-trail" />
+                </span>
+              ) : (
+                <span aria-hidden="true" className="game-card-image-wrap arcade-card-preview">
+                  <span className="arcade-preview-bubble bubble-one">HEAD</span>
+                  <span className="arcade-preview-bubble bubble-two">EYE</span>
+                  <span className="arcade-preview-bubble bubble-three">HAND</span>
+                  <span className="arcade-preview-shot" />
+                  <span className="arcade-preview-aim" />
+                </span>
+              )
             )}
             <span className="game-card-copy">
               <span className="game-card-title-row">
