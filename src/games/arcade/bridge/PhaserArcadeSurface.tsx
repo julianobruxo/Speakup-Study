@@ -309,7 +309,9 @@ export function PhaserArcadeSurface({
       className={`phaser-arcade-surface ${className}`.trim()}
       data-arcade-ready={ready}
       data-runtime-active-object-count={runtimeDiagnostics.activeObjectCount}
+      data-runtime-auto-running={runtimeDiagnostics.autoRunning}
       data-runtime-board-bubble-count={runtimeDiagnostics.boardBubbleCount}
+      data-runtime-camera-x={runtimeDiagnostics.cameraX}
       data-runtime-challenge-index={runtimeDiagnostics.challengeIndex}
       data-runtime-disconnected-dropped={runtimeDiagnostics.disconnectedDropped}
       data-runtime-impact-id={runtimeDiagnostics.impactId}
@@ -318,10 +320,12 @@ export function PhaserArcadeSurface({
       data-runtime-last-answer={runtimeDiagnostics.lastAnswerCorrect === undefined
         ? undefined
         : runtimeDiagnostics.lastAnswerCorrect ? "correct" : "incorrect"}
+      data-runtime-pooled-reuse-count={runtimeDiagnostics.pooledReuseCount}
       data-phaser-version={version}
       data-runtime-paused={runtimeDiagnostics.paused}
       data-runtime-render-resolution={runtimeDiagnostics.renderResolution}
       data-runtime-reduced-motion={runtimeDiagnostics.reducedMotion}
+      data-runtime-runner-distance={runtimeDiagnostics.runnerDistance}
       data-runtime-removed-group-size={runtimeDiagnostics.removedGroupSize}
       data-runtime-resize-deferred={runtimeDiagnostics.resizeDeferred}
       data-runtime-selected-choice-id={runtimeDiagnostics.selectedChoiceId}
@@ -331,6 +335,7 @@ export function PhaserArcadeSurface({
       data-runtime-sound-muted={runtimeDiagnostics.soundMuted}
       data-runtime-tween-count={runtimeDiagnostics.tweenCount}
       data-runtime-trail-point-count={runtimeDiagnostics.trailPointCount}
+      data-runtime-track-pool-size={runtimeDiagnostics.trackPoolSize}
       data-runtime-wall-bounce-count={runtimeDiagnostics.wallBounceCount}
       data-runtime-wave-index={runtimeDiagnostics.waveIndex}
       ref={containerRef}

@@ -16,7 +16,7 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Vocabulário funcional apenas em Partes do corpo.
 - Progresso com atividade semanal, conquistas, revisão e métricas locais.
 - Perfil local editável, preferências e reset local confirmado.
-- Jogos: onze jogos do catálogo oficial funcionais com `present_tobe` + `body`, incluindo Bubble Shooter e Corte a palavra em Canvas e DOM.
+- Jogos: onze jogos do catálogo oficial funcionais com `present_tobe` + `body`, incluindo Bubble Shooter e Corte a palavra em Canvas e DOM; Ninja está em implementação incremental, com a fundação 6A acessível apenas por rota direta.
 - Página de Jogos: onze cards, com nove thumbnails aprovadas e previews locais dos dois arcades; versões WebP 800x450 e masters 1600x900 permanecem preservados.
 
 ## Conteúdo
@@ -80,6 +80,7 @@ Onze jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramá
 - `/vocabulario/body/flashcards`: flashcards de Partes do corpo.
 - `/jogos`: catálogo de onze jogos.
 - `/jogos/monte-a-frase`, `/jogos/caca-ao-erro`, `/jogos/contra-o-relogio`, `/jogos/cada-coisa-no-seu-lugar`, `/jogos/palavra-secreta`, `/jogos/conectando`, `/jogos/cruzando-palavras`, `/jogos/par-perfeito`, `/jogos/ouvido-afiado`, `/jogos/bubble-shooter`, `/jogos/corte-a-palavra`: jogos individuais.
+- `/jogos/ninja`: fundação técnica lazy da subfase 6A; ainda não publicada no catálogo e sem rodada pedagógica até a 6B.
 - `/progresso`: progresso local.
 - `/perfil`: perfil local.
 
@@ -185,6 +186,17 @@ Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lin
 - Evidências finais abertas e inspecionadas: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-Pzdvzd`, cobrindo Canvas, DOM, erro, resultado, movimento reduzido e catálogo.
 - Risco residual aceito: uma repetição intermediária parou na flutuação conhecida do touch físico de `Cada coisa no seu lugar` no Edge headless. Juliano autorizou deixar pequenos problemas do Edge para depois; a execução final passou inteira.
 - Revisão: os pareceres independentes técnico e visual/pedagógico reavaliaram as correções e resultaram em `APPROVE`, sem bloqueios remanescentes.
+
+### Relatório da Fase 6A
+
+- Objetivo: estabelecer a fundação visual e de lifecycle do Ninja antes de introduzir conteúdo ou regras de resposta.
+- Cena: personagem procedural, corrida automática a 190 px/s, câmera, nuvens, montanhas e cidade em parallax, pista e lanternas recicladas por pool fixo.
+- Fronteira: React mantém rota, preferências e controles externos; Phaser mantém somente renderização e estado transitório. Nenhum outcome, score, XP ou dado persistente existe nesta subfase.
+- Lifecycle: pausa congela distância, retomada continua o percurso, resize preserva o pool e sair da rota destrói o Canvas.
+- Acessibilidade: controle externo de pausa com 44 px, status textual e movimento reduzido realmente estático, sem câmera, parallax ou tweens ativos.
+- Testes: 34 testes puros e gate completo com conteúdo, TypeScript, lint, build, split, smoke e `git diff --check`.
+- Evidências: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-rF04XY`; capturas em 1440x900, 768x1024, 390x844 e 360x800, além de pausa, resize e movimento reduzido; `browserErrors: 0`.
+- Revisão: o parecer visual/acessível aprovou a correção de movimento reduzido e contraste; nenhum card foi exposto antes da primeira progressão funcional da 6B.
 
 ## Git
 

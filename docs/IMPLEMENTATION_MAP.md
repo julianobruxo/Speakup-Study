@@ -27,7 +27,7 @@ Conteúdo autorizado:
 | 3. Code-splitting e bridge Phaser | concluída | Fase 2 | Phaser isolado, mount/unmount limpo e revisão aprovada |
 | 4. Bubble Shooter | concluída | Fase 3 | arcade completo e modo DOM simplificado |
 | 5. Corte a palavra | concluída | Fase 4 | gesto confiável, modos Canvas/DOM e gate aprovado |
-| 6. Ninja | pendente | Fase 5 | subfases 6A–6E verdes |
+| 6. Ninja | em andamento — 6A concluída | Fase 5 | subfases 6A–6E verdes |
 | 7. Corrida individual | pendente | Fase 6 | experiência single-player completa |
 | 8. Integração dos 13 jogos | pendente | Fase 7 | dois fluxos de entrada completos |
 | 9. Release candidate | pendente | Fase 8 | auditoria final sem regressões conhecidas |
@@ -45,9 +45,9 @@ Conteúdo autorizado:
 | missão, streak e XP | `engagement.ts` | idempotência por `sessionId` |
 | conclusão React | `completionCoordinator.ts`, `useGameCompletion.ts` | fila entre sessões, duas tentativas automáticas e retry visível |
 | assets | `visualResolver.tsx` | resolução central por `visualKey` |
-| testes puros | `tests/gamesFoundation.test.mjs`, `tests/domGameContracts.test.mjs`, `tests/arcadeBridge.test.mjs`, `tests/bubbleShooter.test.mjs`, `tests/wordSlice.test.mjs` | 31 testes com `node:test` |
+| testes puros | `tests/gamesFoundation.test.mjs`, `tests/domGameContracts.test.mjs`, `tests/arcadeBridge.test.mjs`, `tests/bubbleShooter.test.mjs`, `tests/wordSlice.test.mjs`, `tests/ninjaFoundation.test.mjs` | 34 testes com `node:test` |
 | smoke funcional/visual | `scripts/smokeUi.mjs` | a suite cobre nove viewports e verifica `browserErrors` |
-| bridge arcade | `src/games/arcade/bridge` | rodada preparada e outcome validado por React; cena técnica, Bubble Shooter e Corte a palavra em chunks sob demanda |
+| bridge arcade | `src/games/arcade/bridge` | rodada preparada e outcome validado por React; cena técnica, Bubble Shooter, Corte a palavra e fundação 6A do Ninja em chunks sob demanda |
 | isolamento Phaser | `scripts/verifyPhaserSplit.mjs` | manifest comprova chunk sob demanda sem preload no entry |
 
 ## Fase 1 — critérios
@@ -108,6 +108,14 @@ Phaser mantém apenas:
 - **Corte a palavra:** trilha interpolada, colisão confiável, alvos/distratores, progressão e modo DOM.
 - **Ninja:** corrida automática em 6A–6E; velocidade não substitui conhecimento.
 - **Corrida individual:** três faixas, portais, swipe/toque, boost e desaceleração; nenhum código multiplayer.
+
+### Ninja — estado das subfases
+
+- **6A concluída:** rota lazy direta, personagem, auto-run, câmera, cenário procedural, três camadas de parallax, pooling, resize, pausa, movimento reduzido e teardown. Ainda sem card público, conteúdo, outcome ou persistência.
+- **6B pendente:** placas/opções, salto para responder, feedback, uma progressão funcional e integração canônica de `present_tobe`.
+- **6C pendente:** três vidas, recuperação, game over parcial, transições, score e combo.
+- **6D pendente:** cinco faixas pedagógicas e decisão medida da duração mobile.
+- **6E pendente:** modo simplificado, controles alternativos, som, acessibilidade e polimento final.
 
 ## Fase 8 — integração dos 13 jogos
 

@@ -596,6 +596,58 @@
   }
 }
 
+.ninja-foundation-game {
+  width: min(100%, 1320px);
+  margin: 0 auto;
+}
+
+.ninja-foundation-toolbar {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.ninja-foundation-toolbar > span {
+  color: #69738d;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.icon-button.ninja-pause-button {
+  width: 44px;
+  height: 44px;
+}
+
+.ninja-foundation-canvas {
+  height: clamp(500px, calc(100vh - 182px), 700px);
+}
+
+.ninja-foundation-status {
+  min-height: 38px;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 7px 12px;
+  color: #17234b;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .ninja-foundation-toolbar {
+    margin-bottom: 8px;
+  }
+
+  .ninja-foundation-canvas {
+    height: min(590px, calc(100vh - 164px));
+    min-height: 500px;
+  }
+}
+
 :root {
   /* Marca — navy e vinho continuam dominantes; branco e a base. */
   --navy: #17234b;

@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-08-03 (Fase 5 do loop de jogos v1)
+Atualizado em: 2026-08-03 (Fase 6A do loop de jogos v1)
 
 ## Estado Atual
 
@@ -23,9 +23,10 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Package name `ingles-em-jogo` e metadata atualizada.
 - Fundação compartilhada de jogos: catálogo central, matriz de compatibilidade, seleção determinística de conteúdo, engine de sessão, XP/missão/streak idempotentes, adapters de Gramática (`present_tobe`) e Vocabulário (`body`).
 - Roadmap canônico dos 13 jogos em `docs/IMPLEMENTATION_MAP.md`, com fronteira React–Phaser e gates por fase.
-- Suite pura com `node:test`: 31 testes para fundação, contratos DOM, bridge arcade, Bubble Shooter, Corte a palavra, resultado e conclusão persistente.
+- Suite pura com `node:test`: 34 testes para fundação, contratos DOM, bridge arcade, Bubble Shooter, Corte a palavra, fundação do Ninja, resultado e conclusão persistente.
 - Conclusão de jogo serializada e idempotente, com duas tentativas automáticas, retry visível e a mesma `sessionId`.
 - Onze jogos oficiais funcionais com o escopo `present_tobe` + `body`, incluindo Bubble Shooter e Corte a palavra em Canvas e modo DOM simplificado.
+- Ninja em implementação incremental: a subfase 6A entrega rota lazy direta, personagem procedural, corrida automática, câmera, três camadas de parallax, pista com pool fixo, pausa, resize, teardown e movimento reduzido estático; o jogo ainda não está publicado no catálogo.
 - Cards da página de Jogos com as nove imagens aprovadas integradas no topo e previews locais dos dois arcades; os masters 1600x900 permanecem preservados.
 
 ## Jogos
@@ -113,7 +114,7 @@ O smoke deve cobrir 360x800, 390x844, 412x915, 768x1024, 1000x800, 1024x768, 136
 
 O bloqueio anterior (`node scripts/smokeUi.mjs` não alcançava `127.0.0.1:5173`) tinha causa raiz confirmada: o script assumia um servidor Vite externo já rodando, mas processos iniciados em invocações de terminal separadas não eram acessíveis entre si neste ambiente. `scripts/smokeUi.mjs` agora reserva uma porta local livre por execução, inicia e gerencia seu próprio servidor Vite isolado e aguarda seu encerramento. O Edge headless também passou a rodar com `--disable-extensions` para eliminar ruído de uma extensão do perfil do sistema que gerava exceções não relacionadas ao produto.
 
-O smoke agora cobre fluxo funcional completo dos onze jogos, timers individuais do Contra o relógio, persistência/XP/missão/streak idempotentes e checagens estruturais de acessibilidade, além dos fluxos já existentes. A execução completa da Fase 5 passou com `browserErrors: 0`.
+O smoke agora cobre fluxo funcional completo dos onze jogos, a fundação técnica do Ninja, timers individuais do Contra o relógio, persistência/XP/missão/streak idempotentes e checagens estruturais de acessibilidade, além dos fluxos já existentes. A execução completa da Fase 6A passou com `browserErrors: 0`.
 
 ## Fase 0 — baseline consolidado
 
@@ -190,3 +191,15 @@ O smoke agora cobre fluxo funcional completo dos onze jogos, timers individuais 
 - Evidências finais abertas e inspecionadas: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-Pzdvzd`, incluindo Canvas em 1440x900, 768x1024, 390x844 e 360x800, DOM, erro, resultado, movimento reduzido e catálogo.
 - Uma repetição intermediária parou na oscilação conhecida do touch físico de `Cada coisa no seu lugar` no Edge headless; Juliano autorizou deixar pequenos problemas do Edge para depois. A execução final passou inteira sem relaxar assertions.
 - As revisões independentes técnica e visual/pedagógica reavaliaram as correções e resultaram em `APPROVE`, sem bloqueios remanescentes.
+
+## Fase 6A — fundação visual do Ninja
+
+- A rota lazy direta `/jogos/ninja` monta uma cena procedural de auto-run sem publicar um card incompleto no catálogo.
+- Phaser mantém personagem, deslocamento, câmera, parallax e pool transitório; não há conteúdo, outcome, score, XP ou persistência nesta subfase.
+- A pista pré-aloca segmentos e lanternas, recicla as mesmas identidades fora da câmera e preserva a quantidade do pool durante resize.
+- Pausa e visibilidade usam o host compartilhado; resize recalcula proporções sem remontar a cena; sair da rota remove Canvas e listeners.
+- Movimento reduzido congela personagem, câmera e parallax, mantém zero tweens e apresenta status textual coerente.
+- Gate verde: 34 testes puros, conteúdo, TypeScript, lint, build, split Phaser, smoke em nove viewports e `git diff --check`.
+- O smoke comprova corrida, câmera, reciclagem, pausa sem avanço, retomada, resize, movimento reduzido e teardown com `browserErrors: 0`.
+- Evidências finais abertas e inspecionadas: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-rF04XY`, incluindo 1440x900, 768x1024, 390x844, 360x800, pausa, resize e movimento reduzido.
+- A revisão visual/acessível resultou em `APPROVE` após corrigir movimento reduzido e contraste do personagem.

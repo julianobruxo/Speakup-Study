@@ -1639,7 +1639,159 @@ async function main() {
     () => evaluate(`document.querySelectorAll('canvas').length === 0`),
     "Corte a palavra destroys its canvas on exit",
   );
-  await send("Emulation.setEmulatedMedia", { features: [] }, sessionId);
+  await send(
+    "Emulation.setEmulatedMedia",
+    { features: [{ name: "prefers-reduced-motion", value: "no-preference" }] },
+    sessionId,
+  );
+
+  // ---- Ninja 6A: auto-run, camera, parallax foundation, pooling and lifecycle ----
+  for (const [width, height] of [[1440, 900], [768, 1024], [390, 844], [360, 800]]) {
+    await setViewport(width, height);
+    await navigate("/jogos/ninja");
+    await waitFor(
+      () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.arcadeReady === 'true'`),
+      `Ninja foundation ready at ${width}x${height}`,
+      20000,
+    );
+    await waitFor(
+      () => evaluate(`(() => {
+        const surface = document.querySelector('.ninja-foundation-canvas');
+        return Number(surface?.dataset.runtimeRunnerDistance) > 80 &&
+          Number(surface?.dataset.runtimeCameraX) > 0 &&
+          Number(surface?.dataset.runtimePooledReuseCount) > 0;
+      })()`),
+      `Ninja foundation advances and recycles at ${width}x${height}`,
+      12000,
+    );
+    const ninjaLayout = await evaluate(`(() => {
+      const surface = document.querySelector('.ninja-foundation-canvas');
+      const pause = document.querySelector('.ninja-pause-button');
+      const rect = surface?.getBoundingClientRect();
+      const pauseRect = pause?.getBoundingClientRect();
+      return {
+        autoRunning: surface?.dataset.runtimeAutoRunning,
+        canvasCount: document.querySelectorAll('.ninja-foundation-canvas canvas').length,
+        height: rect?.height ?? 0,
+        pauseHeight: pauseRect?.height ?? 0,
+        pauseWidth: pauseRect?.width ?? 0,
+        poolSize: Number(surface?.dataset.runtimeTrackPoolSize),
+        width: rect?.width ?? 0,
+      };
+    })()`);
+    assert(
+      ninjaLayout.autoRunning === "true" &&
+        ninjaLayout.canvasCount === 1 &&
+        ninjaLayout.width > 0 &&
+        ninjaLayout.height >= 500 &&
+        ninjaLayout.pauseHeight >= 44 &&
+        ninjaLayout.pauseWidth >= 44 &&
+        ninjaLayout.poolSize >= 9,
+      `Ninja foundation layout failed at ${width}x${height}: ${JSON.stringify(ninjaLayout)}`,
+    );
+    await assertNoOverflow(`/jogos/ninja ${width}x${height}`);
+    screenshots.push(await screenshot(`ninja-foundation-${width}x${height}`));
+  }
+
+  await click(".ninja-pause-button");
+  await waitFor(
+    () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimePaused === 'true'`),
+    "Ninja foundation pauses",
+  );
+  const pausedNinjaDistance = await evaluate(
+    `Number(document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeRunnerDistance)`,
+  );
+  await delay(550);
+  assert(
+    await evaluate(
+      `Number(document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeRunnerDistance) === ${pausedNinjaDistance}`,
+    ),
+    "Ninja runner advanced while paused",
+  );
+  screenshots.push(await screenshot("ninja-foundation-paused-360x800"));
+  await click(".ninja-pause-button");
+  await waitFor(
+    () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimePaused === 'false'`),
+    "Ninja foundation resumes",
+  );
+  await waitFor(
+    () => evaluate(
+      `Number(document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeRunnerDistance) > ${pausedNinjaDistance}`,
+    ),
+    "Ninja runner advances after resume",
+  );
+  const ninjaPoolBeforeResize = await evaluate(
+    `Number(document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeTrackPoolSize)`,
+  );
+  const ninjaDistanceBeforeResize = await evaluate(
+    `Number(document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeRunnerDistance)`,
+  );
+  await setViewport(768, 1024);
+  await waitFor(
+    () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.getBoundingClientRect().width > 650`),
+    "Ninja foundation resizes",
+  );
+  assert(
+    await evaluate(
+      `(() => {
+        const surface = document.querySelector('.ninja-foundation-canvas');
+        return Number(surface?.dataset.runtimeTrackPoolSize) === ${ninjaPoolBeforeResize} &&
+          Number(surface?.dataset.runtimeRunnerDistance) >= ${ninjaDistanceBeforeResize};
+      })()`,
+    ),
+    "Ninja resize replaced the fixed track pool or reset runner distance",
+  );
+  screenshots.push(await screenshot("ninja-foundation-resized-768x1024"));
+  await navigateSpa("/jogos");
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('canvas').length === 0`),
+    "Ninja foundation destroys its canvas on exit",
+  );
+  await send(
+    "Emulation.setEmulatedMedia",
+    { features: [{ name: "prefers-reduced-motion", value: "reduce" }] },
+    sessionId,
+  );
+  await setViewport(390, 844);
+  await navigate("/jogos/ninja");
+  await waitFor(
+    () => evaluate(`(() => {
+      const surface = document.querySelector('.ninja-foundation-canvas');
+      return surface?.dataset.arcadeReady === 'true' &&
+        surface?.dataset.runtimeReducedMotion === 'true' &&
+        surface?.dataset.runtimeAutoRunning === 'false' &&
+        surface?.dataset.runtimeTweenCount === '0';
+    })()`),
+    "Ninja foundation respects reduced motion",
+    20000,
+  );
+  const reducedNinjaState = await evaluate(`(() => {
+    const surface = document.querySelector('.ninja-foundation-canvas');
+    return {
+      cameraX: Number(surface?.dataset.runtimeCameraX),
+      distance: Number(surface?.dataset.runtimeRunnerDistance),
+    };
+  })()`);
+  await delay(550);
+  assert(
+    await evaluate(`(() => {
+      const surface = document.querySelector('.ninja-foundation-canvas');
+      return Number(surface?.dataset.runtimeCameraX) === ${reducedNinjaState.cameraX} &&
+        Number(surface?.dataset.runtimeRunnerDistance) === ${reducedNinjaState.distance};
+    })()`),
+    "Ninja reduced-motion scene continued moving",
+  );
+  screenshots.push(await screenshot("ninja-foundation-reduced-motion-390x844"));
+  await navigateSpa("/jogos");
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('canvas').length === 0`),
+    "Ninja reduced-motion scene destroys its canvas on exit",
+  );
+  await send(
+    "Emulation.setEmulatedMedia",
+    { features: [{ name: "prefers-reduced-motion", value: "no-preference" }] },
+    sessionId,
+  );
 
   await setViewport(1366, 768);
   const routeChecks = [
@@ -1662,6 +1814,7 @@ async function main() {
     ["/jogos/contra-o-relogio", "Contra o relógio"],
     ["/jogos/bubble-shooter", "Bubble Shooter"],
     ["/jogos/corte-a-palavra", "Corte a palavra"],
+    ["/jogos/ninja", "Ninja"],
   ];
   for (const [path, text] of routeChecks) {
     await navigate(path);
