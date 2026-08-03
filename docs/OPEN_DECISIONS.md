@@ -51,7 +51,7 @@ Atualizado em: 2026-08-03
    - Corrida individual.
 
    `Conectando` é o nome aprovado para associação entre palavra em inglês e imagem.
-   Os nove primeiros jogos DOM estão funcionais; os quatro arcades serão implementados nas Fases 4–7 do roadmap canônico.
+   Os nove jogos DOM e Bubble Shooter estão funcionais; Corte a palavra, Ninja e Corrida individual seguem nas Fases 5–7 do roadmap canônico.
 
 9. Repositório
 
@@ -59,7 +59,7 @@ Atualizado em: 2026-08-03
 
 10. Jogos funcionais
 
-    Os nove jogos do catálogo oficial estão implementados sobre uma fundação compartilhada (`src/games`), usando `present_tobe` e `body`. Nenhum banco de conteúdo foi duplicado; cada jogo consome os bancos canônicos via adapters.
+    Dez jogos do catálogo oficial estão implementados sobre uma fundação compartilhada (`src/games`), usando `present_tobe` e `body`. Nenhum banco de conteúdo foi duplicado; cada jogo consome os bancos canônicos via adapters.
 
 11. Roadmap e testes puros
 
@@ -89,7 +89,7 @@ Atualizado em: 2026-08-03
 
 4. Testes automatizados adicionais
 
-   A fundação e os contratos DOM possuem 15 testes puros com `node:test`, e o smoke cobre os fluxos reais no Edge. Testes de componente com uma biblioteca dedicada continuam opcionais; adicionar dependências além do Phaser autorizado exige decisão explícita.
+   A fundação, os contratos DOM, a bridge e Bubble Shooter possuem 26 testes puros com `node:test`, e o smoke cobre os fluxos reais no Edge. Testes de componente com uma biblioteca dedicada continuam opcionais; adicionar dependências além do Phaser autorizado exige decisão explícita.
 
 5. Login e sincronização
 

@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   acceptFirstArcadeOutcome,
   createArcadeAnswerGate,
+  createArcadeRoundAnswerGate,
   resolveArcadeAnswer,
 } from "../src/games/arcade/bridge/arcadeBridge.ts";
 
@@ -101,20 +102,69 @@ test("arcade scene gate locks only after React accepts a valid outcome", () => {
     challengeId: "body-eye",
     choiceId: "unknown",
     answeredAt: "2026-07-30T12:00:00.000Z",
-  }), false);
-  assert.equal(submit({
+  }), null);
+  assert.deepEqual(submit({
     challengeId: "body-eye",
     choiceId: "eye",
     answeredAt: "2026-07-30T12:00:01.000Z",
-  }), true);
+  }), {
+    challengeId: "body-eye",
+    correct: true,
+    answeredAt: "2026-07-30T12:00:01.000Z",
+  });
   assert.equal(submit({
     challengeId: "body-eye",
     choiceId: "ear",
     answeredAt: "2026-07-30T12:00:02.000Z",
-  }), false);
+  }), null);
   assert.deepEqual(accepted, [{
     challengeId: "body-eye",
     correct: true,
     answeredAt: "2026-07-30T12:00:01.000Z",
   }]);
+});
+
+test("arcade round gate accepts one validated outcome per prepared challenge", () => {
+  const multiRound = {
+    ...round,
+    challenges: [
+      ...round.challenges,
+      {
+        id: "body-ear",
+        prompt: "Qual palavra significa orelha?",
+        choices: [
+          { id: "eye", label: "Eye" },
+          { id: "ear", label: "Ear" },
+        ],
+        correctChoiceId: "ear",
+      },
+    ],
+  };
+  const accepted = [];
+  const submit = createArcadeRoundAnswerGate(multiRound, (outcome) => accepted.push(outcome));
+
+  assert.equal(submit({
+    challengeId: "body-ear",
+    choiceId: "ear",
+    answeredAt: "2026-07-30T11:59:59.000Z",
+  }), null);
+  assert.equal(submit({
+    challengeId: "body-eye",
+    choiceId: "eye",
+    answeredAt: "2026-07-30T12:00:00.000Z",
+  })?.correct, true);
+  assert.equal(submit({
+    challengeId: "body-eye",
+    choiceId: "ear",
+    answeredAt: "2026-07-30T12:00:01.000Z",
+  }), null);
+  assert.equal(submit({
+    challengeId: "body-ear",
+    choiceId: "eye",
+    answeredAt: "2026-07-30T12:00:02.000Z",
+  })?.correct, false);
+  assert.deepEqual(accepted.map(({ challengeId, correct }) => ({ challengeId, correct })), [
+    { challengeId: "body-eye", correct: true },
+    { challengeId: "body-ear", correct: false },
+  ]);
 });

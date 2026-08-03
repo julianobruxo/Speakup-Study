@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-08-03 (Fase 3 do loop de jogos v1)
+Atualizado em: 2026-08-03 (Fase 4 do loop de jogos v1)
 
 ## Estado Atual
 
@@ -23,14 +23,14 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Package name `ingles-em-jogo` e metadata atualizada.
 - Fundação compartilhada de jogos: catálogo central, matriz de compatibilidade, seleção determinística de conteúdo, engine de sessão, XP/missão/streak idempotentes, adapters de Gramática (`present_tobe`) e Vocabulário (`body`).
 - Roadmap canônico dos 13 jogos em `docs/IMPLEMENTATION_MAP.md`, com fronteira React–Phaser e gates por fase.
-- Suite pura com `node:test`: 15 testes para catálogo, compatibilidade, seleção, rodada, deadline, adapters DOM, gerador de palavras cruzadas, resultado e conclusão persistente.
+- Suite pura com `node:test`: 26 testes para fundação, contratos DOM, bridge arcade, Bubble Shooter, resultado e conclusão persistente.
 - Conclusão de jogo serializada e idempotente, com duas tentativas automáticas, retry visível e a mesma `sessionId`.
-- Os nove jogos oficiais funcionais com o escopo `present_tobe` + `body`.
-- Cards da página de Jogos com as nove imagens aprovadas integradas no topo, usando versões de produção WebP 800x450 em `src/assets/game-card-images/cards/`; os masters 1600x900 permanecem preservados.
+- Dez jogos oficiais funcionais com o escopo `present_tobe` + `body`, incluindo Bubble Shooter em Canvas e modo DOM simplificado.
+- Cards da página de Jogos com as nove imagens aprovadas integradas no topo e preview local do Bubble Shooter; os masters 1600x900 permanecem preservados.
 
 ## Jogos
 
-Os nove jogos do catálogo oficial estão funcionais nesta fase, usando exclusivamente `present_tobe` (Gramática) e `body` (Vocabulário) como conteúdo:
+Dez jogos do catálogo oficial estão funcionais nesta fase, usando exclusivamente `present_tobe` (Gramática) e `body` (Vocabulário) como conteúdo:
 
 - Monte a frase — reordenar tokens da frase correta (110 questões elegíveis de 130, após exclusão conservadora de fragmentos e ordenações ambíguas).
 - Caça ao erro — tocar na palavra corrompida por um distrator revisado (115 elegíveis); pontuação é texto não interativo.
@@ -41,6 +41,7 @@ Os nove jogos do catálogo oficial estão funcionais nesta fase, usando exclusiv
 - Cruzando palavras — tabuleiro interativo gerado deterministicamente (até 8 palavras), sem letras reveladas e com validação de colisões, teclado físico/virtual e pistas associadas.
 - Par perfeito — jogo da memória com cartas de palavra e imagem em board responsivo ampliado, bloqueio durante conferência e timers limpos.
 - Ouvido afiado — três modos: ouvir e selecionar imagem, ouvir e digitar, ouvir e montar frase; indisponibilidade ou preferência de som desligada exibe fallback textual.
+- Bubble Shooter — seis desafios de `body`, mira e lançamento, ricochete lateral, snap hexagonal pelo impacto físico, grupos, peças desconectadas, combo, score e modo DOM equivalente.
 
 `Conectando` é o nome aprovado para associação entre palavra em inglês e imagem.
 
@@ -111,7 +112,7 @@ O smoke deve cobrir 360x800, 390x844, 412x915, 768x1024, 1000x800, 1024x768, 136
 
 O bloqueio anterior (`node scripts/smokeUi.mjs` não alcançava `127.0.0.1:5173`) tinha causa raiz confirmada: o script assumia um servidor Vite externo já rodando, mas processos iniciados em invocações de terminal separadas não eram acessíveis entre si neste ambiente. `scripts/smokeUi.mjs` agora reserva uma porta local livre por execução, inicia e gerencia seu próprio servidor Vite isolado e aguarda seu encerramento. O Edge headless também passou a rodar com `--disable-extensions` para eliminar ruído de uma extensão do perfil do sistema que gerava exceções não relacionadas ao produto.
 
-O smoke agora cobre fluxo funcional completo dos nove jogos, timers individuais do Contra o relógio, persistência/XP/missão/streak idempotentes e checagens estruturais de acessibilidade, além dos fluxos já existentes. Passou em execuções consecutivas com `browserErrors: 0`.
+O smoke agora cobre fluxo funcional completo dos dez jogos, timers individuais do Contra o relógio, persistência/XP/missão/streak idempotentes e checagens estruturais de acessibilidade, além dos fluxos já existentes. A execução final da Fase 4 passou com `browserErrors: 0`.
 
 ## Fase 0 — baseline consolidado
 
@@ -162,3 +163,16 @@ O smoke agora cobre fluxo funcional completo dos nove jogos, timers individuais 
 - Gate técnico verde: 20 testes puros, conteúdo, TypeScript, lint, build, verificação de split, smoke em nove viewports com `browserErrors: 0` e `git diff --check`.
 - Evidências visuais: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-M7f7UN`, incluindo Canvas em 1440x900, 768x1024, 390x844 e DPR 2, além do modo DOM em 390x844.
 - Revisões independentes de lifecycle e do delta completo aprovaram a fase sem bloqueios remanescentes.
+
+## Fase 4 — Bubble Shooter
+
+- O primeiro arcade de produto usa seis entradas determinísticas de `body`, três escolhas revisadas por desafio e a mesma rodada preparada nos modos Canvas e DOM.
+- React continua dono de correção, outcomes, score, resultado, IndexedDB, XP, missão e streak; a bridge devolve o `ChallengeOutcome` aceito para a cena, que não reinterpreta a resposta.
+- Phaser implementa mira por ponteiro/toque/setas, lançamento por clique/toque/Space/Enter, colisão circular, ricochete, snap hexagonal pelo ponto de impacto, remoção de grupos e queda de peças desconectadas.
+- Resize durante o voo preserva o projétil; pausa, som, movimento reduzido, teardown e route-level split permanecem sob o host compartilhado.
+- O modo simplificado completa os mesmos seis desafios sem carregar Phaser, mantém uma única live region e move o foco ao novo enunciado em toda a rodada.
+- Gate verde: 26 testes puros, conteúdo, TypeScript, lint, build, split do Phaser, smoke em nove viewports com `browserErrors: 0` e `git diff --check`.
+- O smoke comprova rodada DOM `6/6` com `40 XP`, rodada Canvas `5/6`, score `750` e `35 XP`, touch sem scroll, teclado, ricochete, resize em voo, alvos de 44 px, zero tweens com movimento reduzido e teardown limpo.
+- Evidências abertas e inspecionadas: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-W1Ktud`, incluindo 1440x900, 768x1024, 390x844 e 360x800.
+- Revisões independentes de física/ownership/lifecycle e de visual/acessibilidade resultaram em `APPROVE`, sem bloqueios remanescentes.
+- Uma oscilação pontual do Edge headless na simulação de troca de aba foi observada em uma execução e autorizada para acompanhamento posterior; a repetição e o gate final passaram sem erros de navegador.

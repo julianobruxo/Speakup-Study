@@ -22,6 +22,7 @@ const CrosswordGame = lazy(() => import("./games/mechanics/CrosswordGame"));
 const ListeningEarGame = lazy(() => import("./games/mechanics/ListeningEarGame"));
 const BeatTheClockGame = lazy(() => import("./games/mechanics/BeatTheClockGame"));
 const ArcadeBridgeLabPage = lazy(() => import("./games/arcade/bridge/ArcadeBridgeLabPage"));
+const BubbleShooterGame = lazy(() => import("./games/arcade/bubbleShooter/BubbleShooterGame"));
 
 function RouteLoading() {
   return (
@@ -66,6 +67,7 @@ export default function App() {
         <Route path="/jogos/ouvido-afiado" element={<ListeningEarGame />} />
         <Route path="/jogos/contra-o-relogio" element={<BeatTheClockGame />} />
         <Route path="/jogos/bridge-tecnica" element={<ArcadeBridgeLabPage />} />
+        <Route path="/jogos/bubble-shooter" element={<BubbleShooterGame />} />
         <Route path="/progresso" element={<ProgressPage />} />
         <Route path="/perfil" element={<ProfilePage />} />
 

@@ -9,13 +9,15 @@ const manifest = JSON.parse(
 );
 const entries = Object.entries(manifest);
 const appEntry = entries.find(([, chunk]) => chunk.isEntry);
-const arcadeEntry = entries.find(([source]) => source.endsWith("ArcadeBridgeLabPage.tsx"));
+const arcadeEntries = entries.filter(([source]) =>
+  source.endsWith("ArcadeBridgeLabPage.tsx") || source.endsWith("BubbleShooterGame.tsx")
+);
 const phaserEntries = entries.filter(
-  ([source, chunk]) => source.toLowerCase().includes("phaser") || chunk.file.toLowerCase().includes("phaser"),
+  ([source]) => /(^|[\\/])node_modules[\\/]phaser[\\/]/i.test(source),
 );
 
 assert(appEntry, "Vite manifest is missing the application entry.");
-assert(arcadeEntry, "Vite manifest is missing the lazy arcade bridge route.");
+assert(arcadeEntries.length === 2, "Vite manifest is missing a lazy arcade route.");
 assert(phaserEntries.length === 1, `Expected one Phaser chunk, found ${phaserEntries.length}.`);
 
 function collectStaticImports(source, collected = new Set()) {
@@ -38,19 +40,22 @@ function collectReachableImports(source, collected = new Set()) {
 }
 
 const [appSource] = appEntry;
-const [arcadeSource] = arcadeEntry;
 const [phaserSource, phaserChunk] = phaserEntries[0];
 const appStaticImports = collectStaticImports(appSource);
-const arcadeImports = collectReachableImports(arcadeSource);
 const indexHtml = await readFile(join(projectRoot, "dist", "index.html"), "utf8");
 
 assert(!appStaticImports.has(phaserSource), "The initial application graph statically reaches Phaser.");
-assert(arcadeImports.has(phaserSource), "The lazy arcade route does not reach the Phaser chunk.");
+for (const [arcadeSource] of arcadeEntries) {
+  assert(
+    collectReachableImports(arcadeSource).has(phaserSource),
+    `The lazy arcade route ${arcadeSource} does not reach the Phaser chunk.`,
+  );
+}
 assert(!indexHtml.includes(phaserChunk.file), "dist/index.html must not preload Phaser.");
 
 console.log(JSON.stringify({
   appEntry: manifest[appSource].file,
-  arcadeEntry: manifest[arcadeSource].file,
+  arcadeEntries: arcadeEntries.map(([source]) => manifest[source].file),
   phaserChunk: phaserChunk.file,
   phaserPreloaded: false,
 }, null, 2));

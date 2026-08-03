@@ -1,23 +1,14 @@
 import type Phaser from "phaser";
 import type {
   ArcadeAnswer,
-  ArcadeSceneEvents,
-  PreparedArcadeRound,
+  ArcadeSceneFactory,
 } from "./arcadeBridge";
 
-interface TechnicalSceneSettings {
-  renderResolution: number;
-  reducedMotion: boolean;
-  round: PreparedArcadeRound;
-}
-
-type PhaserRuntime = typeof Phaser;
-
-export function createTechnicalScene(
-  PhaserRuntime: PhaserRuntime,
-  settings: TechnicalSceneSettings,
-  events: ArcadeSceneEvents,
-) {
+export const createTechnicalScene: ArcadeSceneFactory = (
+  PhaserRuntime,
+  settings,
+  events,
+) => {
   return class TechnicalBridgeScene extends PhaserRuntime.Scene {
     private answerLocked = false;
     private reducedMotion = settings.reducedMotion;
@@ -132,7 +123,7 @@ export function createTechnicalScene(
 
     private submitAnswer(answer: ArcadeAnswer) {
       if (this.answerLocked) return;
-      this.answerLocked = events.onAnswer(answer);
+      this.answerLocked = Boolean(events.onAnswer(answer));
     }
 
     private teardown() {
@@ -141,4 +132,4 @@ export function createTechnicalScene(
       this.tweens.killAll();
     }
   };
-}
+};

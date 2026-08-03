@@ -1,8 +1,9 @@
 import type { ArcadeAnswer, PreparedArcadeRound } from "./arcadeBridge";
+import type { ChallengeOutcome } from "../../core/sessionEngine";
 
 interface ArcadeDomFallbackProps {
   answered: boolean;
-  onAnswer: (answer: ArcadeAnswer) => void;
+  onAnswer: (answer: ArcadeAnswer) => ChallengeOutcome | null;
   round: PreparedArcadeRound;
 }
 

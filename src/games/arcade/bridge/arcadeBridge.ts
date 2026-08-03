@@ -1,3 +1,4 @@
+import type Phaser from "phaser";
 import type { ChallengeOutcome } from "../../core/sessionEngine";
 
 export const ARCADE_RUNTIME_DESTROYED_EVENT = "ingles-em-jogo:arcade-runtime-destroyed";
@@ -34,16 +35,40 @@ export interface ArcadeAnswer {
 }
 
 export interface ArcadeSceneEvents {
-  onAnswer: (answer: ArcadeAnswer) => boolean;
+  onAnswer: (answer: ArcadeAnswer) => ChallengeOutcome | null;
   onReady: () => void;
   onRuntimeState: (state: ArcadeSceneRuntimeState) => void;
 }
 
 export interface ArcadeSceneRuntimeState {
+  boardBubbleCount?: number;
+  challengeIndex?: number;
+  disconnectedDropped?: number;
+  impactId?: string;
+  lastAnswerCorrect?: boolean;
+  removedGroupSize?: number;
+  resizeDeferred?: boolean;
   renderResolution: number;
   reducedMotion: boolean;
+  shotInFlight?: boolean;
+  shotSnapColumn?: number;
+  shotSnapRow?: number;
   tweenCount: number;
+  wallBounceCount?: number;
 }
+
+export interface ArcadeSceneSettings {
+  renderResolution: number;
+  reducedMotion: boolean;
+  round: PreparedArcadeRound;
+}
+
+export type PhaserRuntime = typeof Phaser;
+export type ArcadeSceneFactory = (
+  PhaserRuntime: PhaserRuntime,
+  settings: ArcadeSceneSettings,
+  events: ArcadeSceneEvents,
+) => typeof Phaser.Scene;
 
 export function resolveArcadeAnswer(
   round: PreparedArcadeRound,
@@ -73,12 +98,31 @@ export function createArcadeAnswerGate(
 ) {
   let acceptedOutcome: ChallengeOutcome | null = null;
 
-  return (answer: ArcadeAnswer): boolean => {
-    if (acceptedOutcome) return false;
+  return (answer: ArcadeAnswer): ChallengeOutcome | null => {
+    if (acceptedOutcome) return null;
     const nextOutcome = resolveArcadeAnswer(round, answer);
-    if (!nextOutcome) return false;
+    if (!nextOutcome) return null;
     acceptedOutcome = nextOutcome;
     onAccepted(nextOutcome);
-    return true;
+    return nextOutcome;
+  };
+}
+
+export function createArcadeRoundAnswerGate(
+  round: PreparedArcadeRound,
+  onAccepted: (outcome: ChallengeOutcome) => void,
+) {
+  const acceptedChallengeIds = new Set<string>();
+  let nextChallengeIndex = 0;
+
+  return (answer: ArcadeAnswer): ChallengeOutcome | null => {
+    if (round.challenges[nextChallengeIndex]?.id !== answer.challengeId) return null;
+    if (acceptedChallengeIds.has(answer.challengeId)) return null;
+    const outcome = resolveArcadeAnswer(round, answer);
+    if (!outcome) return null;
+    acceptedChallengeIds.add(answer.challengeId);
+    nextChallengeIndex += 1;
+    onAccepted(outcome);
+    return outcome;
   };
 }

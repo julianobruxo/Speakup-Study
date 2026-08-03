@@ -10,6 +10,8 @@ type IconName =
   | "grid"
   | "home"
   | "lock"
+  | "pause"
+  | "play"
   | "refresh"
   | "settings"
   | "sparkles"
@@ -69,6 +71,12 @@ const paths: Record<IconName, ReactNode> = {
       <path d="M8 10V7a4 4 0 0 1 8 0v3" />
     </>
   ),
+  pause: (
+    <>
+      <path d="M8 5v14M16 5v14" />
+    </>
+  ),
+  play: <path d="m8 5 11 7-11 7V5Z" />,
   refresh: <path d="M20 7h-5V2M4 17h5v5M19 12a7 7 0 0 0-12-5l-2 2M5 12a7 7 0 0 0 12 5l2-2" />,
   settings: (
     <>

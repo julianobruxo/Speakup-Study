@@ -9,7 +9,8 @@ export type GameId =
   | "matching_pairs"
   | "crossword"
   | "memory_match"
-  | "listening_ear";
+  | "listening_ear"
+  | "bubble_shooter";
 
 export type ContentDomain = "grammar" | "vocabulary";
 
@@ -101,6 +102,14 @@ export const GAME_CATALOG: GameCatalogEntry[] = [
     defaultRoundSize: 10,
     supportsDragAndDrop: false,
   },
+  {
+    id: "bubble_shooter",
+    title: "Bubble Shooter",
+    description: "Mire na palavra em inglês que corresponde à pista.",
+    compatibleDomains: ["vocabulary"],
+    defaultRoundSize: 6,
+    supportsDragAndDrop: false,
+  },
 ];
 
 export function getGameById(id: GameId): GameCatalogEntry | undefined {
@@ -127,6 +136,7 @@ const COMPATIBILITY: Record<GameId, ContentSelector["domain"][]> = {
   crossword: ["vocabulary"],
   memory_match: ["vocabulary"],
   listening_ear: ["grammar", "vocabulary"],
+  bubble_shooter: ["vocabulary"],
 };
 
 export function isGameCompatibleWithContent(

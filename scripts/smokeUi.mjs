@@ -610,7 +610,135 @@ async function main() {
   await evaluate(`window.scrollTo(0, 0)`);
   screenshots.push(await screenshot("arcade-bridge-dom-390x844"));
 
-  for (const [width, height] of [[1440, 900], [768, 1024], [390, 844]]) {
+  await navigate("/jogos/bubble-shooter?mode=dom&seed=2026");
+  const bubbleDomState = await evaluate(`({
+    canvasCount: document.querySelectorAll('canvas').length,
+    choiceCount: document.querySelectorAll('.bubble-dom-choices button').length,
+    minChoiceHeight: Math.min(...[...document.querySelectorAll('.bubble-dom-choices button')].map((button) => button.getBoundingClientRect().height)),
+    minChoiceWidth: Math.min(...[...document.querySelectorAll('.bubble-dom-choices button')].map((button) => button.getBoundingClientRect().width)),
+    phaserLoaded: performance.getEntriesByType('resource').some((entry) => entry.name.toLowerCase().includes('/deps/phaser.js'))
+  })`);
+  assert(
+    bubbleDomState.canvasCount === 0 &&
+      bubbleDomState.choiceCount === 3 &&
+      bubbleDomState.minChoiceHeight >= 44 &&
+      bubbleDomState.minChoiceWidth >= 44 &&
+      !bubbleDomState.phaserLoaded,
+    `Bubble Shooter DOM mode loaded Phaser or rendered incorrectly: ${JSON.stringify(bubbleDomState)}`,
+  );
+  await assertNoOverflow("/jogos/bubble-shooter DOM 390x844");
+  await evaluate(`window.scrollTo(0, 0)`);
+  screenshots.push(await screenshot("bubble-shooter-dom-390x844"));
+  for (let challengeIndex = 0; challengeIndex < 6; challengeIndex += 1) {
+    const correctChoiceId = await evaluate(`(async () => {
+      const { createBubbleShooterRound } = await import('/src/games/arcade/bubbleShooter/bubbleShooterRound.ts');
+      return createBubbleShooterRound(2026).challenges[${challengeIndex}].correctChoiceId;
+    })()`);
+    let accepted;
+    if (challengeIndex === 0) {
+      accepted = await evaluate(`(() => {
+        const button = document.querySelector('[data-choice-id="${correctChoiceId}"]');
+        if (!button) return false;
+        button.focus();
+        return document.activeElement === button;
+      })()`);
+      if (accepted) {
+        await delay(80);
+        screenshots.push(await screenshot("bubble-shooter-dom-focus-390x844"));
+        await send("Input.dispatchKeyEvent", {
+          type: "rawKeyDown",
+          key: " ",
+          code: "Space",
+          windowsVirtualKeyCode: 32,
+          nativeVirtualKeyCode: 32,
+        }, sessionId);
+        await send("Input.dispatchKeyEvent", {
+          type: "keyUp",
+          key: " ",
+          code: "Space",
+          windowsVirtualKeyCode: 32,
+          nativeVirtualKeyCode: 32,
+        }, sessionId);
+      }
+    } else {
+      const promptFocused = await evaluate(
+        `document.activeElement?.classList.contains('bubble-dom-prompt')`,
+      );
+      assert(promptFocused, `Bubble Shooter DOM did not restore focus for challenge ${challengeIndex + 1}`);
+      const correctChoiceIndex = await evaluate(
+        `[...document.querySelectorAll('.bubble-dom-choices button')].findIndex((button) => button.dataset.choiceId === '${correctChoiceId}')`,
+      );
+      for (let tabIndex = 0; tabIndex <= correctChoiceIndex; tabIndex += 1) {
+        await pressKey("Tab");
+      }
+      accepted = await evaluate(
+        `document.activeElement?.dataset.choiceId === '${correctChoiceId}'`,
+      );
+      if (accepted) {
+        await send("Input.dispatchKeyEvent", {
+          type: "rawKeyDown",
+          key: " ",
+          code: "Space",
+          windowsVirtualKeyCode: 32,
+          nativeVirtualKeyCode: 32,
+        }, sessionId);
+        await send("Input.dispatchKeyEvent", {
+          type: "keyUp",
+          key: " ",
+          code: "Space",
+          windowsVirtualKeyCode: 32,
+          nativeVirtualKeyCode: 32,
+        }, sessionId);
+      }
+    }
+    assert(accepted, `Bubble Shooter DOM choice ${challengeIndex + 1} was not available`);
+    if (challengeIndex === 0) {
+      await waitFor(() => hasText("Correto!"), "Bubble Shooter DOM correct feedback");
+      screenshots.push(await screenshot("bubble-shooter-dom-correct-390x844"));
+    }
+    if (challengeIndex < 5) {
+      await waitFor(
+        () => evaluate(`document.querySelector('.bubble-shooter-dom')?.dataset.challengeIndex === '${challengeIndex + 1}'`),
+        `Bubble Shooter DOM advances to challenge ${challengeIndex + 2}`,
+      );
+    }
+  }
+  await waitFor(
+    () => evaluate(`document.querySelector('.game-progress')?.getAttribute('aria-valuenow') === '100'`),
+    "Bubble Shooter DOM records all six outcomes",
+  );
+  await delay(1600);
+  const bubbleDomResultState = await evaluate(`({
+    bodyText: document.body.innerText.slice(0, 1200),
+    hasResult: Boolean(document.querySelector('.game-result-page')),
+    progress: document.querySelector('.game-progress')?.getAttribute('aria-valuenow') ?? null
+  })`);
+  assert(
+    bubbleDomResultState.hasResult,
+    `Bubble Shooter DOM did not open its result: ${JSON.stringify(bubbleDomResultState)}`,
+  );
+  const bubbleDomPersistence = await evaluate(`(async () => {
+    const { getGameSessions } = await import('/src/services/progress/localProgress.ts');
+    const sessions = await getGameSessions();
+    const session = sessions.find((item) => item.gameId === 'bubble_shooter');
+    return session ? {
+      correctCount: session.correctCount,
+      totalChallenges: session.totalChallenges,
+      xpEarned: session.xpEarned,
+    } : null;
+  })()`);
+  assert(
+    bubbleDomPersistence?.correctCount === 6 &&
+      bubbleDomPersistence.totalChallenges === 6 &&
+      bubbleDomPersistence.xpEarned === 40,
+    `Bubble Shooter DOM persistence failed: ${JSON.stringify(bubbleDomPersistence)}`,
+  );
+  await evaluate(`(async () => {
+    const { resetAllLocalData } = await import('/src/services/progress/engagement.ts');
+    await resetAllLocalData();
+  })()`);
+
+  for (const [width, height] of [[1440, 900], [768, 1024], [390, 844], [360, 800]]) {
     await setViewport(width, height);
     await navigate("/jogos/bridge-tecnica");
     await waitFor(
@@ -850,6 +978,249 @@ async function main() {
   })()`);
   await send("Emulation.setEmulatedMedia", { features: [] }, sessionId);
 
+  for (const [width, height] of [[1440, 900], [768, 1024], [390, 844], [360, 800]]) {
+    await setViewport(width, height);
+    await navigate("/jogos/bubble-shooter?seed=2026");
+    await waitFor(
+      () => evaluate(`document.querySelector('.bubble-shooter-canvas')?.dataset.arcadeReady === 'true'`),
+      `Bubble Shooter ready at ${width}x${height}`,
+      20000,
+    );
+    const bubbleLayout = await evaluate(`(() => {
+      const surface = document.querySelector('.bubble-shooter-canvas');
+      return {
+        boardBubbleCount: Number(surface?.dataset.runtimeBoardBubbleCount ?? 0),
+        canvasCount: surface?.querySelectorAll('canvas').length ?? 0,
+        height: surface?.clientHeight ?? 0,
+        minControlSize: Math.min(...[...document.querySelectorAll('.game-play-page .icon-button, .arcade-mode-switch button')].flatMap((control) => {
+          const rect = control.getBoundingClientRect();
+          return [rect.width, rect.height];
+        })),
+        width: surface?.clientWidth ?? 0,
+      };
+    })()`);
+    assert(
+      bubbleLayout.canvasCount === 1 &&
+        bubbleLayout.boardBubbleCount === 9 &&
+        bubbleLayout.width > 0 &&
+        bubbleLayout.minControlSize >= 44 &&
+        bubbleLayout.height >= 470,
+      `Bubble Shooter initial board failed at ${width}x${height}: ${JSON.stringify(bubbleLayout)}`,
+    );
+    await assertNoOverflow(`/jogos/bubble-shooter ${width}x${height}`);
+    await evaluate(`window.scrollTo(0, 0)`);
+    screenshots.push(await screenshot(`bubble-shooter-${width}x${height}`));
+  }
+
+  await setViewport(390, 844);
+  await navigate("/jogos/bubble-shooter?seed=2026");
+  await waitFor(
+    () => evaluate(`document.querySelector('.bubble-shooter-canvas')?.dataset.arcadeReady === 'true'`),
+    "Bubble Shooter ready for keyboard rebound and in-flight resize",
+    20000,
+  );
+  await evaluate(`document.querySelector('.bubble-shooter-canvas')?.focus()`);
+  for (let turn = 0; turn < 12; turn += 1) {
+    await send("Input.dispatchKeyEvent", {
+      type: "rawKeyDown",
+      key: "ArrowLeft",
+      code: "ArrowLeft",
+      windowsVirtualKeyCode: 37,
+      nativeVirtualKeyCode: 37,
+    }, sessionId);
+    await send("Input.dispatchKeyEvent", {
+      type: "keyUp",
+      key: "ArrowLeft",
+      code: "ArrowLeft",
+      windowsVirtualKeyCode: 37,
+      nativeVirtualKeyCode: 37,
+    }, sessionId);
+    await delay(40);
+  }
+  await send("Input.dispatchKeyEvent", {
+    type: "rawKeyDown",
+    key: " ",
+    code: "Space",
+    windowsVirtualKeyCode: 32,
+    nativeVirtualKeyCode: 32,
+  }, sessionId);
+  await send("Input.dispatchKeyEvent", {
+    type: "keyUp",
+    key: " ",
+    code: "Space",
+    windowsVirtualKeyCode: 32,
+    nativeVirtualKeyCode: 32,
+  }, sessionId);
+  await waitFor(
+    () => evaluate(`document.querySelector('.bubble-shooter-canvas')?.dataset.runtimeShotInFlight === 'true'`),
+    "Bubble Shooter launches with the keyboard",
+  );
+  await waitFor(
+    () => evaluate(`Number(document.querySelector('.bubble-shooter-canvas')?.dataset.runtimeWallBounceCount ?? 0) >= 1`),
+    "Bubble Shooter projectile rebounds from a side wall",
+  );
+  await setViewport(768, 1024);
+  await waitFor(
+    () => evaluate(`(() => {
+      const surface = document.querySelector('.bubble-shooter-canvas');
+      return surface?.dataset.runtimeResizeDeferred === 'true' &&
+        surface?.dataset.runtimeShotInFlight === 'true';
+    })()`),
+    "Bubble Shooter preserves an in-flight shot through resize",
+  );
+  screenshots.push(await screenshot("bubble-shooter-keyboard-rebound-resize-768x1024"));
+
+  await setViewport(390, 844);
+  await navigate("/jogos/bubble-shooter?seed=2026");
+  await waitFor(
+    () => evaluate(`document.querySelector('.bubble-shooter-canvas')?.dataset.arcadeReady === 'true'`),
+    "Bubble Shooter ready for complete mobile round",
+    20000,
+  );
+
+  const getBubbleTarget = async (challengeIndex, chooseCorrect, clearGroup = false) => evaluate(`(async () => {
+    const { createBubbleShooterRound } = await import('/src/games/arcade/bubbleShooter/bubbleShooterRound.ts');
+    const challenge = createBubbleShooterRound(2026).challenges[${challengeIndex}];
+    const correctIndex = challenge.choices.findIndex((choice) => choice.id === challenge.correctChoiceId);
+    const choiceIndex = ${chooseCorrect} ? correctIndex : (correctIndex + 1) % challenge.choices.length;
+    const columns = [0, 2, 4];
+    const surface = document.querySelector('.bubble-shooter-canvas');
+    const rect = surface.getBoundingClientRect();
+    const radius = Math.min(52, Math.max(24, (surface.clientWidth - 24) / 13));
+    const left = (surface.clientWidth - radius * 13) / 2;
+    return {
+      x: rect.left + left + radius + columns[choiceIndex] * radius * 2 + (${clearGroup} ? radius * 2.4 : 0),
+      y: rect.top + 116 + (${clearGroup} ? Math.sqrt(3) * radius : 0),
+    };
+  })()`);
+
+  const bubbleWrongTarget = await getBubbleTarget(0, false);
+  await send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: bubbleWrongTarget.x, y: bubbleWrongTarget.y, radiusX: 4, radiusY: 4, force: 1, id: 41 }],
+  }, sessionId);
+  await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }, sessionId);
+  await waitFor(
+    () => evaluate(`document.querySelector('.bubble-shooter-canvas')?.dataset.runtimeLastAnswer === 'incorrect'`),
+    "Bubble Shooter reports an incorrect touch shot",
+  );
+  const bubbleScrollAfterTouch = await evaluate(`window.scrollY`);
+  assert(
+    bubbleScrollAfterTouch === 0,
+    `Bubble Shooter touch moved the page by ${bubbleScrollAfterTouch}px`,
+  );
+  screenshots.push(await screenshot("bubble-shooter-incorrect-390x844"));
+  await waitFor(
+    () => evaluate(`document.querySelector('.bubble-shooter-canvas')?.dataset.runtimeChallengeIndex === '1'`),
+    "Bubble Shooter advances after incorrect shot",
+  );
+
+  for (let challengeIndex = 1; challengeIndex < 6; challengeIndex += 1) {
+    const target = await getBubbleTarget(challengeIndex, true, challengeIndex === 1);
+    await send("Input.dispatchMouseEvent", {
+      type: "mousePressed",
+      x: target.x,
+      y: target.y,
+      button: "left",
+      clickCount: 1,
+    }, sessionId);
+    await send("Input.dispatchMouseEvent", {
+      type: "mouseReleased",
+      x: target.x,
+      y: target.y,
+      button: "left",
+      clickCount: 1,
+    }, sessionId);
+    await waitFor(
+      () => evaluate(`document.querySelector('.bubble-shooter-canvas')?.dataset.runtimeShotInFlight === 'true'`),
+      `Bubble Shooter launches shot ${challengeIndex + 1}`,
+    );
+    await waitFor(
+      () => evaluate(`(() => {
+        const surface = document.querySelector('.bubble-shooter-canvas');
+        return surface?.dataset.runtimeLastAnswer === 'correct' &&
+          surface?.dataset.runtimeShotInFlight === 'false';
+      })()`),
+      `Bubble Shooter accepts correct shot ${challengeIndex + 1}`,
+    );
+    if (challengeIndex === 1) {
+      const removalState = await evaluate(`(() => {
+        const surface = document.querySelector('.bubble-shooter-canvas');
+        return {
+          disconnected: Number(surface?.dataset.runtimeDisconnectedDropped ?? 0),
+          impactId: surface?.dataset.runtimeImpactId,
+          removed: Number(surface?.dataset.runtimeRemovedGroupSize ?? 0),
+          shotSnapColumn: Number(surface?.dataset.runtimeShotSnapColumn ?? -1),
+          shotSnapRow: Number(surface?.dataset.runtimeShotSnapRow ?? -1),
+        };
+      })()`);
+      assert(
+        removalState.removed === 3 && removalState.disconnected === 1,
+        `Bubble Shooter group/disconnection failed: ${JSON.stringify(removalState)}`,
+      );
+      screenshots.push(await screenshot("bubble-shooter-correct-390x844"));
+    }
+    if (challengeIndex < 5) {
+      await waitFor(
+        () => evaluate(`document.querySelector('.bubble-shooter-canvas')?.dataset.runtimeChallengeIndex === '${challengeIndex + 1}'`),
+        `Bubble Shooter advances to challenge ${challengeIndex + 2}`,
+      );
+    }
+  }
+
+  await waitFor(
+    () => evaluate(`document.querySelector('.game-progress')?.getAttribute('aria-valuenow') === '100'`),
+    "Bubble Shooter Canvas records all six outcomes",
+  );
+  await waitFor(
+    () => evaluate(`Boolean(document.querySelector('.game-result-page'))`),
+    "Bubble Shooter Canvas result",
+    12000,
+  );
+  await assertNoOverflow("/jogos/bubble-shooter completed mobile round");
+  const bubbleCanvasResult = await evaluate(`(async () => {
+    const stats = [...document.querySelectorAll('.score-stats > div')].map((item) => item.innerText.trim());
+    const { getGameSessions } = await import('/src/services/progress/localProgress.ts');
+    const sessions = await getGameSessions();
+    const session = sessions.find((item) => item.gameId === 'bubble_shooter');
+    return { session, stats };
+  })()`);
+  assert(
+    bubbleCanvasResult.session?.correctCount === 5 &&
+      bubbleCanvasResult.session.totalChallenges === 6 &&
+      bubbleCanvasResult.session.xpEarned === 35 &&
+      bubbleCanvasResult.session.score === 750,
+    `Bubble Shooter Canvas result/persistence failed: ${JSON.stringify(bubbleCanvasResult)}`,
+  );
+  screenshots.push(await screenshot("bubble-shooter-result-390x844"));
+  await evaluate(`(async () => {
+    const { resetAllLocalData } = await import('/src/services/progress/engagement.ts');
+    await resetAllLocalData();
+  })()`);
+
+  await send(
+    "Emulation.setEmulatedMedia",
+    { features: [{ name: "prefers-reduced-motion", value: "reduce" }] },
+    sessionId,
+  );
+  await navigate("/jogos/bubble-shooter?seed=2026");
+  await waitFor(
+    () => evaluate(`(() => {
+      const surface = document.querySelector('.bubble-shooter-canvas');
+      return surface?.dataset.runtimeReducedMotion === 'true' &&
+        surface?.dataset.runtimeTweenCount === '0';
+    })()`),
+    "Bubble Shooter respects reduced motion",
+    20000,
+  );
+  screenshots.push(await screenshot("bubble-shooter-reduced-motion-390x844"));
+  await navigateSpa("/jogos");
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('canvas').length === 0`),
+    "Bubble Shooter destroys its canvas on exit",
+  );
+  await send("Emulation.setEmulatedMedia", { features: [] }, sessionId);
+
   await setViewport(1366, 768);
   const routeChecks = [
     ["/", "Jogue, aprenda e"],
@@ -869,6 +1240,7 @@ async function main() {
     ["/jogos/cruzando-palavras", "Cruzando palavras"],
     ["/jogos/ouvido-afiado", "Ouvido afiado"],
     ["/jogos/contra-o-relogio", "Contra o relógio"],
+    ["/jogos/bubble-shooter", "Bubble Shooter"],
   ];
   for (const [path, text] of routeChecks) {
     await navigate(path);
@@ -879,7 +1251,7 @@ async function main() {
   await navigate("/jogos");
   await waitFor(
     () => evaluate(`document.querySelectorAll('.quick-game-card .game-card-image').length === 9`),
-    "nine game card images render",
+    "nine approved game card images render",
   );
   await evaluate(`(async () => {
     for (const card of document.querySelectorAll('.quick-game-card')) {
@@ -907,6 +1279,7 @@ async function main() {
       "Cruzando palavras",
       "Par perfeito",
       "Ouvido afiado",
+      "Bubble Shooter",
     ];
     const cards = [...document.querySelectorAll('.quick-game-card')];
     const images = [...document.querySelectorAll('.quick-game-card .game-card-image')];
@@ -944,14 +1317,16 @@ async function main() {
         src: img.currentSrc || img.src,
       })),
       patternCount: document.querySelectorAll('.game-card-pattern').length,
+      arcadePreviewCount: document.querySelectorAll('.arcade-card-preview').length,
       everyButton: cards.every((card) => card.tagName === 'BUTTON'),
       titleMatches: expectedTitles.every((title, index) => cards[index]?.innerText.includes(title)),
       sortingDescription: cards[3]?.innerText.includes("Arraste cada palavra até a imagem correspondente."),
     };
   })()`);
   assert(
-    gameCardImageState.cardCount === 9 &&
+    gameCardImageState.cardCount === 10 &&
       gameCardImageState.imageCount === 9 &&
+      gameCardImageState.arcadePreviewCount === 1 &&
       gameCardImageState.everyButton &&
       gameCardImageState.titleMatches &&
       gameCardImageState.sortingDescription &&
@@ -993,7 +1368,7 @@ async function main() {
     await setViewport(width, height);
     await navigate("/jogos");
     await waitFor(
-      () => evaluate(`document.querySelectorAll('.quick-game-card').length === 9`),
+      () => evaluate(`document.querySelectorAll('.quick-game-card').length === 10`),
       `games grid ${width}x${height}`,
     );
     await assertNoOverflow(`/jogos ${width}x${height}`);
@@ -1014,6 +1389,25 @@ async function main() {
       `Games grid layout failed at ${width}x${height}: ${JSON.stringify(layout)}`,
     );
     screenshots.push(await screenshot(`games-refined-${width}x${height}`));
+    if (width === 1440 || width === 390) {
+      await evaluate(`document.querySelector('.quick-game-card:last-child')?.scrollIntoView({ block: 'center' })`);
+      const bubbleCardState = await evaluate(`(() => {
+        const card = document.querySelector('.quick-game-card:last-child');
+        const preview = card?.querySelector('.arcade-card-preview');
+        const rect = card?.getBoundingClientRect();
+        return {
+          preview: Boolean(preview),
+          title: card?.querySelector('.game-card-copy strong')?.textContent.trim(),
+          visible: Boolean(rect && rect.top < innerHeight && rect.bottom > 0),
+        };
+      })()`);
+      assert(
+        bubbleCardState.preview && bubbleCardState.title === "Bubble Shooter" && bubbleCardState.visible,
+        `Bubble Shooter catalog card failed at ${width}x${height}: ${JSON.stringify(bubbleCardState)}`,
+      );
+      screenshots.push(await screenshot(`games-bubble-card-${width}x${height}`));
+      await evaluate(`window.scrollTo(0, 0)`);
+    }
   }
 
   await setViewport(1366, 768);
@@ -1032,7 +1426,7 @@ async function main() {
   );
   await navigate("/jogos");
   await waitFor(
-    () => evaluate(`document.querySelectorAll('.quick-game-card').length === 9`),
+    () => evaluate(`document.querySelectorAll('.quick-game-card').length === 10`),
     "game cards ready for direct navigation",
   );
   await evaluate(`document.querySelectorAll('.quick-game-card')[3]?.click()`);

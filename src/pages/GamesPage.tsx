@@ -87,6 +87,14 @@ const games = [
     tone: "gold",
     route: "/jogos/ouvido-afiado",
   },
+  {
+    icon: "game" as const,
+    title: "Bubble Shooter",
+    copy: "Mire na palavra certa e derrube os grupos de bolhas.",
+    image: null,
+    tone: "violet",
+    route: "/jogos/bubble-shooter",
+  },
 ];
 
 export default function GamesPage() {
@@ -114,18 +122,28 @@ export default function GamesPage() {
               game.route ? navigate(game.route) : showNotice(game.title)
             }
           >
-            <span className="game-card-image-wrap">
-              <img
-                alt=""
-                aria-hidden="true"
-                className="game-card-image"
-                decoding="async"
-                height="450"
-                loading={index < 3 ? "eager" : "lazy"}
-                src={game.image}
-                width="800"
-              />
-            </span>
+            {game.image ? (
+              <span className="game-card-image-wrap">
+                <img
+                  alt=""
+                  aria-hidden="true"
+                  className="game-card-image"
+                  decoding="async"
+                  height="450"
+                  loading={index < 3 ? "eager" : "lazy"}
+                  src={game.image}
+                  width="800"
+                />
+              </span>
+            ) : (
+              <span aria-hidden="true" className="game-card-image-wrap arcade-card-preview">
+                <span className="arcade-preview-bubble bubble-one">HEAD</span>
+                <span className="arcade-preview-bubble bubble-two">EYE</span>
+                <span className="arcade-preview-bubble bubble-three">HAND</span>
+                <span className="arcade-preview-shot" />
+                <span className="arcade-preview-aim" />
+              </span>
+            )}
             <span className="game-card-copy">
               <span className="game-card-title-row">
                 <span className="quick-game-icon">

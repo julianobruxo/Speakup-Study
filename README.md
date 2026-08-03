@@ -22,7 +22,7 @@ Inglês em Jogo é uma aplicação educacional game-like construída com React, 
 
 ## Jogos
 
-Os nove jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramática) e `body` (Vocabulário):
+Dez jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramática) e `body` (Vocabulário):
 
 - Monte a frase;
 - Caça ao erro;
@@ -33,6 +33,7 @@ Os nove jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gra
 - Cruzando palavras;
 - Par perfeito;
 - Ouvido afiado.
+- Bubble Shooter, com modo arcade em Phaser e modo DOM simplificado.
 
 `Conectando` é o nome aprovado para o jogo de associação entre palavra em inglês e imagem.
 
@@ -104,7 +105,7 @@ node scripts/smokeUi.mjs
 - `src/pages`: telas e fluxos principais;
 - `src/content`: taxonomia e bancos de conteúdo;
 - `src/services`: progresso, engajamento, sessões e áudio;
-- `src/games`: fundação compartilhada e implementação dos nove jogos;
+- `src/games`: fundação compartilhada e implementação dos dez jogos;
 - `scripts`: validação de conteúdo e smoke visual;
 - `docs`: estado, arquitetura, roadmap e handoff;
 - `reference`: referências visuais e legado.
@@ -115,4 +116,4 @@ node scripts/smokeUi.mjs
 
 ## Estado Atual
 
-O produto está funcional localmente, sem deploy nesta fase. Não há login, backend ou sincronização. Os nove jogos estão funcionais com o escopo `present_tobe` + `body`; os demais tópicos e categorias ainda estão em desenvolvimento.
+O produto está funcional localmente, sem deploy nesta fase. Não há login, backend ou sincronização. Dez jogos estão funcionais com o escopo `present_tobe` + `body`; os demais tópicos, categorias e três arcades restantes ainda estão em desenvolvimento.

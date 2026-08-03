@@ -20,6 +20,7 @@ import {
 } from "./arcadeBridge";
 import { ArcadeDomFallback } from "./ArcadeDomFallback";
 import { PhaserArcadeSurface } from "./PhaserArcadeSurface";
+import { createTechnicalScene } from "./technicalScene";
 
 function createTechnicalRound(): PreparedArcadeRound {
   const entries = getBodyEntries().slice(0, 3);
@@ -136,6 +137,7 @@ export default function ArcadeBridgeLabPage() {
             paused={paused}
             reducedMotion={reducedMotion}
             round={round}
+            sceneFactory={createTechnicalScene}
             soundEnabled={soundEnabled}
           />
         ) : (

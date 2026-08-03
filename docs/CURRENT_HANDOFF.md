@@ -16,8 +16,8 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Vocabulário funcional apenas em Partes do corpo.
 - Progresso com atividade semanal, conquistas, revisão e métricas locais.
 - Perfil local editável, preferências e reset local confirmado.
-- Jogos: os nove jogos do catálogo oficial funcionais com `present_tobe` + `body`.
-- Página de Jogos: nove cards com thumbnails aprovadas integradas no topo, versões WebP 800x450 em `src/assets/game-card-images/cards/`, masters 1600x900 preservados e carregamento otimizado sem PNGs de produção.
+- Jogos: dez jogos do catálogo oficial funcionais com `present_tobe` + `body`, incluindo Bubble Shooter em Canvas e DOM.
+- Página de Jogos: dez cards, com nove thumbnails aprovadas e preview local do Bubble Shooter; versões WebP 800x450 e masters 1600x900 permanecem preservados.
 
 ## Conteúdo
 
@@ -52,7 +52,7 @@ A Liga Safira é uma experiência local. Os demais participantes são simulados 
 
 ## Jogos
 
-Os nove jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramática) e `body` (Vocabulário):
+Dez jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramática) e `body` (Vocabulário):
 
 - Monte a frase;
 - Caça ao erro;
@@ -63,6 +63,7 @@ Os nove jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gra
 - Cruzando palavras;
 - Par perfeito;
 - Ouvido afiado.
+- Bubble Shooter.
 
 `Conectando` é o nome aprovado para associação entre palavra em inglês e imagem. A branch local `feat/loop-jogos-v1` preserva e consolida a nova experiência, com seis palavras e seis imagens no mesmo tabuleiro responsivo e compacto, linhas por Pointer Events, fallback por clique/teclado e somente o primeiro outcome por palavra. `Par perfeito` também preserva o ajuste local de largura/densidade do board, sem mudança de mecânica.
 
@@ -76,8 +77,8 @@ Os nove jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gra
 - `/vocabulario`: categorias.
 - `/vocabulario/:categoryId`: prévia da categoria.
 - `/vocabulario/body/flashcards`: flashcards de Partes do corpo.
-- `/jogos`: catálogo de nove jogos.
-- `/jogos/monte-a-frase`, `/jogos/caca-ao-erro`, `/jogos/contra-o-relogio`, `/jogos/cada-coisa-no-seu-lugar`, `/jogos/palavra-secreta`, `/jogos/conectando`, `/jogos/cruzando-palavras`, `/jogos/par-perfeito`, `/jogos/ouvido-afiado`: jogos individuais.
+- `/jogos`: catálogo de dez jogos.
+- `/jogos/monte-a-frase`, `/jogos/caca-ao-erro`, `/jogos/contra-o-relogio`, `/jogos/cada-coisa-no-seu-lugar`, `/jogos/palavra-secreta`, `/jogos/conectando`, `/jogos/cruzando-palavras`, `/jogos/par-perfeito`, `/jogos/ouvido-afiado`, `/jogos/bubble-shooter`: jogos individuais.
 - `/progresso`: progresso local.
 - `/perfil`: perfil local.
 
@@ -155,6 +156,20 @@ Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lin
 - Testes: 20 testes puros, `validateContent`, TypeScript, lint, build, `verifyPhaserSplit`, smoke completo e `git diff --check`; o smoke lê estado real de pausa, mute e tweens, alterna targets reais para validar background, testa DPR 2 e destrói o runtime com documento oculto.
 - Evidências: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-M7f7UN`; Canvas em 1440x900, 768x1024, 390x844 e DPR 2, modo DOM em 390x844, `browserErrors: 0`.
 - Revisão: os pareceres independentes de lifecycle e do delta completo resultaram em `APPROVE`, sem bloqueios remanescentes.
+
+### Relatório da Fase 4
+
+- Objetivo: entregar Bubble Shooter como primeiro arcade de produto, sem ampliar o conteúdo além das 24 entradas de `body`.
+- Rodada: seis desafios determinísticos, três escolhas únicas, score e combo próprios; XP global permanece em +5 por acerto e +10 por conclusão.
+- Fronteira: React prepara e valida a rodada, devolve o `ChallengeOutcome` aceito e persiste resultado/XP/missão/streak; Phaser cuida apenas de renderização, física, colisão, controles e estado transitório.
+- Mecânica: mira por ponteiro, toque e setas; lançamento por clique, toque, Space e Enter; ricochete lateral, snap hexagonal pelo ponto físico, grupos de três e queda de peças desconectadas.
+- Lifecycle: resize em voo preserva o projétil, pausa e movimento reduzido permanecem sincronizados, e sair da rota destrói Canvas/listeners.
+- Acessibilidade: modo DOM usa a mesma rodada sem carregar Phaser, completa os seis desafios pelo teclado, restaura foco no enunciado, usa uma única live region e mantém controles com pelo menos 44 px.
+- Testes: 26 testes puros e gate completo com `validateContent`, TypeScript, lint, build, `verifyPhaserSplit`, smoke em nove viewports e `git diff --check`.
+- Resultados observados: DOM `6/6`, `40 XP`; Canvas `5/6`, score `750`, `35 XP`; persistência idempotente e `browserErrors: 0`.
+- Evidências: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-W1Ktud`, com Canvas em 1440x900, 768x1024, 390x844 e 360x800, estados de erro/acerto/resultado, foco DOM, ricochete e resize.
+- Revisão: os pareceres independentes técnico e visual/acessível resultaram em `APPROVE`, sem bloqueios remanescentes.
+- Risco residual aceito: uma oscilação pontual do Edge headless na simulação de troca de aba ficou para acompanhamento posterior; a repetição e o gate final passaram.
 
 ## Git
 

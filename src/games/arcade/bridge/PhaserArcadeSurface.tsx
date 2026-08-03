@@ -2,15 +2,21 @@ import { useEffect, useRef, useState } from "react";
 import {
   ARCADE_RUNTIME_DESTROYED_EVENT,
   type ArcadeAnswer,
+  type ArcadeSceneFactory,
   type ArcadeSceneRuntimeState,
   type PreparedArcadeRound,
 } from "./arcadeBridge";
+import type { ChallengeOutcome } from "../../core/sessionEngine";
 
 interface PhaserArcadeSurfaceProps {
-  onAnswer: (answer: ArcadeAnswer) => boolean;
+  ariaLabel?: string;
+  className?: string;
+  interactive?: boolean;
+  onAnswer: (answer: ArcadeAnswer) => ChallengeOutcome | null;
   paused: boolean;
   reducedMotion: boolean;
   round: PreparedArcadeRound;
+  sceneFactory: ArcadeSceneFactory;
   soundEnabled: boolean;
 }
 
@@ -78,10 +84,14 @@ function destroyGame(game: PhaserGame) {
 }
 
 export function PhaserArcadeSurface({
+  ariaLabel = "Cena do motor arcade. Use o modo simplificado para acessar os mesmos desafios fora do Canvas.",
+  className = "",
+  interactive = false,
   onAnswer,
   paused,
   reducedMotion,
   round,
+  sceneFactory,
   soundEnabled,
 }: PhaserArcadeSurfaceProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -126,10 +136,7 @@ export function PhaserArcadeSurface({
     let restorePhaserNativeHandlers: (() => void) | null = null;
 
     async function mountGame(parentElement: HTMLDivElement) {
-      const [{ default: Phaser }, { createTechnicalScene }] = await Promise.all([
-        import("phaser"),
-        import("./technicalScene"),
-      ]);
+      const { default: Phaser } = await import("phaser");
       if (disposed || !parentElement.isConnected) return;
 
       const bounds = parentElement.getBoundingClientRect();
@@ -156,7 +163,7 @@ export function PhaserArcadeSurface({
         originalAddEventListener.call(document, type, listener, options);
       }) as typeof document.addEventListener;
 
-      const Scene = createTechnicalScene(
+      const Scene = sceneFactory(
         Phaser,
         { renderResolution, reducedMotion: reducedMotionRef.current, round },
         {
@@ -198,6 +205,10 @@ export function PhaserArcadeSurface({
           },
           scale: {
             mode: Phaser.Scale.NONE,
+          },
+          physics: {
+            default: "arcade",
+            arcade: { debug: false, gravity: { x: 0, y: 0 } },
           },
           scene: [Scene],
         });
@@ -266,7 +277,7 @@ export function PhaserArcadeSurface({
       hostPausedSceneKeys.clear();
       parent.replaceChildren();
     };
-  }, [round]);
+  }, [round, sceneFactory]);
 
   useEffect(() => {
     const game = gameRef.current;
@@ -294,17 +305,31 @@ export function PhaserArcadeSurface({
 
   return (
     <div
-      aria-label="Cena técnica do motor arcade. As mesmas respostas estão descritas na região de status."
-      className="phaser-arcade-surface"
+      aria-label={ariaLabel}
+      className={`phaser-arcade-surface ${className}`.trim()}
       data-arcade-ready={ready}
+      data-runtime-board-bubble-count={runtimeDiagnostics.boardBubbleCount}
+      data-runtime-challenge-index={runtimeDiagnostics.challengeIndex}
+      data-runtime-disconnected-dropped={runtimeDiagnostics.disconnectedDropped}
+      data-runtime-impact-id={runtimeDiagnostics.impactId}
+      data-runtime-last-answer={runtimeDiagnostics.lastAnswerCorrect === undefined
+        ? undefined
+        : runtimeDiagnostics.lastAnswerCorrect ? "correct" : "incorrect"}
       data-phaser-version={version}
       data-runtime-paused={runtimeDiagnostics.paused}
       data-runtime-render-resolution={runtimeDiagnostics.renderResolution}
       data-runtime-reduced-motion={runtimeDiagnostics.reducedMotion}
+      data-runtime-removed-group-size={runtimeDiagnostics.removedGroupSize}
+      data-runtime-resize-deferred={runtimeDiagnostics.resizeDeferred}
+      data-runtime-shot-in-flight={runtimeDiagnostics.shotInFlight}
+      data-runtime-shot-snap-column={runtimeDiagnostics.shotSnapColumn}
+      data-runtime-shot-snap-row={runtimeDiagnostics.shotSnapRow}
       data-runtime-sound-muted={runtimeDiagnostics.soundMuted}
       data-runtime-tween-count={runtimeDiagnostics.tweenCount}
+      data-runtime-wall-bounce-count={runtimeDiagnostics.wallBounceCount}
       ref={containerRef}
-      role="img"
+      role={interactive ? "application" : "img"}
+      tabIndex={interactive ? 0 : undefined}
     />
   );
 }
