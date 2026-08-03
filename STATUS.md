@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-07-30 (Fase 2 do loop de jogos v1)
+Atualizado em: 2026-08-03 (Fase 3 do loop de jogos v1)
 
 ## Estado Atual
 
@@ -89,6 +89,7 @@ Planejado:
 - TypeScript `~6.0.2`.
 - Vite `^8.1.1`.
 - Framer Motion `^12.42.2`.
+- Phaser `^3.90.0`, isolado em chunk lazy para os arcades.
 - Tailwind CSS `^4.3.3` via `@tailwindcss/vite`.
 - Oxlint `^1.71.0`.
 - IndexedDB nativo.
@@ -101,6 +102,7 @@ Planejado:
 - `npx tsc -b`
 - `npm run lint`
 - `npm run build`
+- `node scripts/verifyPhaserSplit.mjs`
 - `node scripts/smokeUi.mjs`
 
 O smoke deve cobrir 360x800, 390x844, 412x915, 768x1024, 1000x800, 1024x768, 1366x768, 1440x900 e 1920x1080, com `browserErrors: 0`.
@@ -146,3 +148,17 @@ O smoke agora cobre fluxo funcional completo dos nove jogos, timers individuais 
 - Duas execuções consecutivas do smoke passaram em servidores isolados, incluindo touch físico da Classificação sem fallback sintético.
 - Capturas inspecionadas em 1440x900, 768x1024 e 390x844 para catálogo, Conectando, Par perfeito, Classificação e Palavras Cruzadas; Palavra secreta também foi inspecionada em 360x800. Evidência final: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-Ei5wvR`.
 - Gate técnico e revisão independente aprovados em 2026-07-30; nenhum bloqueio remanescente para o checkpoint local da Fase 2.
+
+## Fase 3 — code-splitting e bridge React–Phaser
+
+- O catálogo e as nove mecânicas DOM usam `React.lazy`; o chunk inicial caiu de cerca de 542 kB para 481,12 kB.
+- Phaser 3.90.0 foi adicionado como a única dependência nova autorizada e permanece em chunk próprio de 1.198,01 kB, sem preload no `dist/index.html`.
+- `scripts/verifyPhaserSplit.mjs` lê o manifest do Vite e falha se a entrada principal alcançar Phaser estaticamente ou se a rota arcade deixar de alcançá-lo sob demanda.
+- A bridge recebe uma rodada preparada por React, valida antes de preservar o primeiro outcome e rejeita IDs que não pertencem à rodada; não persiste, concede XP ou navega.
+- A cena técnica cobre mount/unmount em React StrictMode, resize, pausa por usuário/visibilidade com ownership por cena, mute efetivo, movimento reduzido, texto em DPR alto e teardown síncrono de canvas, observer e listeners nativos.
+- O modo simplificado em DOM resolve a mesma rodada sem baixar o runtime Phaser.
+- O smoke comprova ausência de Phaser na Home e no modo DOM, um único canvas no modo arcade, estado real de pausa/mute/tweens, troca real de aba, DPR 2, remount limpo e destruição concluída em foreground e com documento oculto.
+- Uma corrida latente no touch da Classificação foi corrigida: listeners documentais permanecem estáveis entre grupos e leem painel/estado por refs.
+- Gate técnico verde: 20 testes puros, conteúdo, TypeScript, lint, build, verificação de split, smoke em nove viewports com `browserErrors: 0` e `git diff --check`.
+- Evidências visuais: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-M7f7UN`, incluindo Canvas em 1440x900, 768x1024, 390x844 e DPR 2, além do modo DOM em 390x844.
+- Revisões independentes de lifecycle e do delta completo aprovaram a fase sem bloqueios remanescentes.

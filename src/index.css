@@ -1,5 +1,167 @@
 @import "tailwindcss";
 
+.route-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  color: #17234b;
+  background: #f7f9ff;
+  font-weight: 800;
+}
+
+.arcade-bridge-lab {
+  width: min(100%, 1180px);
+  margin: 0 auto;
+}
+
+.arcade-bridge-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.arcade-mode-switch {
+  display: inline-flex;
+  margin-right: auto;
+  padding: 3px;
+  background: #edf0f7;
+  border: 1px solid #e2e7f2;
+  border-radius: 8px;
+}
+
+.arcade-mode-switch button {
+  min-height: 38px;
+  padding: 7px 12px;
+  color: #69738d;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  font-weight: 800;
+}
+
+.arcade-mode-switch button[aria-pressed="true"] {
+  color: #ffffff;
+  background: #17234b;
+}
+
+.arcade-bridge-toolbar .secondary-button {
+  min-height: 44px;
+  border: 1px solid #e2e7f2;
+}
+
+.arcade-bridge-toolbar .secondary-button[aria-pressed="true"] {
+  color: #ffffff;
+  background: #17234b;
+  border-color: #17234b;
+}
+
+.arcade-bridge-toolbar .secondary-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.phaser-arcade-surface {
+  width: 100%;
+  height: clamp(430px, 62vh, 620px);
+  overflow: hidden;
+  background: #101a42;
+  border: 1px solid #24366d;
+  border-radius: 8px;
+}
+
+.phaser-arcade-surface canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.arcade-bridge-status {
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  padding: 10px 16px;
+  color: #17234b;
+  font-weight: 800;
+  text-align: center;
+}
+
+.arcade-dom-fallback {
+  min-height: 430px;
+  display: grid;
+  align-content: center;
+  gap: 20px;
+  padding: 32px;
+  color: #ffffff;
+  text-align: center;
+  background: #101a42;
+  border: 1px solid #24366d;
+  border-radius: 8px;
+}
+
+.arcade-dom-title {
+  margin: 0;
+  color: #7de5ef;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.arcade-dom-fallback p {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.arcade-dom-choices {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.arcade-dom-choices button {
+  min-height: 64px;
+  color: #17234b;
+  background: #f7f9ff;
+  border: 2px solid #7de5ef;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+@media (max-width: 560px) {
+  .arcade-bridge-toolbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .arcade-mode-switch {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-right: 0;
+  }
+
+  .arcade-bridge-toolbar .secondary-button {
+    flex: 1;
+    padding-inline: 10px;
+    font-size: 13px;
+  }
+
+  .phaser-arcade-surface {
+    height: 500px;
+  }
+
+  .arcade-dom-fallback {
+    min-height: 500px;
+    padding: 24px 14px;
+  }
+
+  .arcade-dom-choices {
+    grid-template-columns: 1fr;
+  }
+}
+
 :root {
   /* Marca — navy e vinho continuam dominantes; branco e a base. */
   --navy: #17234b;

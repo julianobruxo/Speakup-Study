@@ -242,15 +242,35 @@ async function main() {
         `React remount ${path}`,
       );
     }
+    await waitFor(
+      () => evaluate(`!document.querySelector('.route-loading')`),
+      `lazy route ready ${path}`,
+      20000,
+    );
   };
 
-  const setViewport = async (width, height) => {
+  const navigateSpa = async (path) => {
+    const expectedPath = new URL(path, BASE_URL).pathname;
+    await evaluate(`(() => {
+      history.pushState({}, '', ${JSON.stringify(path)});
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    })()`);
+    await waitFor(
+      () => evaluate(
+        `location.pathname === ${JSON.stringify(expectedPath)} && !document.querySelector('.route-loading')`,
+      ),
+      `SPA navigate ${path}`,
+      20000,
+    );
+  };
+
+  const setViewport = async (width, height, deviceScaleFactor = 1) => {
     await send(
       "Emulation.setDeviceMetricsOverride",
       {
         width,
         height,
-        deviceScaleFactor: 1,
+        deviceScaleFactor,
         mobile: width < 600,
         screenWidth: width,
         screenHeight: height,
@@ -559,6 +579,277 @@ async function main() {
     screenshots.push(await screenshot(`home-${width}x${height}`));
   }
 
+  const phaserLoadedOnHome = await evaluate(
+    `performance.getEntriesByType('resource').some((entry) => entry.name.toLowerCase().includes('/deps/phaser.js'))`,
+  );
+  assert(!phaserLoadedOnHome, "Home must not download the lazy Phaser dependency");
+
+  await send(
+    "Emulation.setEmulatedMedia",
+    { features: [{ name: "prefers-reduced-motion", value: "no-preference" }] },
+    sessionId,
+  );
+  await setViewport(390, 844);
+  await navigate("/jogos/bridge-tecnica?mode=dom");
+  const domFallbackState = await evaluate(`({
+    canvasCount: document.querySelectorAll('canvas').length,
+    choiceCount: document.querySelectorAll('.arcade-dom-choices button').length,
+    phaserLoaded: performance.getEntriesByType('resource').some((entry) => entry.name.toLowerCase().includes('/deps/phaser.js'))
+  })`);
+  assert(
+    domFallbackState.canvasCount === 0 &&
+      domFallbackState.choiceCount === 3 &&
+      !domFallbackState.phaserLoaded,
+    `DOM arcade fallback loaded Phaser or rendered incorrectly: ${JSON.stringify(domFallbackState)}`,
+  );
+  await clickText("Hair", ".arcade-dom-choices button");
+  await waitFor(
+    () => hasText("Outcome recebido pelo React: correto."),
+    "DOM fallback returns a choice for React-owned outcome resolution",
+  );
+  await evaluate(`window.scrollTo(0, 0)`);
+  screenshots.push(await screenshot("arcade-bridge-dom-390x844"));
+
+  for (const [width, height] of [[1440, 900], [768, 1024], [390, 844]]) {
+    await setViewport(width, height);
+    await navigate("/jogos/bridge-tecnica");
+    await waitFor(
+      () => evaluate(`document.querySelector('.phaser-arcade-surface')?.dataset.arcadeReady === 'true'`),
+      `technical Phaser scene ready at ${width}x${height}`,
+      20000,
+    );
+    const bridgeState = await evaluate(`(() => {
+      const surface = document.querySelector('.phaser-arcade-surface');
+      const canvas = surface?.querySelector('canvas');
+      return {
+        canvasCount: document.querySelectorAll('.phaser-arcade-surface canvas').length,
+        canvasWidth: canvas?.width ?? 0,
+        canvasHeight: canvas?.height ?? 0,
+        surfaceWidth: surface?.clientWidth ?? 0,
+        surfaceHeight: surface?.clientHeight ?? 0,
+        version: surface?.dataset.phaserVersion ?? '',
+      };
+    })()`);
+    assert(
+      bridgeState.canvasCount === 1 &&
+        bridgeState.canvasWidth === bridgeState.surfaceWidth &&
+        bridgeState.canvasHeight === bridgeState.surfaceHeight &&
+        bridgeState.version.startsWith("3."),
+      `Technical bridge mount/resize failed at ${width}x${height}: ${JSON.stringify(bridgeState)}`,
+    );
+    await assertNoOverflow(`/jogos/bridge-tecnica ${width}x${height}`);
+    await evaluate(`window.scrollTo(0, 0)`);
+    screenshots.push(await screenshot(`arcade-bridge-${width}x${height}`));
+  }
+
+  await setViewport(390, 844, 2);
+  await navigate("/jogos/bridge-tecnica");
+  await waitFor(
+    () => evaluate(`document.querySelector('.phaser-arcade-surface')?.dataset.arcadeReady === 'true'`),
+    "technical Phaser scene ready at DPR 2",
+    20000,
+  );
+  const highDensityState = await evaluate(`(() => {
+    const surface = document.querySelector('.phaser-arcade-surface');
+    const canvas = surface?.querySelector('canvas');
+    const resolution = Number(surface?.dataset.runtimeRenderResolution ?? 0);
+    return {
+      backingHeight: canvas?.height ?? 0,
+      backingWidth: canvas?.width ?? 0,
+      devicePixelRatio: window.devicePixelRatio,
+      renderResolution: resolution,
+      surfaceHeight: surface?.clientHeight ?? 0,
+      surfaceWidth: surface?.clientWidth ?? 0,
+    };
+  })()`);
+  assert(
+    highDensityState.devicePixelRatio === 2 &&
+      highDensityState.renderResolution === 2 &&
+      highDensityState.backingWidth === highDensityState.surfaceWidth * 2 &&
+      highDensityState.backingHeight === highDensityState.surfaceHeight * 2,
+    `Technical bridge ignored high-density rendering: ${JSON.stringify(highDensityState)}`,
+  );
+  await evaluate(`window.scrollTo(0, 0)`);
+  screenshots.push(await screenshot("arcade-bridge-390x844-dpr2"));
+
+  await setViewport(1440, 900);
+  await navigate("/jogos/bridge-tecnica");
+  await waitFor(
+    () => evaluate(`document.querySelector('.phaser-arcade-surface')?.dataset.arcadeReady === 'true'`),
+    "technical Phaser scene ready for controls",
+    20000,
+  );
+  await evaluate(`(() => {
+    const surface = document.querySelector('.phaser-arcade-surface');
+    window.__arcadePauseTransitions = [surface?.dataset.runtimePaused];
+    window.__arcadePauseObserver = new MutationObserver(() => {
+      window.__arcadePauseTransitions.push(surface?.dataset.runtimePaused);
+    });
+    window.__arcadePauseObserver.observe(surface, {
+      attributes: true,
+      attributeFilter: ['data-runtime-paused'],
+    });
+  })()`);
+  const currentTarget = await send("Target.getTargetInfo", {}, sessionId);
+  const backgroundTarget = await send("Target.createTarget", { url: "about:blank" });
+  await send("Target.activateTarget", { targetId: backgroundTarget.targetId });
+  await delay(150);
+  await send("Target.activateTarget", { targetId: currentTarget.targetInfo.targetId });
+  await waitFor(
+    () => evaluate(`
+      window.__arcadePauseTransitions.includes('true') &&
+      document.querySelector('.phaser-arcade-surface')?.dataset.runtimePaused === 'false'
+    `),
+    "Phaser pauses while the document is hidden and resumes when visible",
+  );
+  await send("Target.closeTarget", { targetId: backgroundTarget.targetId });
+  await evaluate(`window.__arcadePauseObserver.disconnect()`);
+  await clickText("Pausar");
+  await waitFor(
+    () => evaluate(`document.querySelector('.phaser-arcade-surface')?.dataset.runtimePaused === 'true'`),
+    "React pauses the active Phaser scene",
+  );
+  await clickText("Retomar");
+  await waitFor(
+    () => evaluate(`document.querySelector('.phaser-arcade-surface')?.dataset.runtimePaused === 'false'`),
+    "React resumes the host-paused Phaser scene",
+  );
+  const motionStateBeforeToggle = await evaluate(`(() => {
+    const surface = document.querySelector('.phaser-arcade-surface');
+    return {
+      reducedMotion: surface?.dataset.runtimeReducedMotion,
+      tweenCount: Number(surface?.dataset.runtimeTweenCount ?? 0),
+    };
+  })()`);
+  assert(
+    motionStateBeforeToggle.reducedMotion === "false" &&
+      motionStateBeforeToggle.tweenCount > 0,
+    `Phaser scene did not expose active motion: ${JSON.stringify(motionStateBeforeToggle)}`,
+  );
+  await clickText("Movimento reduzido");
+  await waitFor(
+    () => evaluate(
+      `(() => {
+        const surface = document.querySelector('.phaser-arcade-surface');
+        return surface?.dataset.runtimeReducedMotion === 'true' &&
+          surface?.dataset.runtimeTweenCount === '0';
+      })()`,
+    ),
+    "Phaser removes scene tweens for reduced motion",
+  );
+  await click('button[aria-label="Desativar som"]');
+  await waitFor(
+    () => evaluate(`document.querySelector('.phaser-arcade-surface')?.dataset.runtimeSoundMuted === 'true'`),
+    "React mutes the Phaser sound manager",
+  );
+  await click('button[aria-label="Ativar som"]');
+  await waitFor(
+    () => evaluate(`document.querySelector('.phaser-arcade-surface')?.dataset.runtimeSoundMuted === 'false'`),
+    "React unmutes the Phaser sound manager",
+  );
+  const correctBridgeTarget = await evaluate(`(() => {
+    const surface = document.querySelector('.phaser-arcade-surface');
+    const rect = surface.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 + 18 };
+  })()`);
+  await send("Input.dispatchMouseEvent", {
+    type: "mousePressed",
+    x: correctBridgeTarget.x,
+    y: correctBridgeTarget.y,
+    button: "left",
+    clickCount: 1,
+  }, sessionId);
+  await send("Input.dispatchMouseEvent", {
+    type: "mouseReleased",
+    x: correctBridgeTarget.x,
+    y: correctBridgeTarget.y,
+    button: "left",
+    clickCount: 1,
+  }, sessionId);
+  await waitFor(
+    () => hasText("Outcome recebido pelo React: correto."),
+    "Phaser returns a choice for React-owned outcome resolution",
+  );
+
+  const phaserLoadedAfterArcade = await evaluate(
+    `performance.getEntriesByType('resource').some((entry) => entry.name.toLowerCase().includes('/deps/phaser.js'))`,
+  );
+  assert(phaserLoadedAfterArcade, "Arcade route must download the lazy Phaser dependency");
+  await evaluate(`(() => {
+    window.__arcadeRuntimeDestroyCount = 0;
+    window.__arcadeRuntimeDestroyDetails = [];
+    window.addEventListener(
+      "ingles-em-jogo:arcade-runtime-destroyed",
+      (event) => {
+        window.__arcadeRuntimeDestroyCount += 1;
+        window.__arcadeRuntimeDestroyDetails.push(event.detail);
+      },
+    );
+  })()`);
+  const destroyCountBeforeFirstTeardown = await evaluate(
+    `window.__arcadeRuntimeDestroyCount`,
+  );
+  await navigateSpa("/jogos");
+  await waitFor(
+    () => evaluate(
+      `document.querySelectorAll('canvas').length === 0 &&
+        window.__arcadeRuntimeDestroyCount > ${destroyCountBeforeFirstTeardown}`,
+    ),
+    "Phaser runtime destroyed after route change",
+  );
+  const firstDestroyDetail = await evaluate(
+    `window.__arcadeRuntimeDestroyDetails.at(-1)`,
+  );
+  assert(
+    firstDestroyDetail.removedNativeVisibilityListeners > 0,
+    `Phaser native visibility listener was not removed: ${JSON.stringify(firstDestroyDetail)}`,
+  );
+  await navigateSpa("/jogos/bridge-tecnica");
+  await waitFor(
+    () => evaluate(`document.querySelector('.phaser-arcade-surface')?.dataset.arcadeReady === 'true'`),
+    "technical Phaser scene remount",
+    20000,
+  );
+  const remountedCanvasCount = await evaluate(
+    `document.querySelectorAll('.phaser-arcade-surface canvas').length`,
+  );
+  assert(remountedCanvasCount === 1, `StrictMode remount created ${remountedCanvasCount} canvases`);
+  const destroyCountBeforeSecondTeardown = await evaluate(
+    `window.__arcadeRuntimeDestroyCount`,
+  );
+  await evaluate(`(() => {
+    window.__documentHiddenDescriptor = Object.getOwnPropertyDescriptor(document, 'hidden');
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  })()`);
+  await waitFor(
+    () => evaluate(`document.querySelector('.phaser-arcade-surface')?.dataset.runtimePaused === 'true'`),
+    "Phaser pauses before hidden-document teardown",
+  );
+  await navigateSpa("/jogos");
+  await waitFor(
+    () => evaluate(
+      `document.querySelectorAll('canvas').length === 0 &&
+        window.__arcadeRuntimeDestroyCount > ${destroyCountBeforeSecondTeardown}`,
+    ),
+    "Remounted Phaser runtime destroyed while document is hidden",
+  );
+  const secondDestroyDetail = await evaluate(
+    `window.__arcadeRuntimeDestroyDetails.at(-1)`,
+  );
+  assert(
+    secondDestroyDetail.removedNativeVisibilityListeners > 0,
+    `Remounted Phaser visibility listener was not removed: ${JSON.stringify(secondDestroyDetail)}`,
+  );
+  await evaluate(`(() => {
+    if (window.__documentHiddenDescriptor) {
+      Object.defineProperty(document, 'hidden', window.__documentHiddenDescriptor);
+    } else {
+      delete document.hidden;
+    }
+  })()`);
+  await send("Emulation.setEmulatedMedia", { features: [] }, sessionId);
+
   await setViewport(1366, 768);
   const routeChecks = [
     ["/", "Jogue, aprenda e"],
@@ -580,7 +871,7 @@ async function main() {
     ["/jogos/contra-o-relogio", "Contra o relógio"],
   ];
   for (const [path, text] of routeChecks) {
-    if (path !== "/") await navigate(path);
+    await navigate(path);
     await waitFor(() => hasText(text), `route ${path}`);
     await assertNoOverflow(path);
   }
@@ -727,6 +1018,10 @@ async function main() {
 
   await setViewport(1366, 768);
   await navigate("/jogos");
+  await waitFor(
+    () => evaluate(`Boolean(document.querySelector('.quick-game-card'))`),
+    "game cards ready for keyboard focus",
+  );
   await evaluate(`document.querySelector('.quick-game-card')?.focus()`);
   const focusedGameCard = await evaluate(`document.activeElement?.classList.contains('quick-game-card')`);
   assert(focusedGameCard, "Game card must be keyboard focusable");
@@ -736,6 +1031,10 @@ async function main() {
     "Monte a frase card click route",
   );
   await navigate("/jogos");
+  await waitFor(
+    () => evaluate(`document.querySelectorAll('.quick-game-card').length === 9`),
+    "game cards ready for direct navigation",
+  );
   await evaluate(`document.querySelectorAll('.quick-game-card')[3]?.click()`);
   await waitFor(
     () => evaluate(`location.pathname === "/jogos/cada-coisa-no-seu-lugar"`),

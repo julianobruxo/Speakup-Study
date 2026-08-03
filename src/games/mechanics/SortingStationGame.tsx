@@ -101,6 +101,10 @@ export default function SortingStationGame() {
 
   const panelConfig = panels[panelIndex];
   const panel = useMemo(() => panelConfig?.challenges ?? [], [panelConfig]);
+  const panelRef = useRef(panel);
+  const checkedRef = useRef(checked);
+  panelRef.current = panel;
+  checkedRef.current = checked;
   const totalPanels = panels.filter((item) => item.challenges.length > 0).length;
   const completedPanels = panelIndex + (checked ? 1 : 0);
   const allSlotsFilled = panel.length > 0 && panel.every((challenge) => assignments[challenge.targetId]);
@@ -122,18 +126,20 @@ export default function SortingStationGame() {
   }, []);
 
   const wordById = useCallback(
-    (wordId: string): SortingChallenge | undefined => panel.find((challenge) => challenge.targetId === wordId),
-    [panel],
+    (wordId: string): SortingChallenge | undefined =>
+      panelRef.current.find((challenge) => challenge.targetId === wordId),
+    [],
   );
 
   const targetById = useCallback(
-    (targetId: string): SortingChallenge | undefined => panel.find((challenge) => challenge.targetId === targetId),
-    [panel],
+    (targetId: string): SortingChallenge | undefined =>
+      panelRef.current.find((challenge) => challenge.targetId === targetId),
+    [],
   );
 
   const assignWordToTarget = useCallback(
     (wordId: string, targetId: string) => {
-      if (checked) return;
+      if (checkedRef.current) return;
       const word = wordById(wordId);
       const target = targetById(targetId);
       if (!word || !target) return;
@@ -142,7 +148,7 @@ export default function SortingStationGame() {
       setLiveMessage(`${word.term} posicionada em ${target.translation}.`);
       playSound("select");
     },
-    [checked, targetById, wordById],
+    [targetById, wordById],
   );
 
   useEffect(() => {

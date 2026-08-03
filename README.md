@@ -70,6 +70,7 @@ Stack declarada em `package.json`:
 - Vite `^8.1.1`;
 - React Router DOM `^7.18.1`;
 - Framer Motion `^12.42.2`;
+- Phaser `^3.90.0`, carregado somente nas rotas arcade;
 - Tailwind CSS `^4.3.3` com `@tailwindcss/vite` `^4.3.3`;
 - IndexedDB nativo;
 - Web Speech API.
@@ -93,6 +94,7 @@ npm run build
 npm run lint
 npx tsc -b
 node scripts/validateContent.mjs
+node scripts/verifyPhaserSplit.mjs
 node scripts/smokeUi.mjs
 ```
 

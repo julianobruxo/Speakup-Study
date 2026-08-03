@@ -1,6 +1,6 @@
 # Decisões Abertas
 
-Atualizado em: 2026-07-30
+Atualizado em: 2026-08-03
 
 ## Resolvidas
 
@@ -69,6 +69,10 @@ Atualizado em: 2026-07-30
 
     A auditoria das nove mecânicas DOM pertence à Fase 2. A configuração game-first e content-first para o catálogo completo pertence à Fase 8, depois que os quatro arcades existirem, evitando implementar duas vezes a mesma integração.
 
+13. Code-splitting e bridge arcade
+
+    As rotas de jogos são lazy, Phaser 3.90.0 fica em chunk isolado sem preload e a bridge mantém React responsável por rodada, outcome, persistência e engajamento. Todo arcade deve oferecer modo DOM simplificado pela mesma rodada preparada.
+
 ## Abertas
 
 1. Próximo tópico gramatical
@@ -102,7 +106,3 @@ Atualizado em: 2026-07-30
 8. Deploy
 
    Deploy, PR, tag e release estão fora desta publicação e exigem autorização separada.
-
-9. Code-splitting
-
-   O chunk inicial permanece acima de 500 kB. O code-splitting de rotas é obrigatório na Fase 3 antes da instalação do Phaser.

@@ -24,7 +24,7 @@ Conteúdo autorizado:
 | 0. Consolidar baseline | concluída | nenhuma | checkpoint local `1a64659` |
 | 1. Roadmap e fundação | concluída | Fase 0 | contratos, testes e revisão verdes |
 | 2. Fechar nove jogos DOM | concluída | Fase 1 | nove rodadas completas, `browserErrors: 0` |
-| 3. Code-splitting e bridge Phaser | pendente | Fase 2 | Phaser isolado, mount/unmount limpo |
+| 3. Code-splitting e bridge Phaser | concluída | Fase 2 | Phaser isolado, mount/unmount limpo e revisão aprovada |
 | 4. Bubble Shooter | pendente | Fase 3 | arcade completo e modo DOM simplificado |
 | 5. Corte a palavra | pendente | Fase 4 | gesto confiável e performance mobile |
 | 6. Ninja | pendente | Fase 5 | subfases 6A–6E verdes |
@@ -39,14 +39,16 @@ Conteúdo autorizado:
 | catálogo e compatibilidade | `src/games/core/catalog.ts` | nove jogos DOM; arcades entram em suas fases |
 | configuração de rodada e XP | `src/games/core/roundConfig.ts` | centralizada |
 | seleção e seed | `selectChallenges.ts`, `shuffle.ts` | determinística, sem repetição |
-| payloads | `challengeTypes.ts` | DOM atual; bridge arcade será adicionada na Fase 3 |
+| payloads | `challengeTypes.ts`, `arcadeBridge.ts` | contratos DOM e bridge arcade validados pela camada React |
 | outcomes e resultado | `sessionEngine.ts` | primeiro outcome por `challengeId`, score separado de XP |
 | persistência | `localProgress.ts` | IndexedDB v3, store `gameSessions` |
 | missão, streak e XP | `engagement.ts` | idempotência por `sessionId` |
 | conclusão React | `completionCoordinator.ts`, `useGameCompletion.ts` | fila entre sessões, duas tentativas automáticas e retry visível |
 | assets | `visualResolver.tsx` | resolução central por `visualKey` |
-| testes puros | `tests/gamesFoundation.test.mjs`, `tests/domGameContracts.test.mjs` | 15 testes com `node:test`, sem dependência nova |
+| testes puros | `tests/gamesFoundation.test.mjs`, `tests/domGameContracts.test.mjs`, `tests/arcadeBridge.test.mjs` | 20 testes com `node:test` |
 | smoke funcional/visual | `scripts/smokeUi.mjs` | a suite cobre nove viewports e verifica `browserErrors` |
+| bridge arcade | `src/games/arcade/bridge` | rodada preparada por React, escolha validada em React e modo DOM |
+| isolamento Phaser | `scripts/verifyPhaserSplit.mjs` | manifest comprova chunk sob demanda sem preload no entry |
 
 ## Fase 1 — critérios
 
@@ -125,6 +127,7 @@ node scripts/validateContent.mjs
 npx tsc -b
 npm run lint
 npm run build
+node scripts/verifyPhaserSplit.mjs
 node scripts/smokeUi.mjs
 git diff --check
 ```

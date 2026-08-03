@@ -1,6 +1,6 @@
 # Current Handoff
 
-Atualizado em: 2026-07-30
+Atualizado em: 2026-08-03
 
 ## Produto
 
@@ -84,6 +84,7 @@ Os nove jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gra
 ## Stack
 
 - Vite, React, React DOM, React Router DOM, TypeScript, Framer Motion, Tailwind CSS, Oxlint.
+- Phaser 3.90.0, carregado sob demanda somente pela bridge arcade.
 - IndexedDB nativo para progresso/engajamento.
 - Web Speech API para pronúncia.
 
@@ -97,6 +98,7 @@ node scripts/validateContent.mjs
 npx tsc -b
 npm run lint
 npm run build
+node scripts/verifyPhaserSplit.mjs
 node scripts/smokeUi.mjs
 ```
 
@@ -140,6 +142,19 @@ Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lin
 - Evidências visuais: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-Ei5wvR`, com capturas adicionais de Palavra secreta, Classificação e Palavras Cruzadas.
 - Revisão: Dalton revalidou o lifecycle do drag, o touch físico sem fallback, o servidor isolado e a pontuação acessível; checkpoint da Fase 2 aprovado sem bloqueios remanescentes.
 - Dependências: nenhuma adicionada ou alterada nesta fase; Phaser e code-splitting continuam reservados à Fase 3.
+
+### Relatório da Fase 3
+
+- Objetivo: reduzir o chunk inicial e validar a fronteira React–Phaser antes do primeiro arcade.
+- Code-splitting: catálogo e nove rotas DOM usam `React.lazy`; entry principal reduzido de cerca de 542 kB para 481,12 kB.
+- Runtime: Phaser 3.90.0 gera chunk próprio de 1.198,01 kB; a rota técnica mede 7,46 kB e `dist/index.html` não faz preload do Phaser.
+- Contrato: React prepara a rodada canônica, valida a escolha antes de preservar o primeiro outcome e mantém outcomes/persistência/XP fora do Phaser; IDs desconhecidos são rejeitados.
+- Lifecycle: token de descarte para StrictMode, `ResizeObserver`, pausa por usuário/visibilidade com ownership por cena, mute global efetivo, movimento reduzido, backing store limitado a DPR 2 e destruição síncrona de jogo/canvas/listeners, inclusive o listener nativo não removido pelo Phaser.
+- Acessibilidade: modo simplificado DOM disponível sem importar o runtime, controles externos e status anunciado.
+- Regressão corrigida: listeners de Pointer Events da Classificação agora permanecem estáveis na troca de grupo, eliminando a janela que perdia touch físico.
+- Testes: 20 testes puros, `validateContent`, TypeScript, lint, build, `verifyPhaserSplit`, smoke completo e `git diff --check`; o smoke lê estado real de pausa, mute e tweens, alterna targets reais para validar background, testa DPR 2 e destrói o runtime com documento oculto.
+- Evidências: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-M7f7UN`; Canvas em 1440x900, 768x1024, 390x844 e DPR 2, modo DOM em 390x844, `browserErrors: 0`.
+- Revisão: os pareceres independentes de lifecycle e do delta completo resultaram em `APPROVE`, sem bloqueios remanescentes.
 
 ## Git
 

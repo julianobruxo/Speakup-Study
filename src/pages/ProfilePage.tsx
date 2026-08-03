@@ -14,6 +14,10 @@ import {
   playSound,
   setSoundEnabled,
 } from "../services/audio/sound";
+import {
+  areAnimationsEnabled,
+  setAnimationsEnabled,
+} from "../services/preferences/animations";
 
 const AVATAR_TONES = ["cyan", "wine", "violet", "green", "orange"];
 
@@ -21,9 +25,7 @@ export default function ProfilePage() {
   const { snapshot, reload } = useEngagement();
   const { summary } = useProgressSummary();
   const [sound, setSound] = useState(isSoundEnabled);
-  const [animations, setAnimations] = useState(
-    () => localStorage.getItem("ingles-em-jogo-animations") !== "false",
-  );
+  const [animations, setAnimations] = useState(areAnimationsEnabled);
   const [editing, setEditing] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [name, setName] = useState("Jogador");
@@ -50,8 +52,7 @@ export default function ProfilePage() {
   function toggleAnimations() {
     const next = !animations;
     setAnimations(next);
-    localStorage.setItem("ingles-em-jogo-animations", String(next));
-    document.documentElement.dataset.animations = next ? "on" : "off";
+    setAnimationsEnabled(next);
   }
 
   async function saveProfile() {
