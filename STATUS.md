@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-08-03 (Fase 6A do loop de jogos v1)
+Atualizado em: 2026-08-03 (Fase 6B do loop de jogos v1)
 
 ## Estado Atual
 
@@ -23,10 +23,10 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Package name `ingles-em-jogo` e metadata atualizada.
 - Fundação compartilhada de jogos: catálogo central, matriz de compatibilidade, seleção determinística de conteúdo, engine de sessão, XP/missão/streak idempotentes, adapters de Gramática (`present_tobe`) e Vocabulário (`body`).
 - Roadmap canônico dos 13 jogos em `docs/IMPLEMENTATION_MAP.md`, com fronteira React–Phaser e gates por fase.
-- Suite pura com `node:test`: 34 testes para fundação, contratos DOM, bridge arcade, Bubble Shooter, Corte a palavra, fundação do Ninja, resultado e conclusão persistente.
+- Suite pura com `node:test`: 35 testes para fundação, contratos DOM, bridge arcade, Bubble Shooter, Corte a palavra, Ninja, resultado e conclusão persistente.
 - Conclusão de jogo serializada e idempotente, com duas tentativas automáticas, retry visível e a mesma `sessionId`.
 - Onze jogos oficiais funcionais com o escopo `present_tobe` + `body`, incluindo Bubble Shooter e Corte a palavra em Canvas e modo DOM simplificado.
-- Ninja em implementação incremental: a subfase 6A entrega rota lazy direta, personagem procedural, corrida automática, câmera, três camadas de parallax, pista com pool fixo, pausa, resize, teardown e movimento reduzido estático; o jogo ainda não está publicado no catálogo.
+- Ninja em implementação incremental: após a fundação 6A, a subfase 6B adiciona três questões fáceis canônicas e determinísticas de `present_tobe`, placas, salto por clique/toque ou teclado, feedback e uma progressão funcional; o jogo ainda não está publicado no catálogo.
 - Cards da página de Jogos com as nove imagens aprovadas integradas no topo e previews locais dos dois arcades; os masters 1600x900 permanecem preservados.
 
 ## Jogos
@@ -203,3 +203,14 @@ O smoke agora cobre fluxo funcional completo dos onze jogos, a fundação técni
 - O smoke comprova corrida, câmera, reciclagem, pausa sem avanço, retomada, resize, movimento reduzido e teardown com `browserErrors: 0`.
 - Evidências finais abertas e inspecionadas: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-rF04XY`, incluindo 1440x900, 768x1024, 390x844, 360x800, pausa, resize e movimento reduzido.
 - A revisão visual/acessível resultou em `APPROVE` após corrigir movimento reduzido e contraste do personagem.
+
+## Fase 6B — primeira progressão do Ninja
+
+- A rodada curta usa três questões fáceis selecionadas deterministicamente do banco canônico de 130 itens; nenhum texto de pergunta foi copiado para o jogo.
+- React prepara a rodada, embaralha alternativas, valida a ordem dos outcomes e mantém feedback pedagógico em região acessível.
+- Phaser interrompe a corrida numa zona de decisão sem timeout, apresenta três placas e executa o salto pela placa escolhida.
+- Clique/toque direto e teclado com setas + Enter/Espaço resolvem a mesma escolha; somente o receipt aceito por React libera feedback e avanço.
+- A progressão conclui após três placas sem score, vidas, XP ou persistência, que permanecem reservados à 6C.
+- Gate técnico verde: 35 testes, conteúdo, TypeScript, lint, build, split Phaser e `git diff --check`.
+- O smoke ampliado cobre a progressão, mas a execução completa foi interrompida duas vezes por oscilações conhecidas do Edge headless fora do fluxo novo: primeiro numa expectativa antiga de retomada já corrigida e depois no lifecycle compartilhado de visibility. Por orientação de Juliano, não houve repetição adicional nem enfraquecimento da assertion.
+- Revisões independentes técnica e pedagógica/acessível resultaram em `APPROVE` após fechar foco do teclado, salto em resize/reduced motion, duração do feedback, ownership da conclusão e oráculo canônico do teste.

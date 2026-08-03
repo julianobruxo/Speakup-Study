@@ -16,7 +16,7 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Vocabulário funcional apenas em Partes do corpo.
 - Progresso com atividade semanal, conquistas, revisão e métricas locais.
 - Perfil local editável, preferências e reset local confirmado.
-- Jogos: onze jogos do catálogo oficial funcionais com `present_tobe` + `body`, incluindo Bubble Shooter e Corte a palavra em Canvas e DOM; Ninja está em implementação incremental, com a fundação 6A acessível apenas por rota direta.
+- Jogos: onze jogos do catálogo oficial funcionais com `present_tobe` + `body`, incluindo Bubble Shooter e Corte a palavra em Canvas e DOM; Ninja está em implementação incremental, com fundação 6A e primeira progressão 6B acessíveis apenas por rota direta.
 - Página de Jogos: onze cards, com nove thumbnails aprovadas e previews locais dos dois arcades; versões WebP 800x450 e masters 1600x900 permanecem preservados.
 
 ## Conteúdo
@@ -80,7 +80,7 @@ Onze jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramá
 - `/vocabulario/body/flashcards`: flashcards de Partes do corpo.
 - `/jogos`: catálogo de onze jogos.
 - `/jogos/monte-a-frase`, `/jogos/caca-ao-erro`, `/jogos/contra-o-relogio`, `/jogos/cada-coisa-no-seu-lugar`, `/jogos/palavra-secreta`, `/jogos/conectando`, `/jogos/cruzando-palavras`, `/jogos/par-perfeito`, `/jogos/ouvido-afiado`, `/jogos/bubble-shooter`, `/jogos/corte-a-palavra`: jogos individuais.
-- `/jogos/ninja`: fundação técnica lazy da subfase 6A; ainda não publicada no catálogo e sem rodada pedagógica até a 6B.
+- `/jogos/ninja`: implementação lazy do Ninja até a subfase 6B, com três placas canônicas; ainda não publicada no catálogo.
 - `/progresso`: progresso local.
 - `/perfil`: perfil local.
 
@@ -197,6 +197,17 @@ Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lin
 - Testes: 34 testes puros e gate completo com conteúdo, TypeScript, lint, build, split, smoke e `git diff --check`.
 - Evidências: `C:\Users\User\AppData\Local\Temp\ingles-em-jogo-ui-smoke-rF04XY`; capturas em 1440x900, 768x1024, 390x844 e 360x800, além de pausa, resize e movimento reduzido; `browserErrors: 0`.
 - Revisão: o parecer visual/acessível aprovou a correção de movimento reduzido e contraste; nenhum card foi exposto antes da primeira progressão funcional da 6B.
+
+### Relatório da Fase 6B
+
+- Objetivo: integrar conteúdo canônico e fechar uma primeira progressão funcional sem antecipar vidas, score ou persistência.
+- Rodada: três questões fáceis, únicas e determinísticas de `present_tobe`, com alternativas embaralhadas e feedback vindo do banco original.
+- Mecânica: corrida automática até uma zona de decisão sem timeout, três placas, salto por clique/toque ou setas + Enter/Espaço e avanço após feedback.
+- Fronteira: React valida e guarda outcomes; Phaser só muda de fase depois do receipt. Nenhum score, XP, missão, streak ou IndexedDB é tocado nesta subfase.
+- Acessibilidade: prompt e feedback externos ao Canvas, foco visível no host, controles alternativos e zona de decisão estática com movimento reduzido.
+- Gate técnico: 35 testes, conteúdo, TypeScript, lint, build, split e `git diff --check` verdes.
+- Edge headless: o smoke novo foi implementado para clique incorreto, teclado correto e conclusão, mas as execuções completas pararam em oscilações conhecidas fora desse fluxo. A assertion não foi relaxada e, por orientação explícita de Juliano, novos ciclos no Edge foram deixados para depois.
+- Revisões: pareceres técnico e pedagógico/acessível aprovaram o delta após correções de foco, salto em resize/reduced motion, feedback legível, conclusão confirmada por outcomes React e resposta confrontada com o banco canônico.
 
 ## Git
 

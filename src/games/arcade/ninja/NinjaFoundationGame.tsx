@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import AppIcon from "../../../components/AppIcon";
 import {
   SOUND_PREFERENCE_EVENT,
@@ -12,25 +12,74 @@ import {
   areAnimationsEnabled,
 } from "../../../services/preferences/animations";
 import { GameShell } from "../../components/GameShell";
-import type { PreparedArcadeRound } from "../bridge/arcadeBridge";
+import type { ChallengeOutcome } from "../../core/sessionEngine";
+import {
+  createArcadeRoundAnswerGate,
+  type ArcadeAnswer,
+  type ArcadeSceneRuntimeState,
+} from "../bridge/arcadeBridge";
 import { PhaserArcadeSurface } from "../bridge/PhaserArcadeSurface";
 import { createNinjaFoundationScene } from "./ninjaFoundationScene";
-
-const FOUNDATION_ROUND: PreparedArcadeRound = {
-  id: "ninja-foundation-v1",
-  gameId: "ninja",
-  challenges: [],
-};
+import { createNinjaFoundationRound } from "./ninjaRound";
 
 export default function NinjaFoundationGame() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const systemReducedMotion = useReducedMotion();
+  const [seed, setSeed] = useState(() => {
+    const requestedSeed = Number(searchParams.get("seed"));
+    return Number.isFinite(requestedSeed) && requestedSeed > 0
+      ? Math.trunc(requestedSeed)
+      : Date.now();
+  });
   const [paused, setPaused] = useState(false);
   const [soundEnabled, setSoundPreference] = useState(isSoundEnabled);
   const [animationsEnabled, setAnimationPreference] = useState(areAnimationsEnabled);
-  const round = useMemo(() => FOUNDATION_ROUND, []);
+  const [outcomes, setOutcomes] = useState<ChallengeOutcome[]>([]);
+  const [displayChallengeIndex, setDisplayChallengeIndex] = useState(0);
+  const displayChallengeIndexRef = useRef(0);
+  const selectedChoiceIdRef = useRef("");
+  const [liveMessage, setLiveMessage] = useState("Prepare-se para a primeira placa.");
+  const round = useMemo(() => createNinjaFoundationRound(seed), [seed]);
   const reducedMotion = Boolean(systemReducedMotion) || !animationsEnabled;
-  const ignoreAnswer = useCallback(() => null, []);
+  const handleAcceptedOutcome = useCallback((outcome: ChallengeOutcome) => {
+    setOutcomes((current) => [...current, outcome]);
+    const challenge = round.challenges.find((candidate) => candidate.id === outcome.challengeId);
+    const correctLabel = challenge?.choices.find(
+      (choice) => choice.id === challenge.correctChoiceId,
+    )?.label;
+    setLiveMessage(
+      outcome.correct
+        ? "Correto!"
+        : `Resposta incorreta. A resposta era ${correctLabel}. ${challenge?.feedback ?? ""}`,
+    );
+  }, [round]);
+  const answerGate = useMemo(
+    () => createArcadeRoundAnswerGate(round, handleAcceptedOutcome),
+    [handleAcceptedOutcome, round],
+  );
+  const submitAnswer = useCallback(
+    (answer: ArcadeAnswer) => answerGate(answer),
+    [answerGate],
+  );
+  const handleRuntimeState = useCallback((state: ArcadeSceneRuntimeState) => {
+    const nextIndex = state.challengeIndex;
+    if (nextIndex !== undefined && nextIndex !== displayChallengeIndexRef.current) {
+      displayChallengeIndexRef.current = nextIndex;
+      selectedChoiceIdRef.current = "";
+      setDisplayChallengeIndex(nextIndex);
+      setLiveMessage(
+        nextIndex >= round.challenges.length
+          ? "Progressão concluída."
+          : "Escolha a próxima placa.",
+      );
+    }
+    if (!state.selectedChoiceId || state.selectedChoiceId === selectedChoiceIdRef.current) return;
+    selectedChoiceIdRef.current = state.selectedChoiceId;
+    const challenge = round.challenges[nextIndex ?? displayChallengeIndexRef.current];
+    const selected = challenge?.choices.find((choice) => choice.id === state.selectedChoiceId);
+    if (selected) setLiveMessage(`Placa selecionada: ${selected.label}.`);
+  }, [round.challenges]);
 
   useEffect(() => {
     const syncSound = () => setSoundPreference(isSoundEnabled());
@@ -42,6 +91,22 @@ export default function NinjaFoundationGame() {
       window.removeEventListener(ANIMATION_PREFERENCE_EVENT, syncAnimations);
     };
   }, []);
+
+  const completed = outcomes.length === round.challenges.length &&
+    displayChallengeIndex >= round.challenges.length;
+  const currentChallenge = round.challenges[
+    Math.min(displayChallengeIndex, round.challenges.length - 1)
+  ];
+
+  function restartProgression() {
+    setSeed(Date.now());
+    setOutcomes([]);
+    displayChallengeIndexRef.current = 0;
+    selectedChoiceIdRef.current = "";
+    setDisplayChallengeIndex(0);
+    setPaused(false);
+    setLiveMessage("Nova progressão pronta.");
+  }
 
   return (
     <GameShell
@@ -62,7 +127,14 @@ export default function NinjaFoundationGame() {
     >
       <div className="ninja-foundation-game">
         <div className="ninja-foundation-toolbar">
-          <span>Treino</span>
+          <span aria-label={`${outcomes.length} respostas registradas`}>
+            {displayChallengeIndex}/{round.challenges.length} placas
+          </span>
+          {completed && (
+            <button className="secondary-button" onClick={restartProgression} type="button">
+              Recomeçar
+            </button>
+          )}
           <button
             aria-label={paused ? "Retomar jogo" : "Pausar jogo"}
             aria-pressed={paused}
@@ -75,10 +147,17 @@ export default function NinjaFoundationGame() {
           </button>
         </div>
 
+        <div className="ninja-question" tabIndex={-1}>
+          <span>{completed ? "Treino concluído" : `Placa ${displayChallengeIndex + 1}`}</span>
+          <strong>{completed ? "Progressão concluída!" : currentChallenge.prompt}</strong>
+        </div>
+
         <PhaserArcadeSurface
-          ariaLabel="Cenário do jogo Ninja com personagem em corrida automática."
-          className="ninja-foundation-canvas"
-          onAnswer={ignoreAnswer}
+          ariaLabel={`Jogo Ninja. ${completed ? "Progressão concluída." : currentChallenge?.prompt} Opções: ${completed ? "nenhuma" : currentChallenge?.choices.map((choice) => choice.label).join(", ")}. Use as setas e salte com Enter ou Espaço.`}
+          className="ninja-foundation-canvas is-interactive"
+          interactive
+          onAnswer={submitAnswer}
+          onRuntimeState={handleRuntimeState}
           paused={paused}
           reducedMotion={reducedMotion}
           round={round}
@@ -90,8 +169,8 @@ export default function NinjaFoundationGame() {
           {paused
             ? "Jogo pausado."
             : reducedMotion
-              ? "Cena estática com movimento reduzido."
-              : "Corrida em andamento."}
+              ? completed ? "Progressão concluída." : liveMessage
+              : completed ? "Progressão concluída." : liveMessage}
         </p>
       </div>
     </GameShell>

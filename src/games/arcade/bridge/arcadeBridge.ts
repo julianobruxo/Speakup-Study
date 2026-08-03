@@ -20,6 +20,7 @@ export interface PreparedArcadeChallenge {
   prompt: string;
   choices: ArcadeChoice[];
   correctChoiceId: string;
+  feedback?: string;
 }
 
 export interface PreparedArcadeRound {

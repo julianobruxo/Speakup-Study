@@ -1648,7 +1648,7 @@ async function main() {
   // ---- Ninja 6A: auto-run, camera, parallax foundation, pooling and lifecycle ----
   for (const [width, height] of [[1440, 900], [768, 1024], [390, 844], [360, 800]]) {
     await setViewport(width, height);
-    await navigate("/jogos/ninja");
+    await navigate("/jogos/ninja?seed=2026");
     await waitFor(
       () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.arcadeReady === 'true'`),
       `Ninja foundation ready at ${width}x${height}`,
@@ -1659,7 +1659,8 @@ async function main() {
         const surface = document.querySelector('.ninja-foundation-canvas');
         return Number(surface?.dataset.runtimeRunnerDistance) > 80 &&
           Number(surface?.dataset.runtimeCameraX) > 0 &&
-          Number(surface?.dataset.runtimePooledReuseCount) > 0;
+          Number(surface?.dataset.runtimePooledReuseCount) > 0 &&
+          Boolean(surface?.dataset.runtimeSelectedChoiceId);
       })()`),
       `Ninja foundation advances and recycles at ${width}x${height}`,
       12000,
@@ -1670,7 +1671,7 @@ async function main() {
       const rect = surface?.getBoundingClientRect();
       const pauseRect = pause?.getBoundingClientRect();
       return {
-        autoRunning: surface?.dataset.runtimeAutoRunning,
+        decisionStopped: surface?.dataset.runtimeAutoRunning,
         canvasCount: document.querySelectorAll('.ninja-foundation-canvas canvas').length,
         height: rect?.height ?? 0,
         pauseHeight: pauseRect?.height ?? 0,
@@ -1680,7 +1681,7 @@ async function main() {
       };
     })()`);
     assert(
-      ninjaLayout.autoRunning === "true" &&
+      ninjaLayout.decisionStopped === "false" &&
         ninjaLayout.canvasCount === 1 &&
         ninjaLayout.width > 0 &&
         ninjaLayout.height >= 500 &&
@@ -1714,11 +1715,12 @@ async function main() {
     () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimePaused === 'false'`),
     "Ninja foundation resumes",
   );
-  await waitFor(
-    () => evaluate(
-      `Number(document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeRunnerDistance) > ${pausedNinjaDistance}`,
+  await delay(350);
+  assert(
+    await evaluate(
+      `Number(document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeRunnerDistance) === ${pausedNinjaDistance}`,
     ),
-    "Ninja runner advances after resume",
+    "Ninja left the decision zone without an answer after resume",
   );
   const ninjaPoolBeforeResize = await evaluate(
     `Number(document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeTrackPoolSize)`,
@@ -1747,13 +1749,78 @@ async function main() {
     () => evaluate(`document.querySelectorAll('canvas').length === 0`),
     "Ninja foundation destroys its canvas on exit",
   );
+
+  await setViewport(390, 844);
+  await navigate("/jogos/ninja?seed=2026");
+  await waitFor(
+    () => evaluate(`Boolean(document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeSelectedChoiceId)`),
+    "Ninja first decision is ready",
+    20000,
+  );
+  const ninjaRound = await evaluate(`(async () => {
+    const { createNinjaFoundationRound } = await import('/src/games/arcade/ninja/ninjaRound.ts');
+    return createNinjaFoundationRound(2026);
+  })()`);
+  const clickNinjaSign = async (index) => {
+    const point = await evaluate(`(() => {
+      const rect = document.querySelector('.ninja-foundation-canvas').getBoundingClientRect();
+      const logicalGround = Math.min(rect.height - 76, Math.max(300, rect.height * 0.76));
+      return {
+        x: rect.left + rect.width * ((${index} + 0.5) / 3),
+        y: rect.top + Math.max(145, logicalGround - 122),
+      };
+    })()`);
+    await send("Input.dispatchMouseEvent", { type: "mousePressed", button: "left", clickCount: 1, ...point }, sessionId);
+    await send("Input.dispatchMouseEvent", { type: "mouseReleased", button: "left", clickCount: 1, ...point }, sessionId);
+  };
+  const first = ninjaRound.challenges[0];
+  const wrongIndex = first.choices.findIndex((choice) => choice.id !== first.correctChoiceId);
+  await clickNinjaSign(wrongIndex);
+  await waitFor(
+    () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeLastAnswer === 'incorrect'`),
+    "Ninja click resolves an incorrect sign",
+  );
+  await waitFor(
+    () => hasText("Resposta incorreta."),
+    "Ninja incorrect feedback is exposed outside Canvas",
+  );
+  screenshots.push(await screenshot("ninja-sign-incorrect-390x844"));
+  await waitFor(
+    () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeChallengeIndex === '1'`),
+    "Ninja advances to second sign challenge",
+  );
+  await evaluate(`document.querySelector('.ninja-foundation-canvas')?.focus()`);
+  const second = ninjaRound.challenges[1];
+  const secondCorrectIndex = second.choices.findIndex((choice) => choice.id === second.correctChoiceId);
+  for (let index = 0; index < secondCorrectIndex; index += 1) await pressKey("ArrowRight");
+  await pressKey("Enter");
+  await waitFor(
+    () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeLastAnswer === 'correct'`),
+    "Ninja keyboard jump resolves a correct sign",
+  );
+  await waitFor(
+    () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeChallengeIndex === '2'`),
+    "Ninja advances to third sign challenge",
+  );
+  const third = ninjaRound.challenges[2];
+  const thirdCorrectIndex = third.choices.findIndex((choice) => choice.id === third.correctChoiceId);
+  await clickNinjaSign(thirdCorrectIndex);
+  await waitFor(() => hasText("Progressão concluída!"), "Ninja completes the 6B progression", 12000);
+  assert(
+    await evaluate(`document.querySelectorAll('.ninja-foundation-canvas canvas').length === 1`),
+    "Ninja progression remounted its Canvas",
+  );
+  screenshots.push(await screenshot("ninja-progression-complete-390x844"));
+  await navigateSpa("/jogos");
+  await waitFor(() => evaluate(`document.querySelectorAll('canvas').length === 0`), "Ninja 6B teardown");
+
   await send(
     "Emulation.setEmulatedMedia",
     { features: [{ name: "prefers-reduced-motion", value: "reduce" }] },
     sessionId,
   );
   await setViewport(390, 844);
-  await navigate("/jogos/ninja");
+  await navigate("/jogos/ninja?seed=2026");
   await waitFor(
     () => evaluate(`(() => {
       const surface = document.querySelector('.ninja-foundation-canvas');

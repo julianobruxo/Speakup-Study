@@ -16,6 +16,14 @@ interface TrackVisual {
   slab: Phaser.GameObjects.Rectangle;
 }
 
+interface SignVisual {
+  choiceId: string;
+  container: Phaser.GameObjects.Container;
+  panel: Phaser.GameObjects.Rectangle;
+}
+
+type NinjaPhase = "running" | "decision" | "jumping" | "feedback" | "complete";
+
 const TEXTURE_SIZE = 720;
 
 export const createNinjaFoundationScene: ArcadeSceneFactory = (
@@ -29,6 +37,7 @@ export const createNinjaFoundationScene: ArcadeSceneFactory = (
     private lastDiagnosticsAt = 0;
     private layout?: NinjaFoundationLayout;
     private nearLayer?: Phaser.GameObjects.TileSprite;
+    private phase: NinjaPhase = "running";
     private pooledReuseCount = 0;
     private reducedMotion = settings.reducedMotion;
     private runner?: Phaser.GameObjects.Container;
@@ -38,10 +47,25 @@ export const createNinjaFoundationScene: ArcadeSceneFactory = (
       frontLeg: Phaser.GameObjects.Rectangle;
       scarf: Phaser.GameObjects.Triangle;
     };
+    private selectedSignIndex = 0;
+    private signs: SignVisual[] = [];
     private sky?: Phaser.GameObjects.Rectangle;
     private sun?: Phaser.GameObjects.Arc;
     private track: NinjaTrackSegment[] = [];
     private trackVisuals = new Map<number, TrackVisual>();
+    private transitionTimer?: Phaser.Time.TimerEvent;
+    private keyboardKeys?: {
+      confirm: Phaser.Input.Keyboard.Key;
+      confirmAlt: Phaser.Input.Keyboard.Key;
+      left: Phaser.Input.Keyboard.Key;
+      right: Phaser.Input.Keyboard.Key;
+    };
+    private keyboardHost?: HTMLElement;
+    private jumpTween?: Phaser.Tweens.Tween;
+    private pendingSign?: SignVisual;
+    private lastOutcomeCorrect?: boolean;
+    private statusText?: Phaser.GameObjects.Text;
+    private challengeIndex = 0;
 
     constructor() {
       super({ key: `ninja-foundation:${settings.round.id}` });
@@ -55,10 +79,12 @@ export const createNinjaFoundationScene: ArcadeSceneFactory = (
       this.layout = getNinjaFoundationLayout(this.logicalWidth(), this.logicalHeight());
       this.createTrack();
       this.createRunner();
+      this.createDecisionControls();
 
       this.scale.on(PhaserRuntime.Scale.Events.RESIZE, this.handleResize, this);
       this.game.events.on("arcade-reduced-motion", this.setReducedMotion, this);
       this.events.once(PhaserRuntime.Scenes.Events.SHUTDOWN, this.teardown, this);
+      this.scheduleDecision();
       events.onReady();
       this.emitRuntimeState();
     }
@@ -69,12 +95,15 @@ export const createNinjaFoundationScene: ArcadeSceneFactory = (
       if (!runner || !layout) return;
 
       const body = runner.body as Phaser.Physics.Arcade.Body;
-      body.setVelocityX(this.reducedMotion ? 0 : NINJA_RUN_SPEED);
-      runner.y = layout.groundY - 7;
-      if (!this.reducedMotion) {
+      const autoRunning = this.phase === "running" && !this.reducedMotion;
+      body.setVelocityX(autoRunning ? NINJA_RUN_SPEED : 0);
+      if (this.phase === "running" || this.phase === "decision") {
+        runner.y = layout.groundY - 7;
+      }
+      if (autoRunning) {
         this.cameras.main.scrollX = Math.max(0, runner.x - layout.runnerStartX);
       }
-      this.animateRunner(time);
+      this.animateRunner(this.phase === "running" ? time : 0);
       this.updateParallax();
       this.recycleTrack();
 
@@ -216,6 +245,221 @@ export const createNinjaFoundationScene: ArcadeSceneFactory = (
       parts.scarf.rotation = -0.08 + Math.sin(time * 0.008) * 0.08;
     }
 
+    private createDecisionControls() {
+      this.statusText = this.add.text(this.logicalWidth() / 2, this.logicalHeight() - 28, "", {
+        align: "center",
+        color: "#17234b",
+        fontFamily: "Inter, system-ui, sans-serif",
+        fontSize: "14px",
+        fontStyle: "bold",
+        resolution: settings.renderResolution,
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(12);
+
+      if (!this.input.keyboard) return;
+      this.keyboardHost = this.game.canvas.parentElement ?? undefined;
+      this.keyboardKeys = {
+        confirm: this.input.keyboard.addKey(PhaserRuntime.Input.Keyboard.KeyCodes.SPACE, false),
+        confirmAlt: this.input.keyboard.addKey(PhaserRuntime.Input.Keyboard.KeyCodes.ENTER, false),
+        left: this.input.keyboard.addKey(PhaserRuntime.Input.Keyboard.KeyCodes.LEFT, false),
+        right: this.input.keyboard.addKey(PhaserRuntime.Input.Keyboard.KeyCodes.RIGHT, false),
+      };
+      this.keyboardKeys.left.on("down", this.selectPreviousSign, this);
+      this.keyboardKeys.right.on("down", this.selectNextSign, this);
+      this.keyboardKeys.confirm.on("down", this.confirmSelectedSign, this);
+      this.keyboardKeys.confirmAlt.on("down", this.confirmSelectedSign, this);
+    }
+
+    private scheduleDecision() {
+      this.phase = "running";
+      this.statusText?.setText(this.reducedMotion ? "Escolha uma placa." : "As placas estão chegando...");
+      this.transitionTimer?.remove(false);
+      if (this.reducedMotion) {
+        this.enterDecision();
+        return;
+      }
+      this.transitionTimer = this.time.delayedCall(720, this.enterDecision, [], this);
+    }
+
+    private enterDecision() {
+      if (this.phase !== "running") return;
+      this.phase = "decision";
+      const body = this.runner?.body as Phaser.Physics.Arcade.Body | undefined;
+      body?.setVelocityX(0);
+      this.selectedSignIndex = 0;
+      this.renderSigns();
+      this.statusText?.setColor("#17234b").setText("Escolha uma placa e salte.");
+      this.emitRuntimeState();
+    }
+
+    private renderSigns() {
+      this.clearSigns();
+      const challenge = settings.round.challenges[this.challengeIndex];
+      const layout = this.layout;
+      if (!challenge || !layout) return;
+      const width = this.logicalWidth();
+      const signWidth = Math.max(92, Math.min(190, (width - 54) / 3));
+      const signY = Math.max(145, layout.groundY - 122);
+
+      challenge.choices.forEach((choice, index) => {
+        const x = width * ((index + 0.5) / 3);
+        const post = this.add.rectangle(0, 40, 8, 80, 0x243665);
+        const panel = this.add.rectangle(0, 0, signWidth, 72, 0xffffff)
+          .setStrokeStyle(4, 0x17234b)
+          .setInteractive({ useHandCursor: true });
+        const label = this.add.text(0, 0, choice.label, {
+          align: "center",
+          color: "#17234b",
+          fontFamily: "Inter, system-ui, sans-serif",
+          fontSize: width < 520 ? "17px" : "20px",
+          fontStyle: "bold",
+          resolution: settings.renderResolution,
+          wordWrap: { width: signWidth - 16 },
+        }).setOrigin(0.5);
+        const container = this.add.container(x, signY, [post, panel, label])
+          .setScrollFactor(0)
+          .setDepth(9);
+        panel.on("pointerup", () => this.chooseSign(index));
+        this.signs.push({ choiceId: choice.id, container, panel });
+      });
+      this.drawSignSelection();
+    }
+
+    private selectPreviousSign() {
+      if (!this.keyboardHasFocus() || this.phase !== "decision" || this.signs.length === 0) return;
+      this.selectedSignIndex = (this.selectedSignIndex - 1 + this.signs.length) % this.signs.length;
+      this.drawSignSelection();
+      this.emitRuntimeState();
+    }
+
+    private selectNextSign() {
+      if (!this.keyboardHasFocus() || this.phase !== "decision" || this.signs.length === 0) return;
+      this.selectedSignIndex = (this.selectedSignIndex + 1) % this.signs.length;
+      this.drawSignSelection();
+      this.emitRuntimeState();
+    }
+
+    private confirmSelectedSign() {
+      if (!this.keyboardHasFocus()) return;
+      this.chooseSign(this.selectedSignIndex);
+    }
+
+    private chooseSign(index: number) {
+      const sign = this.signs[index];
+      const runner = this.runner;
+      const layout = this.layout;
+      if (this.phase !== "decision" || !sign || !runner || !layout) return;
+      this.selectedSignIndex = index;
+      this.drawSignSelection();
+      this.phase = "jumping";
+      this.pendingSign = sign;
+      const resolve = () => this.resolveSign(sign);
+
+      if (this.reducedMotion) {
+        resolve();
+        return;
+      }
+      this.jumpTween = this.tweens.add({
+        targets: runner,
+        x: this.cameras.main.scrollX + sign.container.x,
+        y: layout.groundY - 112,
+        duration: 320,
+        ease: "Sine.easeOut",
+        yoyo: true,
+        onYoyo: resolve,
+        onComplete: () => {
+          this.jumpTween = undefined;
+          this.scheduleAdvance();
+        },
+      });
+      this.emitRuntimeState();
+    }
+
+    private resolveSign(sign: SignVisual) {
+      const challenge = settings.round.challenges[this.challengeIndex];
+      if (!challenge || this.phase !== "jumping") return;
+      const outcome = events.onAnswer({
+        answeredAt: new Date().toISOString(),
+        challengeId: challenge.id,
+        choiceId: sign.choiceId,
+      });
+      if (!outcome) {
+        this.phase = "decision";
+        return;
+      }
+      this.phase = "feedback";
+      this.pendingSign = undefined;
+      this.lastOutcomeCorrect = outcome.correct;
+      sign.panel.setFillStyle(outcome.correct ? 0xdff7ef : 0xffe4e8)
+        .setStrokeStyle(5, outcome.correct ? 0x23705b : 0x8d1d30);
+      const correctLabel = challenge.choices.find(
+        (choice) => choice.id === challenge.correctChoiceId,
+      )?.label;
+      this.statusText
+        ?.setColor(outcome.correct ? "#23705b" : "#8d1d30")
+        .setText(outcome.correct ? "Correto!" : `Resposta: ${correctLabel}`);
+      this.emitRuntimeState({ lastAnswerCorrect: outcome.correct });
+      if (this.reducedMotion) this.scheduleAdvance();
+    }
+
+    private scheduleAdvance() {
+      if (this.phase !== "feedback") return;
+      this.transitionTimer?.remove(false);
+      const feedbackDelay = this.lastOutcomeCorrect === false ? 4_500 : 1_200;
+      this.transitionTimer = this.time.delayedCall(feedbackDelay, () => {
+        this.challengeIndex += 1;
+        this.clearSigns();
+        if (this.challengeIndex >= settings.round.challenges.length) {
+          this.phase = "complete";
+          this.statusText?.setColor("#23705b").setText("Progressão concluída!");
+          this.emitRuntimeState();
+          return;
+        }
+        this.scheduleDecision();
+        this.emitRuntimeState();
+      });
+    }
+
+    private drawSignSelection() {
+      this.signs.forEach((sign, index) => {
+        sign.panel.setStrokeStyle(index === this.selectedSignIndex ? 5 : 3, index === this.selectedSignIndex ? 0x8d1d30 : 0x17234b);
+      });
+    }
+
+    private keyboardHasFocus() {
+      return document.activeElement === this.keyboardHost;
+    }
+
+    private settleActiveJump() {
+      const sign = this.pendingSign;
+      const runner = this.runner;
+      const layout = this.layout;
+      if (!runner || !layout || !this.jumpTween) return;
+      this.jumpTween.stop();
+      this.jumpTween = undefined;
+      runner.setPosition(this.cameras.main.scrollX + layout.runnerStartX, layout.groundY - 7);
+      if (this.phase === "jumping" && sign) {
+        this.resolveSign(sign);
+        if (!this.reducedMotion) this.scheduleAdvance();
+      } else if (this.phase === "feedback") {
+        this.scheduleAdvance();
+      }
+    }
+
+    private positionSigns() {
+      const layout = this.layout;
+      if (!layout || this.signs.length === 0) return;
+      const width = this.logicalWidth();
+      const signY = Math.max(145, layout.groundY - 122);
+      this.signs.forEach((sign, index) => {
+        sign.container.setPosition(width * ((index + 0.5) / 3), signY);
+      });
+    }
+
+    private clearSigns() {
+      this.signs.forEach((sign) => sign.container.destroy(true));
+      this.signs = [];
+    }
+
     private recycleTrack() {
       const layout = this.layout;
       if (!layout) return;
@@ -279,14 +523,20 @@ export const createNinjaFoundationScene: ArcadeSceneFactory = (
         this.runner.y = this.layout.groundY - 7;
         this.runner.setScale(this.runnerScale());
       }
+      this.settleActiveJump();
+      this.positionSigns();
+      this.statusText?.setPosition(this.logicalWidth() / 2, this.logicalHeight() - 28);
+      if (this.phase === "decision") this.renderSigns();
       this.emitRuntimeState();
     }
 
     private setReducedMotion(value: boolean) {
       this.reducedMotion = value;
       const body = this.runner?.body as Phaser.Physics.Arcade.Body | undefined;
-      body?.setVelocityX(value ? 0 : NINJA_RUN_SPEED);
+      body?.setVelocityX(value || this.phase !== "running" ? 0 : NINJA_RUN_SPEED);
+      if (value) this.settleActiveJump();
       this.animateRunner(0);
+      if (this.phase === "running" && value) this.enterDecision();
       this.emitRuntimeState();
     }
 
@@ -302,24 +552,34 @@ export const createNinjaFoundationScene: ArcadeSceneFactory = (
       return 1.04 + Math.min(0.2, Math.max(0, (this.logicalWidth() - 360) / 3000));
     }
 
-    private emitRuntimeState() {
+    private emitRuntimeState(detail: { lastAnswerCorrect?: boolean } = {}) {
       const runner = this.runner;
       events.onRuntimeState({
         activeObjectCount: this.track.length + (runner ? 1 : 0),
         autoRunning: Boolean(runner && (runner.body as Phaser.Physics.Arcade.Body).velocity.x > 0),
         cameraX: Math.round(this.cameras.main.scrollX),
+        challengeIndex: this.challengeIndex,
         pooledReuseCount: this.pooledReuseCount,
         renderResolution: settings.renderResolution,
         reducedMotion: this.reducedMotion,
         runnerDistance: Math.max(0, Math.round((runner?.x ?? 0) - this.runnerStartX)),
+        selectedChoiceId: this.signs[this.selectedSignIndex]?.choiceId,
         trackPoolSize: this.track.length,
         tweenCount: this.tweens.getTweens().length,
+        ...detail,
       });
     }
 
     private teardown() {
       this.scale.off(PhaserRuntime.Scale.Events.RESIZE, this.handleResize, this);
       this.game.events.off("arcade-reduced-motion", this.setReducedMotion, this);
+      this.transitionTimer?.remove(false);
+      this.keyboardKeys?.left.off("down", this.selectPreviousSign, this);
+      this.keyboardKeys?.right.off("down", this.selectNextSign, this);
+      this.keyboardKeys?.confirm.off("down", this.confirmSelectedSign, this);
+      this.keyboardKeys?.confirmAlt.off("down", this.confirmSelectedSign, this);
+      this.keyboardHost = undefined;
+      this.clearSigns();
       this.tweens.killAll();
       this.trackVisuals.clear();
     }

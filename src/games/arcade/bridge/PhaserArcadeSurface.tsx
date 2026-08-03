@@ -13,6 +13,7 @@ interface PhaserArcadeSurfaceProps {
   className?: string;
   interactive?: boolean;
   onAnswer: (answer: ArcadeAnswer) => ChallengeOutcome | null;
+  onRuntimeState?: (state: ArcadeSceneRuntimeState) => void;
   paused: boolean;
   reducedMotion: boolean;
   round: PreparedArcadeRound;
@@ -88,6 +89,7 @@ export function PhaserArcadeSurface({
   className = "",
   interactive = false,
   onAnswer,
+  onRuntimeState,
   paused,
   reducedMotion,
   round,
@@ -98,6 +100,7 @@ export function PhaserArcadeSurface({
   const gameRef = useRef<PhaserGame | null>(null);
   const hostPausedSceneKeysRef = useRef(new Set<string>());
   const onAnswerRef = useRef(onAnswer);
+  const onRuntimeStateRef = useRef(onRuntimeState);
   const pausedRef = useRef(paused);
   const reducedMotionRef = useRef(reducedMotion);
   const soundEnabledRef = useRef(soundEnabled);
@@ -112,6 +115,7 @@ export function PhaserArcadeSurface({
   const [version, setVersion] = useState("");
 
   onAnswerRef.current = onAnswer;
+  onRuntimeStateRef.current = onRuntimeState;
   pausedRef.current = paused;
   reducedMotionRef.current = reducedMotion;
   soundEnabledRef.current = soundEnabled;
@@ -184,6 +188,7 @@ export function PhaserArcadeSurface({
           onRuntimeState: (state) => {
             if (!disposed) {
               setRuntimeDiagnostics((current) => ({ ...current, ...state }));
+              onRuntimeStateRef.current?.(state);
             }
           },
         },

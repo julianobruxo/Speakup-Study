@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { PRESENT_TOBE_QUESTIONS } from "../src/content/data/presentTobeQuestions.ts";
 
 import {
   createNinjaTrackPool,
@@ -7,6 +8,29 @@ import {
   getNinjaParallaxOffsets,
   recycleNinjaTrackPool,
 } from "../src/games/arcade/ninja/ninjaFoundationModel.ts";
+import { createNinjaFoundationRound } from "../src/games/arcade/ninja/ninjaRound.ts";
+
+test("Ninja 6B prepares three deterministic canonical grammar challenges", () => {
+  const first = createNinjaFoundationRound(2026);
+  const second = createNinjaFoundationRound(2026);
+  assert.deepEqual(first, second);
+  assert.equal(first.gameId, "ninja");
+  assert.equal(first.challenges.length, 3);
+  assert.equal(new Set(first.challenges.map((challenge) => challenge.id)).size, 3);
+  first.challenges.forEach((challenge) => {
+    assert.equal(challenge.choices.length, 3);
+    assert.equal(new Set(challenge.choices.map((choice) => choice.id)).size, 3);
+    assert(challenge.choices.some((choice) => choice.id === challenge.correctChoiceId));
+    assert.match(challenge.id, /^ninja:present_tobe_easy_/);
+    assert(challenge.feedback?.length > 10);
+    const canonicalId = challenge.id.replace("ninja:", "");
+    const canonical = PRESENT_TOBE_QUESTIONS.find((question) => question.id === canonicalId);
+    const correctChoice = challenge.choices.find(
+      (choice) => choice.id === challenge.correctChoiceId,
+    );
+    assert.equal(correctChoice?.label, canonical?.correctAnswer);
+  });
+});
 
 test("Ninja foundation derives compact layouts with enough pooled track", () => {
   for (const [width, height] of [[390, 844], [768, 1024], [1440, 900]]) {
