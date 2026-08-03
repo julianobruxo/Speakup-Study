@@ -1887,19 +1887,21 @@ async function main() {
       `Ninja records remaining challenge ${challengeIndex + 1}`,
     );
   }
-  await waitFor(() => hasText("Progressão concluída!"), "Ninja completes the 6D progression", 12000);
+  await waitFor(() => hasText("Você completou Ninja."), "Ninja completes the Canvas progression", 15000);
   ninjaMobileProgressionMs = Date.now() - ninjaProgressionStartedAt;
   assert(
     ninjaMobileProgressionMs < 90_000,
     `Ninja measured mobile progression exceeded 90 seconds: ${ninjaMobileProgressionMs}ms`,
   );
   assert(
-    await evaluate(`document.querySelectorAll('.ninja-foundation-canvas canvas').length === 1`),
-    "Ninja recovery left more than one Canvas mounted",
+    await evaluate(`document.querySelectorAll('canvas').length === 0`),
+    "Ninja Canvas remained mounted on the result screen",
   );
-  screenshots.push(await screenshot("ninja-progression-complete-390x844"));
+  assert(await hasText("1150"), "Ninja Canvas result did not preserve its score");
+  assert(await hasText("+45"), "Ninja Canvas result did not grant expected XP");
+  screenshots.push(await screenshot("ninja-result-390x844"));
   await navigateSpa("/jogos");
-  await waitFor(() => evaluate(`document.querySelectorAll('canvas').length === 0`), "Ninja 6C teardown");
+  await waitFor(() => evaluate(`document.querySelectorAll('canvas').length === 0`), "Ninja Canvas teardown");
 
   await send(
     "Emulation.setEmulatedMedia",
@@ -1946,6 +1948,107 @@ async function main() {
     { features: [{ name: "prefers-reduced-motion", value: "no-preference" }] },
     sessionId,
   );
+
+  // ---- Ninja 6E: equivalent simplified DOM mode and persistent completion ----
+  await setViewport(390, 844);
+  await navigate("/jogos/ninja?seed=2026&mode=dom");
+  await waitFor(() => evaluate(`Boolean(document.querySelector('.ninja-dom'))`), "Ninja DOM mode mounts");
+  assert(await evaluate(`document.querySelectorAll('canvas').length === 0`), "Ninja DOM mode mounted Canvas");
+  assert(
+    await evaluate(`document.querySelectorAll('[aria-live]').length === 1`),
+    "Ninja DOM mode must expose one live region",
+  );
+  await assertNoOverflow("Ninja DOM active board 390x844");
+  for (let challengeIndex = 0; challengeIndex < 3; challengeIndex += 1) {
+    const challenge = ninjaRound.challenges[challengeIndex];
+    const wrongChoice = challenge.choices.find((choice) => choice.id !== challenge.correctChoiceId);
+    await waitFor(
+      () => evaluate(`document.querySelector('.ninja-dom')?.dataset.challengeIndex === '${challengeIndex}'`),
+      `Ninja DOM challenge ${challengeIndex + 1} is ready`,
+      12000,
+    );
+    if (challengeIndex > 0) {
+      assert(
+        await evaluate(`document.activeElement?.classList.contains('ninja-dom-prompt')`),
+        `Ninja DOM challenge ${challengeIndex + 1} did not receive focus`,
+      );
+    }
+    if (challengeIndex === 0) {
+      await evaluate(`document.querySelector('.ninja-dom-choices button[data-choice-id="${wrongChoice.id}"]')?.focus()`);
+      await pressKey("Enter");
+    } else {
+      await click(`.ninja-dom-choices button[data-choice-id="${wrongChoice.id}"]`);
+    }
+    await waitFor(
+      () => hasText(`${challengeIndex + 1}/${ninjaRound.challenges.length} placas`),
+      `Ninja DOM records challenge ${challengeIndex + 1}`,
+    );
+    if (challengeIndex === 0) {
+      assert(
+        await evaluate(`Array.from(document.querySelectorAll('.arcade-mode-switch button')).every((button) => button.disabled)`),
+        "Ninja mode switch remained enabled after the round started",
+      );
+    }
+  }
+  await waitFor(
+    () => evaluate(`Boolean(document.querySelector('.ninja-recovery .primary-button'))`),
+    "Ninja DOM exposes recovery after three errors",
+    12000,
+  );
+  assert(
+    await hasText("Recuperar e continuar está disponível"),
+    "Ninja DOM recovery was not announced",
+  );
+  assert(
+    await evaluate(`document.activeElement?.matches('.ninja-recovery .primary-button')`),
+    "Ninja DOM recovery did not receive focus",
+  );
+  await pressKey("Enter");
+  await waitFor(
+    () => evaluate(`document.querySelector('.ninja-dom')?.dataset.challengeIndex === '0'`),
+    "Ninja DOM recovery did not mount the remaining round",
+  );
+  await waitFor(() => hasText("3/10 placas"), "Ninja DOM recovery lost completed outcomes");
+  await assertNoOverflow("Ninja DOM recovered board 390x844");
+
+  for (let challengeIndex = 3; challengeIndex < ninjaRound.challenges.length; challengeIndex += 1) {
+    const localChallengeIndex = challengeIndex - 3;
+    const challenge = ninjaRound.challenges[challengeIndex];
+    await waitFor(
+      () => evaluate(`document.querySelector('.ninja-dom')?.dataset.challengeIndex === '${localChallengeIndex}'`),
+      `Ninja DOM recovered challenge ${challengeIndex + 1} is ready`,
+      12000,
+    );
+    assert(
+      await evaluate(`document.activeElement?.classList.contains('ninja-dom-prompt')`),
+      `Ninja DOM recovered challenge ${challengeIndex + 1} did not receive focus`,
+    );
+    await click(`.ninja-dom-choices button[data-choice-id="${challenge.correctChoiceId}"]`);
+    await waitFor(
+      () => hasText(`${challengeIndex + 1}/${ninjaRound.challenges.length} placas`),
+      `Ninja DOM records recovered challenge ${challengeIndex + 1}`,
+    );
+  }
+  await waitFor(() => hasText("Você completou Ninja."), "Ninja DOM mode completes", 15000);
+  assert(await evaluate(`document.activeElement?.matches('.result-hero h1')`), "Ninja result did not receive focus");
+  assert(await hasText("1150"), "Ninja DOM result did not preserve its score");
+  assert(await hasText("+45"), "Ninja DOM result did not grant expected XP");
+  await waitFor(
+    () => evaluate(`(async () => {
+      const { getGameSessions } = await import('/src/services/progress/localProgress.ts');
+      const sessions = await getGameSessions();
+      return sessions.some((session) =>
+        session.gameId === 'ninja' &&
+        session.totalChallenges === 10 &&
+        session.correctCount === 7 &&
+        session.score === 1150
+      );
+    })()`),
+    "Ninja DOM result persists",
+  );
+  await assertNoOverflow("Ninja DOM result 390x844");
+  screenshots.push(await screenshot("ninja-dom-result-390x844"));
+  await navigateSpa("/jogos");
 
   await setViewport(1366, 768);
   const routeChecks = [

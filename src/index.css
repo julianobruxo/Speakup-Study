@@ -728,6 +728,93 @@
   flex: 0 0 auto;
 }
 
+.ninja-dom {
+  min-height: 430px;
+  display: grid;
+  align-content: center;
+  gap: 18px;
+  padding: 28px;
+  color: #17234b;
+  background: #e8f8fb;
+  border: 1px solid #24366d;
+  border-radius: 8px;
+}
+
+.ninja-dom-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ninja-dom-heading span,
+.ninja-dom-stage {
+  color: #69738d;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ninja-dom-heading h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.ninja-dom-stage {
+  color: #8d1d30;
+  text-align: center;
+}
+
+.ninja-dom-prompt {
+  margin: 0;
+  font-size: 24px;
+  text-align: center;
+}
+
+.ninja-dom-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ninja-dom-choices button {
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  color: #17234b;
+  background: #ffffff;
+  border: 2px solid #cbd5e8;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.ninja-dom-choices button > span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  background: #243665;
+  border-radius: 50%;
+  font-size: 12px;
+}
+
+.ninja-dom-feedback {
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.ninja-dom-feedback.is-correct { color: #23705b; }
+.ninja-dom-feedback.is-incorrect { color: #8d1d30; }
+
 @media (max-width: 560px) {
   .ninja-foundation-toolbar {
     align-items: flex-start;
@@ -736,6 +823,19 @@
 
   .ninja-progress-stats {
     max-width: calc(100% - 52px);
+  }
+
+  .ninja-foundation-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .ninja-foundation-toolbar .arcade-mode-switch {
+    order: 3;
+    width: 100%;
+  }
+
+  .ninja-foundation-toolbar .arcade-mode-switch button {
+    flex: 1;
   }
 
   .ninja-foundation-canvas {
@@ -755,6 +855,25 @@
   .ninja-recovery {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .ninja-dom {
+    min-height: 420px;
+    gap: 14px;
+    padding: 20px 12px;
+  }
+
+  .ninja-dom-prompt {
+    font-size: 19px;
+  }
+
+  .ninja-dom-choices {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .ninja-dom-choices button {
+    min-height: 56px;
   }
 }
 

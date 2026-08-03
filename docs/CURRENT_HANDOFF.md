@@ -16,7 +16,7 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Vocabulário funcional apenas em Partes do corpo.
 - Progresso com atividade semanal, conquistas, revisão e métricas locais.
 - Perfil local editável, preferências e reset local confirmado.
-- Jogos: onze jogos do catálogo oficial funcionais com `present_tobe` + `body`, incluindo Bubble Shooter e Corte a palavra em Canvas e DOM; Ninja está em implementação incremental, com fundação 6A e primeira progressão 6B acessíveis apenas por rota direta.
+- Jogos: onze jogos publicados no catálogo com `present_tobe` + `body`; Ninja está completo em Canvas e DOM na rota direta, aguardando publicação conjunta na Fase 8, e Corrida individual permanece para a Fase 7.
 - Página de Jogos: onze cards, com nove thumbnails aprovadas e previews locais dos dois arcades; versões WebP 800x450 e masters 1600x900 permanecem preservados.
 
 ## Conteúdo
@@ -80,7 +80,7 @@ Onze jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramá
 - `/vocabulario/body/flashcards`: flashcards de Partes do corpo.
 - `/jogos`: catálogo de onze jogos.
 - `/jogos/monte-a-frase`, `/jogos/caca-ao-erro`, `/jogos/contra-o-relogio`, `/jogos/cada-coisa-no-seu-lugar`, `/jogos/palavra-secreta`, `/jogos/conectando`, `/jogos/cruzando-palavras`, `/jogos/par-perfeito`, `/jogos/ouvido-afiado`, `/jogos/bubble-shooter`, `/jogos/corte-a-palavra`: jogos individuais.
-- `/jogos/ninja`: implementação lazy do Ninja até a subfase 6B, com três placas canônicas; ainda não publicada no catálogo.
+- `/jogos/ninja`: Ninja completo com 10 placas em cinco fases, Canvas e DOM simplificado, vidas, recuperação, resultado e persistência; ainda não publicado no catálogo.
 - `/progresso`: progresso local.
 - `/perfil`: perfil local.
 
@@ -229,6 +229,18 @@ Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lin
 - Duração: constantes centralizadas resultam em 27,5 s automáticos para uma rodada sem erro e 34,1 s com dois erros. Com 4 s conservadores por leitura/escolha, 5/10/15 desafios projetam 38,0/74,1/110,2 s. Cinco não repete habilidade e 15 excede 90 s; 10 é o menor tamanho pedagogicamente claro. O smoke registra o percurso móvel completo com três erros/recuperação e impõe o mesmo teto.
 - Testes: 42 testes puros, incluindo 100 seeds sem duplicatas, recovery dentro da fase, metadados/anúncios de estágio e orçamento de duração; conteúdo, TypeScript, lint, build, split e `git diff --check` verdes.
 - Navegador: a medição de parede está instrumentada, mas não foi recolhida após a parada do driver Chrome no clique Canvas; por orientação explícita, não houve novo ciclo no Edge/Chrome. Desktop/tablet permanecem visualmente aprovados e a evidência móvel CDP da 6A continua válida.
+
+### Relatório da Fase 6E
+
+- Objetivo: concluir acessibilidade, modo simplificado, preferências, feedback, som, performance e integração persistente do Ninja.
+- Equivalência: Canvas e DOM consomem a mesma rodada React de 10 desafios e compartilham outcomes, vidas, score, combo, recovery, resultado e XP. O modo DOM não monta Phaser.
+- Ownership: `finalizeRound` e `useGameCompletion` são acionados assim que a rodada termina; somente a troca visual para `GameResultScreen` é atrasada. Sair ou reiniciar durante essa transição não descarta a persistência iniciada.
+- Acessibilidade: uma live region externa anuncia os dois modos; o recovery DOM anuncia disponibilidade e recebe foco, o Canvas recuperado retoma foco e o resultado foca o título. Controles alternativos são setas + Enter/Espaço no Canvas e botões nativos no DOM.
+- Preferências e performance: som usa o serviço global, movimento reduzido congela a corrida sem bloquear escolhas, Phaser permanece no chunk lazy separado e o chunk do Ninja ficou em cerca de 26,58 kB.
+- Testes: 42 testes puros e gates de conteúdo, TypeScript, lint, build, split e `git diff --check` verdes. O smoke contém cobertura de Canvas e DOM, incluindo recovery, teclado, foco, overflow, resultado, XP e IndexedDB, mas não foi repetido por orientação explícita de não gastar novos ciclos com o driver do navegador.
+- Visual: Canvas e DOM foram abertos e inspecionados em 1440x900 e 768x1024 em `C:\Users\User\AppData\Local\Temp\ninja-6e-3920d6352981458bbadf02c91968ae41`; a captura CDP 390x844 aprovada na 6A continua como referência móvel válida.
+- Revisão: ownership/persistência recebeu `APPROVE` após a correção da janela de finalização. A revisão acessível solicitou foco/anúncios e cobertura DOM adicionais; as correções foram aplicadas e reenviadas para parecer final.
+- Publicação: a rota direta está completa, mas o card e o fluxo content-first permanecem deliberadamente para a Fase 8, quando os 13 jogos serão integrados em conjunto.
 
 ## Git
 

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import type { CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import AppIcon from "../../components/AppIcon";
 import { AppShell, PrimaryButton } from "../../components/AppShell";
 import type { GameRoundResult } from "../core/sessionEngine";
@@ -25,6 +25,7 @@ export function GameResultScreen({
   reduceMotion,
   result,
 }: GameResultScreenProps) {
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
   const percentage =
     result.totalChallenges > 0
       ? Math.round((result.correctCount / result.totalChallenges) * 100)
@@ -35,6 +36,10 @@ export function GameResultScreen({
       : percentage >= 70
         ? "Você está no caminho certo!"
         : "Cada rodada deixa a habilidade mais afiada.";
+
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
 
   return (
     <AppShell className="result-page game-result-page" hideNavigation>
@@ -50,7 +55,7 @@ export function GameResultScreen({
             <AppIcon name="trophy" size={40} />
           </span>
           <span className="eyebrow">Rodada concluída</span>
-          <h1>{message}</h1>
+          <h1 ref={headingRef} tabIndex={-1}>{message}</h1>
           <p>Você completou {gameTitle}.</p>
         </motion.section>
 

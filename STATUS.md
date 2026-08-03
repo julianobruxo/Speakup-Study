@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-08-03 (Fase 6D do loop de jogos v1)
+Atualizado em: 2026-08-03 (Fase 6E do loop de jogos v1)
 
 ## Estado Atual
 
@@ -26,7 +26,7 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Suite pura com `node:test`: 42 testes para fundação, contratos DOM, bridge arcade, Bubble Shooter, Corte a palavra, Ninja, resultado e conclusão persistente.
 - Conclusão de jogo serializada e idempotente, com duas tentativas automáticas, retry visível e a mesma `sessionId`.
 - Onze jogos oficiais funcionais com o escopo `present_tobe` + `body`, incluindo Bubble Shooter e Corte a palavra em Canvas e modo DOM simplificado.
-- Ninja em implementação incremental: a subfase 6D consolida 10 desafios em cinco faixas pedagógicas, mantendo vidas, score, combo e recuperação da 6C; o jogo ainda não está publicado no catálogo.
+- Ninja concluído na rota direta: 10 desafios em cinco faixas pedagógicas, modos Canvas e DOM simplificado, vidas, score, combo, recuperação, resultado, persistência e XP; a publicação no catálogo permanece reservada à integração da Fase 8.
 - Cards da página de Jogos com as nove imagens aprovadas integradas no topo e previews locais dos dois arcades; os masters 1600x900 permanecem preservados.
 
 ## Jogos
@@ -236,3 +236,14 @@ O smoke agora cobre fluxo funcional completo dos onze jogos, a fundação técni
 - Cinco foi rejeitado por oferecer só um exemplo por faixa; 15 excede a meta de 90 s. Dez é, portanto, o menor tamanho com repetição pedagógica clara dentro do orçamento mobile. O smoke também mede o fluxo completo com três erros/recuperação e exige menos de 90 s.
 - Gate técnico: 42 testes puros, conteúdo, TypeScript, lint, build, split Phaser e `git diff --check` verdes. A coleta final da duração instrumentada não foi repetida porque o driver Chrome parou anteriormente na injeção de clique Canvas e Juliano orientou deixar problemas pequenos de navegador para depois.
 - Visual: a composição inicial aprovada em 1440x900 e 768x1024 permanece estável; a indicação externa de fase usa o mesmo painel responsivo. A referência móvel CDP válida continua sendo a captura 390x844 da 6A.
+
+## Fase 6E — acessibilidade e polish do Ninja
+
+- O modo simplificado resolve exatamente a mesma rodada preparada por React com botões nativos, sem montar ou baixar Phaser na rota `?mode=dom`.
+- React finaliza a rodada e inicia a persistência imediatamente após o décimo outcome; apenas a transição visual para o resultado aguarda 300/850 ms, evitando perda de sessão ou XP numa saída rápida.
+- Canvas e DOM compartilham som, movimento reduzido, três vidas, score, combo, recuperação parcial e resultado. Score permanece separado do XP global, com teto de 60 XP e conclusão idempotente.
+- Acessibilidade: uma única região viva externa ao Canvas anuncia respostas, fases, game over e conclusão; recuperação recebe foco no DOM, o Canvas recuperado volta a receber foco e o resultado foca seu título. O painel duplicado de pergunta foi removido do modo simplificado.
+- O smoke foi ampliado para cobrir teclado, três erros, anúncio/foco da recuperação, rodada restante fatiada, overflow ativo/recuperado, foco do resultado e persistência de `7/10`, score `1150` e `45 XP` no DOM. As assertions de Canvas continuam cobrindo clique, toque, teclado, reduced motion, lifecycle e conclusão.
+- Gate técnico: 42 testes puros, conteúdo, TypeScript, lint, build, split Phaser e `git diff --check` verdes. A suíte de navegador não foi repetida nesta subfase por orientação explícita de deixar os problemas pequenos do driver para depois; nenhuma assertion foi removida ou relaxada.
+- Evidências abertas e inspecionadas: `C:\Users\User\AppData\Local\Temp\ninja-6e-3920d6352981458bbadf02c91968ae41`, com Canvas e DOM em 1440x900 e 768x1024. A referência móvel CDP válida permanece a captura 390x844 da 6A, complementada pelas checagens de overflow da suíte.
+- Revisão de ownership/persistência aprovada após antecipar a finalização; a revisão acessível foi reaberta após as correções de anúncio, foco e cobertura DOM.
