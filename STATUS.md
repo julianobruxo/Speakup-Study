@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-08-03 (Fase 6C do loop de jogos v1)
+Atualizado em: 2026-08-03 (Fase 6D do loop de jogos v1)
 
 ## Estado Atual
 
@@ -23,10 +23,10 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Package name `ingles-em-jogo` e metadata atualizada.
 - Fundação compartilhada de jogos: catálogo central, matriz de compatibilidade, seleção determinística de conteúdo, engine de sessão, XP/missão/streak idempotentes, adapters de Gramática (`present_tobe`) e Vocabulário (`body`).
 - Roadmap canônico dos 13 jogos em `docs/IMPLEMENTATION_MAP.md`, com fronteira React–Phaser e gates por fase.
-- Suite pura com `node:test`: 39 testes para fundação, contratos DOM, bridge arcade, Bubble Shooter, Corte a palavra, Ninja, resultado e conclusão persistente.
+- Suite pura com `node:test`: 42 testes para fundação, contratos DOM, bridge arcade, Bubble Shooter, Corte a palavra, Ninja, resultado e conclusão persistente.
 - Conclusão de jogo serializada e idempotente, com duas tentativas automáticas, retry visível e a mesma `sessionId`.
 - Onze jogos oficiais funcionais com o escopo `present_tobe` + `body`, incluindo Bubble Shooter e Corte a palavra em Canvas e modo DOM simplificado.
-- Ninja em implementação incremental: após a fundação 6A e a primeira progressão 6B, a subfase 6C adiciona cinco questões provisórias, três vidas, score, combo, recuperação e game over parcial; o jogo ainda não está publicado no catálogo.
+- Ninja em implementação incremental: a subfase 6D consolida 10 desafios em cinco faixas pedagógicas, mantendo vidas, score, combo e recuperação da 6C; o jogo ainda não está publicado no catálogo.
 - Cards da página de Jogos com as nove imagens aprovadas integradas no topo e previews locais dos dois arcades; os masters 1600x900 permanecem preservados.
 
 ## Jogos
@@ -225,3 +225,14 @@ O smoke agora cobre fluxo funcional completo dos onze jogos, a fundação técni
 - Testes puros verdes: 39/39, incluindo game over parcial, recuperação, conclusão com última vida e teto do bônus de combo. Conteúdo, TypeScript, lint, build, split Phaser e `git diff --check` também estão verdes.
 - O smoke contém assertions para mouse, touch, teclado, feedback fatal, zero vidas, score preservado, overflow, foco após recuperação e conclusão. Uma execução única com Chrome, selecionado por `SMOKE_BROWSER`, chegou ao Ninja e parou na injeção do primeiro clique por coordenadas; por orientação de Juliano, não houve novo ciclo de compatibilidade no Edge ou Chrome.
 - Capturas iniciais de Chrome em 1440x900 e 768x1024 foram abertas e inspecionadas em `C:\Users\User\AppData\Local\Temp\ninja-6c-f896e69f092548f2ab4ee57330a692b8`; a captura estreita por `--window-size` não representa viewport móvel real no Windows, então a evidência móvel válida permanece a captura CDP da 6A.
+
+## Fase 6D — progressão pedagógica do Ninja
+
+- A rodada final usa 10 desafios, o menor tamanho que oferece dois exemplos em cada uma das cinco faixas: base afirmativa, frases simples, negativas/contrações, perguntas e mistura final.
+- Cada faixa seleciona deterministicamente um item por slot a partir de listas explícitas de IDs revisados do banco canônico; nenhum enunciado, alternativa ou feedback foi copiado para o jogo.
+- As quatro primeiras fases usam questões `easy`; a mistura final usa questões `medium` de concordância e contraste. Testes em 100 seeds confirmam 10 IDs únicos e ordem estável das faixas.
+- A interface identifica fase atual e total. A cena dá 1,1 s às transições de fase e 720 ms às demais corridas; `NINJA_RUN_SPEED` permanece fixo, portanto velocidade não substitui conhecimento.
+- O orçamento automático derivado das constantes da cena é 27,5 s com todos os acertos e 34,1 s com dois erros, antes do tempo de escolha. Com margem conservadora de 4 s por leitura/escolha em 390x844, os candidatos medem 38,0 s para 5 desafios, 74,1 s para 10 e 110,2 s para 15.
+- Cinco foi rejeitado por oferecer só um exemplo por faixa; 15 excede a meta de 90 s. Dez é, portanto, o menor tamanho com repetição pedagógica clara dentro do orçamento mobile. O smoke também mede o fluxo completo com três erros/recuperação e exige menos de 90 s.
+- Gate técnico: 42 testes puros, conteúdo, TypeScript, lint, build, split Phaser e `git diff --check` verdes. A coleta final da duração instrumentada não foi repetida porque o driver Chrome parou anteriormente na injeção de clique Canvas e Juliano orientou deixar problemas pequenos de navegador para depois.
+- Visual: a composição inicial aprovada em 1440x900 e 768x1024 permanece estável; a indicação externa de fase usa o mesmo painel responsivo. A referência móvel CDP válida continua sendo a captura 390x844 da 6A.

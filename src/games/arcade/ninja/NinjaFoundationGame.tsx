@@ -50,6 +50,7 @@ export default function NinjaFoundationGame() {
   const [attempt, setAttempt] = useState(0);
   const [recoveryReady, setRecoveryReady] = useState(false);
   const recoveryFocusPendingRef = useRef(false);
+  const announcedStageIdRef = useRef("");
   const gameRootRef = useRef<HTMLDivElement | null>(null);
   const [displayChallengeIndex, setDisplayChallengeIndex] = useState(0);
   const displayChallengeIndexRef = useRef(0);
@@ -60,6 +61,7 @@ export default function NinjaFoundationGame() {
     ...round,
     id: `${round.id}:attempt:${attempt}`,
     challenges: round.challenges.slice(runStartIndex),
+    precedingStageId: round.challenges[runStartIndex - 1]?.stage?.id,
   }), [attempt, round, runStartIndex]);
   const reducedMotion = Boolean(systemReducedMotion) || !animationsEnabled;
   const answerGate = useMemo(
@@ -120,9 +122,17 @@ export default function NinjaFoundationGame() {
           : "Escolha a próxima placa.",
       );
     }
+    const challenge = round.challenges[nextIndex ?? displayChallengeIndexRef.current];
+    if (challenge?.stage && challenge.stage.id !== announcedStageIdRef.current) {
+      announcedStageIdRef.current = challenge.stage.id;
+      selectedChoiceIdRef.current = state.selectedChoiceId ?? "";
+      setLiveMessage(
+        `Fase ${challenge.stage.index + 1} de ${challenge.stage.total}: ${challenge.stage.label}.`,
+      );
+      return;
+    }
     if (!state.selectedChoiceId || state.selectedChoiceId === selectedChoiceIdRef.current) return;
     selectedChoiceIdRef.current = state.selectedChoiceId;
-    const challenge = round.challenges[nextIndex ?? displayChallengeIndexRef.current];
     const selected = challenge?.choices.find((choice) => choice.id === state.selectedChoiceId);
     if (selected) setLiveMessage(`Placa selecionada: ${selected.label}.`);
   }, [round.challenges, runStartIndex]);
@@ -155,6 +165,7 @@ export default function NinjaFoundationGame() {
     setAttempt(0);
     setRecoveryReady(false);
     recoveryFocusPendingRef.current = false;
+    announcedStageIdRef.current = "";
     displayChallengeIndexRef.current = 0;
     selectedChoiceIdRef.current = "";
     setDisplayChallengeIndex(0);
@@ -171,6 +182,7 @@ export default function NinjaFoundationGame() {
     setAttempt((current) => current + 1);
     setRecoveryReady(false);
     recoveryFocusPendingRef.current = true;
+    announcedStageIdRef.current = round.challenges[nextIndex - 1]?.stage?.id ?? "";
     displayChallengeIndexRef.current = nextIndex;
     selectedChoiceIdRef.current = "";
     setDisplayChallengeIndex(nextIndex);
@@ -222,12 +234,18 @@ export default function NinjaFoundationGame() {
         </div>
 
         <div className="ninja-question" tabIndex={-1}>
-          <span>{completed ? "Treino concluído" : recoveryReady ? "Recuperação" : `Placa ${displayChallengeIndex + 1}`}</span>
+          <span>{completed
+            ? "Treino concluído"
+            : recoveryReady
+              ? "Recuperação"
+              : currentChallenge.stage
+                ? `Fase ${currentChallenge.stage.index + 1}/${currentChallenge.stage.total} · ${currentChallenge.stage.label}`
+                : `Placa ${displayChallengeIndex + 1}`}</span>
           <strong>{completed ? "Progressão concluída!" : recoveryReady ? "Você ainda pode concluir esta fase." : currentChallenge.prompt}</strong>
         </div>
 
         <PhaserArcadeSurface
-          ariaLabel={`Jogo Ninja. ${completed ? "Progressão concluída." : recoveryReady ? "Partida interrompida para recuperar vidas." : currentChallenge?.prompt} Opções: ${completed || recoveryReady ? "nenhuma" : currentChallenge?.choices.map((choice) => choice.label).join(", ")}. Use as setas e salte com Enter ou Espaço.`}
+          ariaLabel={`Jogo Ninja. ${currentChallenge?.stage ? `Fase ${currentChallenge.stage.index + 1} de ${currentChallenge.stage.total}, ${currentChallenge.stage.label}. ` : ""}${completed ? "Progressão concluída." : recoveryReady ? "Partida interrompida para recuperar vidas." : currentChallenge?.prompt} Opções: ${completed || recoveryReady ? "nenhuma" : currentChallenge?.choices.map((choice) => choice.label).join(", ")}. Use as setas e salte com Enter ou Espaço.`}
           className="ninja-foundation-canvas is-interactive"
           interactive
           onAnswer={submitAnswer}

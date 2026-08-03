@@ -220,6 +220,16 @@ Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lin
 - Navegador: `scripts/smokeUi.mjs` aceita `SMOKE_BROWSER` e mantém Edge como padrão. A execução única no Chrome percorreu as rotas anteriores e parou no primeiro clique Canvas do Ninja por coordenadas; nenhuma exceção da aplicação foi emitida e, conforme orientação explícita, não houve repetição de ciclos de compatibilidade.
 - Visual: estados iniciais em 1440x900 e 768x1024 foram abertos e aprovados; o CLI do Chrome no Windows não produziu uma largura interna móvel confiável, por isso a evidência CDP de 390x844 da 6A continua sendo a referência móvel desta subfase.
 
+### Relatório da Fase 6D
+
+- Objetivo: fechar conteúdo e progressão do Ninja sem usar velocidade como substituto de conhecimento.
+- Rodada final: 10 desafios, com dois slots por fase. As fases são base afirmativa, frases simples, negativas/contrações, perguntas e mistura final.
+- Curadoria: pools explícitos guardam somente IDs canônicos revisados; os quatro primeiros níveis usam `easy` e a mistura final usa `medium`. Seleção e alternativas continuam determinísticas pela seed.
+- Transições: o painel React anuncia fase atual/total e o Canvas reserva 1,1 s ao início de cada fase. Corrida e física mantêm a mesma velocidade em toda a rodada.
+- Duração: constantes centralizadas resultam em 27,5 s automáticos para uma rodada sem erro e 34,1 s com dois erros. Com 4 s conservadores por leitura/escolha, 5/10/15 desafios projetam 38,0/74,1/110,2 s. Cinco não repete habilidade e 15 excede 90 s; 10 é o menor tamanho pedagogicamente claro. O smoke registra o percurso móvel completo com três erros/recuperação e impõe o mesmo teto.
+- Testes: 42 testes puros, incluindo 100 seeds sem duplicatas, recovery dentro da fase, metadados/anúncios de estágio e orçamento de duração; conteúdo, TypeScript, lint, build, split e `git diff --check` verdes.
+- Navegador: a medição de parede está instrumentada, mas não foi recolhida após a parada do driver Chrome no clique Canvas; por orientação explícita, não houve novo ciclo no Edge/Chrome. Desktop/tablet permanecem visualmente aprovados e a evidência móvel CDP da 6A continua válida.
+
 ## Git
 
 - Branch: `feat/loop-jogos-v1`.

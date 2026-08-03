@@ -21,12 +21,19 @@ export interface PreparedArcadeChallenge {
   choices: ArcadeChoice[];
   correctChoiceId: string;
   feedback?: string;
+  stage?: {
+    id: string;
+    index: number;
+    label: string;
+    total: number;
+  };
 }
 
 export interface PreparedArcadeRound {
   id: string;
   gameId: ArcadeGameId;
   challenges: PreparedArcadeChallenge[];
+  precedingStageId?: string;
 }
 
 export interface ArcadeAnswer {

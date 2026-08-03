@@ -554,6 +554,7 @@ async function main() {
   );
 
   const screenshots = [];
+  let ninjaMobileProgressionMs = 0;
   for (const [width, height] of viewports) {
     await setViewport(width, height);
     await navigate("/");
@@ -1753,6 +1754,7 @@ async function main() {
 
   await setViewport(390, 844);
   await navigate("/jogos/ninja?seed=2026");
+  const ninjaProgressionStartedAt = Date.now();
   await waitFor(
     () => evaluate(`Boolean(document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeSelectedChoiceId)`),
     "Ninja first decision is ready",
@@ -1792,6 +1794,7 @@ async function main() {
     await send("Emulation.setTouchEmulationEnabled", { enabled: false }, sessionId);
   };
   const first = ninjaRound.challenges[0];
+  assert(await hasText("Fase 1/5 · Base afirmativa"), "Ninja does not expose its first stage");
   const wrongIndex = first.choices.findIndex((choice) => choice.id !== first.correctChoiceId);
   await clickNinjaSign(wrongIndex);
   await waitFor(
@@ -1809,28 +1812,21 @@ async function main() {
   );
   await evaluate(`document.querySelector('.ninja-foundation-canvas')?.focus()`);
   const second = ninjaRound.challenges[1];
-  const secondCorrectIndex = second.choices.findIndex((choice) => choice.id === second.correctChoiceId);
-  for (let index = 0; index < secondCorrectIndex; index += 1) await pressKey("ArrowRight");
+  const secondWrongIndex = second.choices.findIndex((choice) => choice.id !== second.correctChoiceId);
+  for (let index = 0; index < secondWrongIndex; index += 1) await pressKey("ArrowRight");
   await pressKey("Enter");
   await waitFor(
-    () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeLastAnswer === 'correct'`),
-    "Ninja keyboard jump resolves a correct sign",
+    () => hasText("1 vida restante"),
+    "Ninja keyboard jump resolves an incorrect sign",
   );
   await waitFor(
     () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeChallengeIndex === '2'`),
     "Ninja advances to third sign challenge",
   );
+  assert(await hasText("Fase 2/5 · Frases simples"), "Ninja does not expose its second stage");
   const third = ninjaRound.challenges[2];
   const thirdWrongIndex = third.choices.findIndex((choice) => choice.id !== third.correctChoiceId);
   await tapNinjaSign(thirdWrongIndex);
-  await waitFor(
-    () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeChallengeIndex === '3'`),
-    "Ninja automatically recovers after a second error",
-    12000,
-  );
-  const fourth = ninjaRound.challenges[3];
-  const fourthWrongIndex = fourth.choices.findIndex((choice) => choice.id !== fourth.correctChoiceId);
-  await clickNinjaSign(fourthWrongIndex);
   await waitFor(
     () => hasText("Você ficou sem vidas. Recupere para continuar."),
     "Ninja preserves the fatal error feedback",
@@ -1840,7 +1836,7 @@ async function main() {
     "Ninja stops after losing all three lives",
   );
   assert(await hasText("0 vidas"), "Ninja did not expose zero remaining lives");
-  assert(await hasText("100 pontos"), "Ninja did not preserve score at partial game over");
+  assert(await hasText("0 pontos"), "Ninja did not preserve score at partial game over");
   await assertNoOverflow("Ninja partial game over 390x844");
   screenshots.push(await screenshot("ninja-partial-game-over-390x844"));
   await evaluate(`document.querySelector('.ninja-recovery .primary-button')?.focus()`);
@@ -1856,15 +1852,47 @@ async function main() {
     20000,
   );
   assert(await hasText("3 vidas"), "Ninja did not restore three lives on recovery");
-  assert(await hasText("100 pontos"), "Ninja recovery reset the preserved score");
+  assert(await hasText("0 pontos"), "Ninja recovery reset the preserved score");
+  assert(
+    await hasText("Fase 2/5 · Frases simples"),
+    "Ninja recovery lost the current stage",
+  );
   assert(
     await evaluate(`document.activeElement?.classList.contains('ninja-foundation-canvas')`),
     "Ninja recovery did not return keyboard focus to the Canvas",
   );
-  const fifth = ninjaRound.challenges[4];
-  const fifthCorrectIndex = fifth.choices.findIndex((choice) => choice.id === fifth.correctChoiceId);
-  await clickNinjaSign(fifthCorrectIndex);
-  await waitFor(() => hasText("Progressão concluída!"), "Ninja completes the 6C progression", 12000);
+  for (let challengeIndex = 3; challengeIndex < ninjaRound.challenges.length; challengeIndex += 1) {
+    const localChallengeIndex = challengeIndex - 3;
+    await waitFor(
+      () => evaluate(`(() => {
+        const surface = document.querySelector('.ninja-foundation-canvas');
+        return surface?.dataset.runtimeChallengeIndex === '${localChallengeIndex}' &&
+          Boolean(surface?.dataset.runtimeSelectedChoiceId);
+      })()`),
+      `Ninja remaining challenge ${challengeIndex + 1} is ready`,
+      12000,
+    );
+    if (challengeIndex === 8) {
+      assert(await hasText("Fase 5/5 · Mistura final"), "Ninja does not expose its final stage");
+    }
+    const challenge = ninjaRound.challenges[challengeIndex];
+    const correctIndex = challenge.choices.findIndex(
+      (choice) => choice.id === challenge.correctChoiceId,
+    );
+    await evaluate(`document.querySelector('.ninja-foundation-canvas')?.focus()`);
+    for (let index = 0; index < correctIndex; index += 1) await pressKey("ArrowRight");
+    await pressKey("Enter");
+    await waitFor(
+      () => hasText(`${challengeIndex + 1}/${ninjaRound.challenges.length} placas`),
+      `Ninja records remaining challenge ${challengeIndex + 1}`,
+    );
+  }
+  await waitFor(() => hasText("Progressão concluída!"), "Ninja completes the 6D progression", 12000);
+  ninjaMobileProgressionMs = Date.now() - ninjaProgressionStartedAt;
+  assert(
+    ninjaMobileProgressionMs < 90_000,
+    `Ninja measured mobile progression exceeded 90 seconds: ${ninjaMobileProgressionMs}ms`,
+  );
   assert(
     await evaluate(`document.querySelectorAll('.ninja-foundation-canvas canvas').length === 1`),
     "Ninja recovery left more than one Canvas mounted",
@@ -3873,6 +3901,11 @@ async function main() {
           league: "passed",
           levels: "passed",
           flashcards: "passed",
+        },
+        ninja: {
+          challengeCount: 10,
+          mobileProgressionMs: ninjaMobileProgressionMs,
+          stages: 5,
         },
         screenshots,
         browserErrors: browserErrors.length,

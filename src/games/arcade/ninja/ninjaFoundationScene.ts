@@ -9,6 +9,7 @@ import {
   type NinjaFoundationLayout,
   type NinjaTrackSegment,
 } from "./ninjaFoundationModel";
+import { NINJA_TIMING_MS, isNinjaStageStart } from "./ninjaRound";
 
 interface TrackVisual {
   accent: Phaser.GameObjects.Rectangle;
@@ -272,13 +273,25 @@ export const createNinjaFoundationScene: ArcadeSceneFactory = (
 
     private scheduleDecision() {
       this.phase = "running";
-      this.statusText?.setText(this.reducedMotion ? "Escolha uma placa." : "As placas estão chegando...");
+      const challenge = settings.round.challenges[this.challengeIndex];
+      const stage = challenge?.stage;
+      const startsLevel = isNinjaStageStart(settings.round, this.challengeIndex);
+      this.statusText?.setText(
+        startsLevel && stage
+          ? `Fase ${stage.index + 1}: ${stage.label}`
+          : this.reducedMotion ? "Escolha uma placa." : "As placas estão chegando...",
+      );
       this.transitionTimer?.remove(false);
       if (this.reducedMotion) {
         this.enterDecision();
         return;
       }
-      this.transitionTimer = this.time.delayedCall(720, this.enterDecision, [], this);
+      this.transitionTimer = this.time.delayedCall(
+        startsLevel ? NINJA_TIMING_MS.levelTransition : NINJA_TIMING_MS.regularRun,
+        this.enterDecision,
+        [],
+        this,
+      );
     }
 
     private enterDecision() {
@@ -406,7 +419,9 @@ export const createNinjaFoundationScene: ArcadeSceneFactory = (
     private scheduleAdvance() {
       if (this.phase !== "feedback") return;
       this.transitionTimer?.remove(false);
-      const feedbackDelay = this.lastOutcomeCorrect === false ? 4_500 : 1_200;
+      const feedbackDelay = this.lastOutcomeCorrect === false
+        ? NINJA_TIMING_MS.incorrectFeedback
+        : NINJA_TIMING_MS.correctFeedback;
       this.transitionTimer = this.time.delayedCall(feedbackDelay, () => {
         if (this.pendingGameOver) {
           this.pendingGameOver = false;
