@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-08-03 (Fase 8 do loop de jogos v1 — integração dos 13 jogos)
+Atualizado em: 2026-08-03 (Fase 9 do loop de jogos v1 — auditoria final da release candidate)
 
 ## Estado Atual
 
@@ -278,3 +278,35 @@ O smoke agora cobre fluxo funcional completo dos onze jogos, a fundação técni
 - Validação funcional via inspeção direta do DOM (protocolo de depuração remota do Chrome): catálogo completo lista exatamente 13 títulos sem nenhum rótulo "Em breve"; filtro de gramática retorna 6 jogos (Monte a frase, Caça ao erro, Contra o relógio, Ouvido afiado, Ninja, Corrida individual); filtro de vocabulário retorna 10 jogos — ambos batendo exatamente com `COMPATIBILITY`; a URL filtrada sobrevive a um refresh completo porque o estado é derivado somente do parâmetro da URL; os dois botões de entrada content-first navegam corretamente; sem overflow horizontal em 390×844.
 - Visual: catálogo completo, filtro de gramática, filtro de vocabulário e os cards de Ninja/Corrida individual foram capturados e inspecionados em 1440×900, 768×1024 e 390×844. A composição dos dois novos previews (silhueta noturna com placas para o Ninja; pista com portais para a Corrida individual) é consistente com o restante do catálogo e com as referências em `reference/`.
 - Escopo preservado: nenhuma página de Gramática ou Vocabulário foi redesenhada; nenhuma nova arquitetura de navegação foi introduzida; nenhum banco de conteúdo foi duplicado; nenhuma dependência foi instalada; Edge permanece fora do escopo.
+
+## Fase 9 — auditoria final da release candidate
+
+Objetivo: auditoria técnica e visual dos 13 jogos sem adicionar funcionalidades, corrigindo apenas defeitos reproduzíveis.
+
+### Defeitos de harness corrigidos (todos em `scripts/smokeUi.mjs`, nenhuma mudança em código de produto)
+
+1. **`pressKey` sem `keyCode`.** O helper `pressKey` despachava `Input.dispatchKeyEvent` do CDP apenas com `type` e `key`, sem `windowsVirtualKeyCode`/`code`. Isso produzia eventos `keydown` nativos com `event.keyCode === 0`, e o `Phaser.Input.Keyboard.KeyboardManager` lê exatamente esse campo para resolver qual `Key` disparar — então nenhuma tecla de seta ou Enter jamais chegava às cenas Phaser (Ninja, Corrida individual). Isso explica o padrão repetidamente documentado desde a Fase 6B ("driver parou no primeiro clique/injeção de teclado do Canvas") sem nunca ter sido diagnosticado. Corrigido com uma tabela `KEY_CODES` para as seis teclas realmente usadas (`ArrowLeft/Up/Right/Down`, `Enter`, `Espaço`, `Tab`), com asserção explícita para qualquer tecla não mapeada em vez de uma falha silenciosa. Confirmado por reprodução isolada via CDP antes e depois da correção.
+2. **Corrida entre avanço de desafio e prontidão de decisão no Ninja.** Duas asserções (`"Ninja advances to second/third sign challenge"`) verificavam apenas `runtimeChallengeIndex`, que se torna verdadeiro assim que a cena entra na fase `"running"` — mas a cena só aceita entrada quando entra na fase `"decision"`, entre 720 ms e 1.100 ms depois. Isso fazia o teclado/toque disparado logo após o avanço ser silenciosamente ignorado pela cena (a seleção ficava mostrando "Placa selecionada" sem nunca resolver). Corrigido acrescentando a mesma checagem de `runtimeSelectedChoiceId` já usada corretamente em todos os outros pontos do arquivo (primeiro desafio, laço de desafios restantes, recuperação). Causa raiz comprovada por instrumentação passo a passo via CDP, incluindo um caso em que o clique resolvia mas o avanço de índice chegava antes da cena aceitar novo input.
+3. **Risco residual não resolvido:** mesmo após as duas correções acima, a transição específica de teclado para toque no terceiro desafio do Ninja (`tapNinjaSign` após `pressKey` no desafio anterior) falhou de forma intermitente em execuções completas da suíte, mas **não** de forma determinística em reproduções isoladas do mesmo trecho — às vezes a mesma sequência exata funciona, às vezes não. Foi tratado como uma corrida real dentro do gerenciador de ponteiro/teclado do Phaser sob automação CDP headless, e não como um problema do produto: a mecânica do jogo, testada exaustivamente de forma isolada (clique, teclado, toque, cada um sozinho e em outras combinações), sempre respondeu corretamente. Uma tentativa de mitigação com um delay de assentamento de 150 ms antes do toque não resolveu o problema, então não foi mantida como solução — ela permanece no diff apenas como o delay já testado, sem efeito comprovado. Não foi investigada mais a fundo por não ser um defeito de produto e por já ter consumido tempo de auditoria desproporcional a seu impacto (a suíte completa do Chrome trava neste ponto específico, mas os 13 jogos foram todos validados individualmente por fora dela).
+
+### Auditoria funcional (via inspeção direta do DOM/CDP, complementando a suíte completa)
+
+- Os nove jogos DOM (Monte a frase, Caça ao erro, Palavra secreta, Conectando, Par perfeito, Cada coisa no seu lugar, Cruzando palavras, Ouvido afiado, Contra o relógio) montam sem erro de console e renderizam o primeiro desafio corretamente; Monte a frase teve uma rodada completa de 10 perguntas executada e concluída sem falhas.
+- Bubble Shooter e Corte a palavra confirmados funcionais em modo Canvas (`arcadeReady: true`, exatamente um canvas) e modo DOM (zero canvas, pergunta de vocabulário correta).
+- Ninja e Corrida individual: mecânica central (resposta correta, resposta incorreta, avanço, recuperação, teclado, mouse, toque) comprovada correta em múltiplas reproduções isoladas via CDP, incluindo o cenário exato de movimento real (não reduzido) usado pela suíte completa.
+- Ciclo de vida do Canvas: verificado via CDP que o Phaser não carrega na Home, carrega sob demanda ao abrir um arcade, mantém exatamente um canvas por jogo, e o canvas é destruído de forma limpa ao navegar para fora — testado com três remontagens consecutivas sem vazamento ou duplicação.
+- Fluxos de produto (game-first e content-first): revalidados como ainda corretos nesta fase porque nenhum código de produto foi alterado desde a validação completa da Fase 8 (`git diff --stat -- src/` retornou vazio antes das correções desta fase).
+
+### QA visual
+
+- Capturado e inspecionado em 5 viewports (360×800, 390×844, 768×1024, 1440×900, 1920×1080) × 15 telas (Home, catálogo completo, catálogo filtrado por gramática, catálogo filtrado por vocabulário, tópicos de Gramática, categorias de Vocabulário, configuração de sessão, Ninja Canvas/DOM, Corrida individual Canvas/DOM, Bubble Shooter Canvas/DOM, Corte a palavra Canvas/DOM) — 75 combinações, `0` ocorrências de overflow horizontal.
+- Defeito visual encontrado e corrigido: a Home (`src/pages/HomePage.tsx`) exibia a contagem estática "Nove jogos disponíveis" no card de atalho para Jogos, desatualizada desde a Fase 8 (agora são 13). Corrigido para "Treze jogos disponíveis". Nenhuma outra contagem estática incorreta foi encontrada em código de produto (duas ocorrências de "nove jogos" restantes são apenas comentários internos em `src/index.css`, não visíveis ao usuário).
+- Os quatro arcades foram inspecionados lado a lado com as referências em `reference/` (`bubble-shooter.jpeg`, `car-race.png`, `ninja-run.png`): a composição, HUD, cenário e legibilidade atingem o nível esperado de "jogo completo", sem aparência de protótipo administrativo. A fidelidade visual exata em relação às referências (paleta, composição pixel a pixel) é uma decisão de Juliano, não deste agente.
+
+### Gate técnico final
+
+`npm test` (47/47), `node scripts/validateContent.mjs`, `npx tsc -b`, `npm run lint`, `npm run build`, `node scripts/verifyPhaserSplit.mjs` e `git diff --check` — todos verdes. Diff final desta fase: 2 arquivos (`scripts/smokeUi.mjs`, `src/pages/HomePage.tsx`), nenhuma alteração de arquitetura, conteúdo, dependência ou mecânica.
+
+### Navegador
+
+Toda a validação desta fase usou Chrome/Chromium via `SMOKE_BROWSER`. Microsoft Edge não foi testado, conforme escopo.

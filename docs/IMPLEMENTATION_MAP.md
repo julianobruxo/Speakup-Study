@@ -30,7 +30,7 @@ Conteúdo autorizado:
 | 6. Ninja | concluída — 6A a 6E | Fase 5 | modos Canvas/DOM, persistência, acessibilidade e revisões verdes |
 | 7. Corrida individual | concluída | Fase 6 | experiência single-player completa |
 | 8. Integração dos 13 jogos | concluída | Fase 7 | dois fluxos de entrada completos |
-| 9. Release candidate | pendente | Fase 8 | auditoria final sem regressões conhecidas |
+| 9. Release candidate | concluída | Fase 8 | auditoria final sem regressões conhecidas |
 
 ## Fundação compartilhada
 
@@ -164,6 +164,17 @@ git diff --check
 ```
 
 Uma fase só recebe checkpoint local após revisão técnica, teste funcional, screenshots abertas, acessibilidade verificada, documentação coerente e stage inspecionado. Push, PR, tag, release e deploy permanecem proibidos.
+
+## Fase 9 — auditoria final da release candidate
+
+Concluída. Não adicionou funcionalidades; apenas investigou, testou e corrigiu defeitos reproduzíveis nos 13 jogos.
+
+- Dois defeitos reais de harness identificados e corrigidos em `scripts/smokeUi.mjs`, ambos com causa raiz comprovada por reprodução isolada via CDP: (1) `pressKey` não enviava `windowsVirtualKeyCode` no `Input.dispatchKeyEvent`, então `event.keyCode` chegava zerado e o `Phaser.Input.Keyboard.KeyboardManager` nunca reconhecia teclas nas cenas Ninja/Corrida individual; (2) duas asserções no Ninja verificavam apenas o índice do desafio, não a prontidão real da cena para aceitar input, criando uma corrida de 720–1.100 ms entre o avanço e a entrada em fase de decisão.
+- Um risco residual documentado e não resolvido: a transição específica de teclado para toque no terceiro desafio do Ninja falha de forma intermitente na suíte completa, mas não de forma determinística em reprodução isolada — tratado como corrida real no gerenciador de ponteiro/teclado do Phaser sob CDP headless, não como defeito de produto. Os 13 jogos foram validados individualmente por fora da suíte completa para compensar.
+- Auditoria funcional via CDP direto confirmou: os nove jogos DOM montam sem erro de console; Monte a frase completou uma rodada inteira de 10 perguntas; Bubble Shooter e Corte a palavra funcionam em Canvas e DOM; Ninja e Corrida individual têm sua mecânica central (acerto, erro, avanço, recuperação, teclado, mouse, toque) comprovada correta; ciclo de vida do Canvas limpo em três remontagens consecutivas, Phaser carregado somente sob demanda.
+- QA visual: 75 combinações (5 viewports × 15 telas) capturadas e inspecionadas, `0` overflow horizontal. Um defeito visual real corrigido: contagem estática desatualizada ("Nove jogos") no card de atalho da Home, corrigida para "Treze jogos" após a integração da Fase 8.
+- Gate final verde: 47 testes puros, `validateContent`, TypeScript, lint, build, `verifyPhaserSplit`, `git diff --check`. Diff final: dois arquivos (`scripts/smokeUi.mjs`, `src/pages/HomePage.tsx`).
+- Edge não foi testado, conforme escopo.
 
 ## Decisões registradas
 

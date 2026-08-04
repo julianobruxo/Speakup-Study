@@ -307,9 +307,26 @@ async function main() {
     assert(clicked, `Missing ${selector} with text: ${text}`);
   };
 
+  const KEY_CODES = {
+    ArrowLeft: { code: "ArrowLeft", keyCode: 37 },
+    ArrowUp: { code: "ArrowUp", keyCode: 38 },
+    ArrowRight: { code: "ArrowRight", keyCode: 39 },
+    ArrowDown: { code: "ArrowDown", keyCode: 40 },
+    Enter: { code: "Enter", keyCode: 13 },
+    " ": { code: "Space", keyCode: 32 },
+    Tab: { code: "Tab", keyCode: 9 },
+  };
+
   const pressKey = async (key) => {
-    await send("Input.dispatchKeyEvent", { type: "keyDown", key }, sessionId);
-    await send("Input.dispatchKeyEvent", { type: "keyUp", key }, sessionId);
+    const mapping = KEY_CODES[key];
+    assert(mapping, `pressKey: no KEY_CODES mapping for ${JSON.stringify(key)}`);
+    const codeFields = {
+      code: mapping.code,
+      windowsVirtualKeyCode: mapping.keyCode,
+      nativeVirtualKeyCode: mapping.keyCode,
+    };
+    await send("Input.dispatchKeyEvent", { type: "keyDown", key, ...codeFields }, sessionId);
+    await send("Input.dispatchKeyEvent", { type: "keyUp", key, ...codeFields }, sessionId);
   };
 
   const screenshot = async (name) => {
@@ -1810,25 +1827,37 @@ async function main() {
   );
   screenshots.push(await screenshot("ninja-sign-incorrect-390x844"));
   await waitFor(
-    () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeChallengeIndex === '1'`),
+    () => evaluate(`(() => {
+      const surface = document.querySelector('.ninja-foundation-canvas');
+      return surface?.dataset.runtimeChallengeIndex === '1' &&
+        Boolean(surface?.dataset.runtimeSelectedChoiceId);
+    })()`),
     "Ninja advances to second sign challenge",
   );
   await evaluate(`document.querySelector('.ninja-foundation-canvas')?.focus()`);
   const second = ninjaRound.challenges[1];
   const secondWrongIndex = second.choices.findIndex((choice) => choice.id !== second.correctChoiceId);
-  for (let index = 0; index < secondWrongIndex; index += 1) await pressKey("ArrowRight");
+  for (let index = 0; index < secondWrongIndex; index += 1) {
+    await pressKey("ArrowRight");
+    await delay(50);
+  }
   await pressKey("Enter");
   await waitFor(
     () => hasText("1 vida restante"),
     "Ninja keyboard jump resolves an incorrect sign",
   );
   await waitFor(
-    () => evaluate(`document.querySelector('.ninja-foundation-canvas')?.dataset.runtimeChallengeIndex === '2'`),
+    () => evaluate(`(() => {
+      const surface = document.querySelector('.ninja-foundation-canvas');
+      return surface?.dataset.runtimeChallengeIndex === '2' &&
+        Boolean(surface?.dataset.runtimeSelectedChoiceId);
+    })()`),
     "Ninja advances to third sign challenge",
   );
   assert(await hasTextCI("Fase 2/5 · Frases simples"), "Ninja does not expose its second stage");
   const third = ninjaRound.challenges[2];
   const thirdWrongIndex = third.choices.findIndex((choice) => choice.id !== third.correctChoiceId);
+  await delay(150);
   await tapNinjaSign(thirdWrongIndex);
   await waitFor(
     () => hasText("Você ficou sem vidas. Recupere para continuar."),
@@ -1883,7 +1912,10 @@ async function main() {
       (choice) => choice.id === challenge.correctChoiceId,
     );
     await evaluate(`document.querySelector('.ninja-foundation-canvas')?.focus()`);
-    for (let index = 0; index < correctIndex; index += 1) await pressKey("ArrowRight");
+    for (let index = 0; index < correctIndex; index += 1) {
+      await pressKey("ArrowRight");
+      await delay(50);
+    }
     await pressKey("Enter");
     await waitFor(
       () => hasText(`${challengeIndex + 1}/${ninjaRound.challenges.length} placas`),
@@ -2100,6 +2132,7 @@ async function main() {
   );
   for (let step = 0; step < Math.abs(firstCorrectLane - 1); step += 1) {
     await pressKey(firstCorrectLane < 1 ? "ArrowLeft" : "ArrowRight");
+    await delay(50);
   }
   await pressKey("Enter");
   await waitFor(
@@ -2140,6 +2173,7 @@ async function main() {
   let selectedLane = Number(await evaluate(`document.querySelector('.solo-race-canvas')?.dataset.runtimeLaneIndex`));
   while (selectedLane !== swipeStartLane) {
     await pressKey(selectedLane < swipeStartLane ? "ArrowRight" : "ArrowLeft");
+    await delay(50);
     selectedLane += selectedLane < swipeStartLane ? 1 : -1;
   }
   const swipeStartX = raceBounds.left + raceBounds.width * ((swipeStartLane + 0.5) / 3);

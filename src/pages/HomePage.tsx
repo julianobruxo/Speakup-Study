@@ -124,7 +124,7 @@ export default function HomePage() {
               onClick={() => navigate("/vocabulario/body/flashcards")}
             />
             <PathCard
-              copy="Nove jogos disponíveis com Gramática e Vocabulário"
+              copy="Treze jogos disponíveis com Gramática e Vocabulário"
               icon="✦"
               progress={0}
               title="Jogos rápidos"
