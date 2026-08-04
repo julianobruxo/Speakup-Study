@@ -143,6 +143,13 @@ export default function PracticeSetupPage() {
           >
             Iniciar desafio
           </PrimaryButton>
+          <PrimaryButton
+            icon={<AppIcon name="game" size={19} />}
+            onClick={() => navigate("/jogos?content=present_tobe")}
+            variant="secondary"
+          >
+            Praticar em jogos
+          </PrimaryButton>
         </section>
       </div>
     </AppShell>

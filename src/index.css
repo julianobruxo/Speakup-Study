@@ -7383,6 +7383,130 @@ html[data-animations="off"] *::after {
   transform: rotate(-25deg);
 }
 
+.ninja-card-preview {
+  background: linear-gradient(180deg, #0c1533 0%, #17234b 65%, #101a42 100%);
+}
+
+.ninja-preview-moon {
+  position: absolute;
+  top: 14%;
+  right: 14%;
+  width: 16%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #f5c85b;
+  box-shadow: 0 0 18px rgba(245, 200, 91, 0.55);
+}
+
+.ninja-preview-skyline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 30%;
+  height: 22%;
+  background:
+    linear-gradient(90deg, transparent 0 8%, #263562 8% 20%, transparent 20% 30%,
+      #263562 30% 46%, transparent 46% 58%, #263562 58% 72%, transparent 72% 84%,
+      #263562 84% 96%, transparent 96%);
+  opacity: 0.85;
+}
+
+.ninja-preview-runner {
+  position: absolute;
+  bottom: 16%;
+  left: 22%;
+  width: 11%;
+  aspect-ratio: 0.62;
+  border-radius: 40% 40% 12% 12%;
+  background: #17234b;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 16px rgba(5, 10, 30, 0.35);
+}
+
+.ninja-preview-sign {
+  position: absolute;
+  bottom: 20%;
+  display: grid;
+  place-items: center;
+  min-width: 20%;
+  padding: 7px 10px;
+  border-radius: 10px;
+  color: #17234b;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: 0 8px 16px rgba(5, 10, 30, 0.3);
+}
+
+.ninja-preview-sign.sign-one {
+  right: 30%;
+  background: #36c6d9;
+}
+
+.ninja-preview-sign.sign-two {
+  right: 10%;
+  background: #f5c85b;
+}
+
+.solo-race-card-preview {
+  background: #101a42;
+  overflow: hidden;
+}
+
+.solo-race-preview-road {
+  position: absolute;
+  left: 32%;
+  right: 32%;
+  top: 8%;
+  bottom: 0;
+  background: #17234b;
+  clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
+  border-left: 3px solid #8d1d30;
+  border-right: 3px solid #8d1d30;
+}
+
+.solo-race-preview-portal {
+  position: absolute;
+  top: 20%;
+  display: grid;
+  place-items: center;
+  min-width: 17%;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f7f9ff;
+  color: #17234b;
+  font-size: 10px;
+  font-weight: 900;
+  box-shadow: 0 8px 16px rgba(5, 10, 30, 0.3);
+}
+
+.solo-race-preview-portal.portal-one {
+  left: 12%;
+  border: 2px solid #36c6d9;
+}
+
+.solo-race-preview-portal.portal-two {
+  left: 41%;
+  border: 2px solid #8b6cf6;
+}
+
+.solo-race-preview-portal.portal-three {
+  right: 12%;
+  border: 2px solid #f5c85b;
+}
+
+.solo-race-preview-car {
+  position: absolute;
+  bottom: 14%;
+  left: 50%;
+  width: 13%;
+  aspect-ratio: 0.82;
+  border-radius: 30% 30% 10% 10%;
+  background: #8d1d30;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 16px rgba(5, 10, 30, 0.35);
+  transform: translateX(-50%);
+}
+
 .games-page .quick-game-card:hover .game-card-image,
 .games-page .quick-game-card:focus-visible .game-card-image {
   transform: scale(1.02);

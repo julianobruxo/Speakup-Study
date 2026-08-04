@@ -26,8 +26,8 @@ import { shuffleWithSeed } from "../src/games/core/shuffle.ts";
 const grammar = { domain: "grammar", grammarTopicId: "present_tobe" };
 const vocabulary = { domain: "vocabulary", vocabularyCategoryId: "body" };
 
-test("catalog declares the nine DOM games and two arcades with central round sizes", () => {
-  assert.equal(GAME_CATALOG.length, 11);
+test("catalog declares the nine DOM games and four arcades with central round sizes", () => {
+  assert.equal(GAME_CATALOG.length, 13);
   assert.equal(new Set(GAME_CATALOG.map((game) => game.id)).size, GAME_CATALOG.length);
   for (const game of GAME_CATALOG) {
     assert.equal(game.defaultRoundSize, ROUND_SIZES[game.id].count);
@@ -40,7 +40,7 @@ test("compatibility is limited to the canonical rollout content", () => {
   assert.deepEqual(ROLLOUT_CONTENT, [grammar, vocabulary]);
   assert.deepEqual(
     getCompatibleGames(grammar).map((game) => game.id),
-    ["sentence_builder", "error_hunt", "beat_the_clock", "listening_ear"],
+    ["sentence_builder", "error_hunt", "beat_the_clock", "listening_ear", "ninja", "solo_race"],
   );
   assert.deepEqual(
     getCompatibleGames(vocabulary).map((game) => game.id),
@@ -54,6 +54,7 @@ test("compatibility is limited to the canonical rollout content", () => {
       "listening_ear",
       "bubble_shooter",
       "word_slice",
+      "solo_race",
     ],
   );
   assert.equal(

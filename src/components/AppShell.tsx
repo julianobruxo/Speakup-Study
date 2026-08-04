@@ -217,7 +217,7 @@ function DesktopSidebar({
         >
           <span className="nav-icon"><AppIcon name="game" size={21} /></span>
           <span className="sidebar-nav-label">Jogos</span>
-          <b className="nav-badge sidebar-nav-label">11</b>
+          <b className="nav-badge sidebar-nav-label">13</b>
         </button>
       </div>
 

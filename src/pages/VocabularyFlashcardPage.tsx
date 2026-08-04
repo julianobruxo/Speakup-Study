@@ -203,7 +203,7 @@ export default function VocabularyFlashcardPage() {
             </PrimaryButton>
             <PrimaryButton
               icon={<AppIcon name="game" size={19} />}
-              onClick={() => navigate("/jogos")}
+              onClick={() => navigate("/jogos?content=body")}
               variant="secondary"
             >
               Praticar em jogos

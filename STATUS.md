@@ -1,6 +1,6 @@
 # STATUS.md
 
-Atualizado em: 2026-08-03 (Fase 7 do loop de jogos v1 — Corrida individual)
+Atualizado em: 2026-08-03 (Fase 8 do loop de jogos v1 — integração dos 13 jogos)
 
 ## Estado Atual
 
@@ -32,7 +32,7 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 
 ## Jogos
 
-Onze jogos do catálogo oficial estão funcionais nesta fase, usando exclusivamente `present_tobe` (Gramática) e `body` (Vocabulário) como conteúdo:
+Os 13 jogos do catálogo oficial estão publicados e funcionais, usando exclusivamente `present_tobe` (Gramática) e `body` (Vocabulário) como conteúdo:
 
 - Monte a frase — reordenar tokens da frase correta (110 questões elegíveis de 130, após exclusão conservadora de fragmentos e ordenações ambíguas).
 - Caça ao erro — tocar na palavra corrompida por um distrator revisado (115 elegíveis); pontuação é texto não interativo.
@@ -45,6 +45,8 @@ Onze jogos do catálogo oficial estão funcionais nesta fase, usando exclusivame
 - Ouvido afiado — três modos: ouvir e selecionar imagem, ouvir e digitar, ouvir e montar frase; indisponibilidade ou preferência de som desligada exibe fallback textual.
 - Bubble Shooter — seis desafios de `body`, mira e lançamento, ricochete lateral, snap hexagonal pelo impacto físico, grupos, peças desconectadas, combo, score e modo DOM equivalente.
 - Corte a palavra — oito desafios de `body`, palavras móveis, trilha interpolada, colisão contínua, mouse/toque/caneta, teclado, combo, penalidade explícita e modo DOM equivalente.
+- Ninja — 10 desafios de `present_tobe` em cinco faixas pedagógicas, corrida automática, vidas, recuperação, score, combo e modo DOM equivalente.
+- Corrida individual — 10 portais de `present_tobe` ou `body`, três faixas com perspectiva, HUD de score/combo/velocidade, controles por ponteiro/swipe/teclado e modo DOM equivalente.
 
 `Conectando` é o nome aprovado para associação entre palavra em inglês e imagem.
 
@@ -264,3 +266,15 @@ O smoke agora cobre fluxo funcional completo dos onze jogos, a fundação técni
 - Defeito de harness identificado e corrigido: quatro asserções pré-existentes em `scripts/smokeUi.mjs` (herdadas do checkpoint `756593c`, Fase 6) comparavam o rótulo de fase do Ninja (`Fase N/5 · ...`) contra `document.body.innerText` de forma sensível a maiúsculas/minúsculas, mas o CSS aplica `text-transform: uppercase` ao rótulo — um falso negativo, não uma regressão de produto. Corrigido com um helper dedicado `hasTextCI` aplicado somente às quatro asserções afetadas; nenhuma asserção foi removida, generalizada ou enfraquecida.
 - Risco residual conhecido, não resolvido nesta sessão: a suíte completa `smokeUi.mjs` no Chrome ainda trava mais adiante dentro do próprio fluxo pré-existente do Ninja (`Timeout: Ninja keyboard jump resolves an incorrect sign`, em `pressKey` sobre o Canvas). É a mesma classe de instabilidade de injeção de teclado/clique no Canvas já registrada e deliberadamente adiada nas Fases 6B–6D; não afeta a Corrida individual, que foi validada de forma independente.
 - Edge permanece fora do escopo desta sessão; a validação usou Chrome via `SMOKE_BROWSER`, sem alterar o padrão do script nem seu harness além da correção pontual acima.
+
+## Fase 8 — integração dos 13 jogos
+
+- Ninja e Corrida individual foram publicados em `GAME_CATALOG` (`src/games/core/catalog.ts`) e na página `/jogos` (`src/pages/GamesPage.tsx`), completando o catálogo público com os 13 jogos oficiais. Nenhum novo asset WebP foi criado — ambos usam previews em CSS (`.ninja-card-preview`, `.solo-race-card-preview`), seguindo exatamente o mesmo padrão já estabelecido por Bubble Shooter e Corte a palavra.
+- Fluxo content-first implementado: a rota `/jogos` aceita `?content=present_tobe` ou `?content=body`, resolve o seletor correspondente e filtra o catálogo com `getCompatibleGames` (função já existente, reaproveitada sem duplicar a matriz de compatibilidade). O cabeçalho da página muda para "Jogos compatíveis" com um link de volta ao catálogo completo.
+- Os botões "Praticar em jogos" em `PracticeSetupPage.tsx` (Gramática, `present_tobe`) e em `VocabularyCategoryPage.tsx`/`VocabularyFlashcardPage.tsx` (Vocabulário, `body`) foram atualizados para navegar à rota filtrada em vez do catálogo genérico. O fluxo game-first (catálogo completo → jogo → conteúdo → rodada → resultado) já existia e foi preservado sem mudanças de arquitetura ou navegação.
+- Correção pontual: o badge "11" na barra lateral de Jogos (`src/components/AppShell.tsx`) foi atualizado para "13", refletindo a contagem real do catálogo.
+- Testes: `tests/gamesFoundation.test.mjs` foi atualizado para esperar 13 entradas em `GAME_CATALOG` e a compatibilidade estendida de Ninja/Corrida individual nos dois domínios. Nenhum teste novo foi necessário; total do projeto permanece em 47 testes, todos verdes.
+- Gate técnico verde: `npm test`, `node scripts/validateContent.mjs`, `npx tsc -b`, `npm run lint`, `npm run build` (chunk de `GamesPage` cresceu para 9,74 kB, entry principal praticamente inalterado em 482,29 kB), `node scripts/verifyPhaserSplit.mjs` (ainda 5 rotas arcade lazy, 1 chunk Phaser) e `git diff --check` (limpo).
+- Validação funcional via inspeção direta do DOM (protocolo de depuração remota do Chrome): catálogo completo lista exatamente 13 títulos sem nenhum rótulo "Em breve"; filtro de gramática retorna 6 jogos (Monte a frase, Caça ao erro, Contra o relógio, Ouvido afiado, Ninja, Corrida individual); filtro de vocabulário retorna 10 jogos — ambos batendo exatamente com `COMPATIBILITY`; a URL filtrada sobrevive a um refresh completo porque o estado é derivado somente do parâmetro da URL; os dois botões de entrada content-first navegam corretamente; sem overflow horizontal em 390×844.
+- Visual: catálogo completo, filtro de gramática, filtro de vocabulário e os cards de Ninja/Corrida individual foram capturados e inspecionados em 1440×900, 768×1024 e 390×844. A composição dos dois novos previews (silhueta noturna com placas para o Ninja; pista com portais para a Corrida individual) é consistente com o restante do catálogo e com as referências em `reference/`.
+- Escopo preservado: nenhuma página de Gramática ou Vocabulário foi redesenhada; nenhuma nova arquitetura de navegação foi introduzida; nenhum banco de conteúdo foi duplicado; nenhuma dependência foi instalada; Edge permanece fora do escopo.

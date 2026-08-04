@@ -29,7 +29,7 @@ Conteúdo autorizado:
 | 5. Corte a palavra | concluída | Fase 4 | gesto confiável, modos Canvas/DOM e gate aprovado |
 | 6. Ninja | concluída — 6A a 6E | Fase 5 | modos Canvas/DOM, persistência, acessibilidade e revisões verdes |
 | 7. Corrida individual | concluída | Fase 6 | experiência single-player completa |
-| 8. Integração dos 13 jogos | pendente | Fase 7 | dois fluxos de entrada completos |
+| 8. Integração dos 13 jogos | concluída | Fase 7 | dois fluxos de entrada completos |
 | 9. Release candidate | pendente | Fase 8 | auditoria final sem regressões conhecidas |
 
 ## Fundação compartilhada
@@ -139,6 +139,14 @@ Phaser mantém apenas:
 - configurar conteúdo e rodada antes de iniciar cada jogo;
 - manter links diretos válidos com defaults canônicos;
 - validar navegação, persistência e resultado nos dois fluxos.
+
+**Concluída.** Ninja e Corrida individual foram publicados em `GAME_CATALOG` (`src/games/core/catalog.ts`) e na página `/jogos` (`src/pages/GamesPage.tsx`), com previews em CSS próprios (`ninja-card-preview`, `solo-race-card-preview` em `src/index.css`), seguindo o mesmo padrão já usado por Bubble Shooter e Corte a palavra — sem novos assets WebP. O catálogo público agora lista os 13 jogos, sem nenhum rótulo "Em breve".
+
+O fluxo content-first foi implementado com um parâmetro `?content=` na rota `/jogos`, resolvido por um mapa local (`present_tobe` → gramática, `body` → vocabulário) e filtrado com `getCompatibleGames` (já existente em `catalog.ts`, sem duplicar a matriz de compatibilidade). Os botões "Praticar em jogos" em `PracticeSetupPage.tsx` (gramática) e em `VocabularyCategoryPage.tsx`/`VocabularyFlashcardPage.tsx` (vocabulário `body`) passam a navegar para a rota filtrada em vez do catálogo genérico. O fluxo game-first (catálogo completo → jogo → conteúdo compatível → rodada → resultado) já existia e foi preservado sem alterações de arquitetura.
+
+Validado via inspeção direta do DOM (protocolo de depuração remota do Chrome): catálogo completo lista 13 títulos; filtro de gramática retorna 6 jogos (`Monte a frase`, `Caça ao erro`, `Contra o relógio`, `Ouvido afiado`, `Ninja`, `Corrida individual`); filtro de vocabulário retorna 10 jogos, ambos batendo exatamente com a matriz `COMPATIBILITY`; URL direta com `?content=` sobrevive a refresh porque o estado é derivado apenas do parâmetro da URL; os dois botões de entrada navegam para as rotas filtradas corretas; nenhum overflow horizontal em 390×844. A contagem "11" no badge lateral de Jogos (`src/components/AppShell.tsx`) foi corrigida para "13".
+
+Testes puros atualizados em `tests/gamesFoundation.test.mjs` para refletir os 13 jogos e a compatibilidade estendida de Ninja/Corrida individual — total do projeto permanece em 47 testes (nenhum teste novo foi necessário, apenas expectativas corrigidas). Gate técnico verde: conteúdo, TypeScript, lint, build, `verifyPhaserSplit` e `git diff --check`.
 
 ## Gates por checkpoint
 

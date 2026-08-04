@@ -16,8 +16,8 @@ O Product Vision aprovado em `reference/ingles-em-jogo-product-vision.html` é a
 - Vocabulário funcional apenas em Partes do corpo.
 - Progresso com atividade semanal, conquistas, revisão e métricas locais.
 - Perfil local editável, preferências e reset local confirmado.
-- Jogos: onze jogos publicados no catálogo com `present_tobe` + `body`; Ninja e Corrida individual estão completos em Canvas e DOM nas rotas diretas, ambos aguardando publicação conjunta no catálogo na Fase 8.
-- Página de Jogos: onze cards, com nove thumbnails aprovadas e previews locais dos dois arcades; versões WebP 800x450 e masters 1600x900 permanecem preservados.
+- Jogos: os 13 jogos oficiais estão publicados no catálogo com `present_tobe` + `body`, incluindo Ninja e Corrida individual, integrados na Fase 8. O catálogo oferece fluxo game-first (catálogo completo) e content-first (`/jogos?content=present_tobe` ou `?content=body`, filtrado por compatibilidade a partir de Gramática e Vocabulário).
+- Página de Jogos: 13 cards, com nove thumbnails aprovadas e previews locais dos quatro arcades (Bubble Shooter, Corte a palavra, Ninja, Corrida individual); versões WebP 800x450 e masters 1600x900 permanecem preservados.
 
 ## Conteúdo
 
@@ -52,7 +52,7 @@ A Liga Safira é uma experiência local. Os demais participantes são simulados 
 
 ## Jogos
 
-Onze jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramática) e `body` (Vocabulário):
+Os 13 jogos do catálogo oficial estão funcionais e publicados, usando `present_tobe` (Gramática) e `body` (Vocabulário):
 
 - Monte a frase;
 - Caça ao erro;
@@ -62,11 +62,11 @@ Onze jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramá
 - Conectando;
 - Cruzando palavras;
 - Par perfeito;
-- Ouvido afiado.
-- Bubble Shooter.
-- Corte a palavra.
-- Ninja (rota direta, aguardando publicação na Fase 8).
-- Corrida individual (rota direta, aguardando publicação na Fase 8).
+- Ouvido afiado;
+- Bubble Shooter;
+- Corte a palavra;
+- Ninja;
+- Corrida individual.
 
 `Conectando` é o nome aprovado para associação entre palavra em inglês e imagem. A branch local `feat/loop-jogos-v1` preserva e consolida a nova experiência, com seis palavras e seis imagens no mesmo tabuleiro responsivo e compacto, linhas por Pointer Events, fallback por clique/teclado e somente o primeiro outcome por palavra. `Par perfeito` também preserva o ajuste local de largura/densidade do board, sem mudança de mecânica.
 
@@ -80,10 +80,8 @@ Onze jogos do catálogo oficial estão funcionais, usando `present_tobe` (Gramá
 - `/vocabulario`: categorias.
 - `/vocabulario/:categoryId`: prévia da categoria.
 - `/vocabulario/body/flashcards`: flashcards de Partes do corpo.
-- `/jogos`: catálogo de onze jogos.
-- `/jogos/monte-a-frase`, `/jogos/caca-ao-erro`, `/jogos/contra-o-relogio`, `/jogos/cada-coisa-no-seu-lugar`, `/jogos/palavra-secreta`, `/jogos/conectando`, `/jogos/cruzando-palavras`, `/jogos/par-perfeito`, `/jogos/ouvido-afiado`, `/jogos/bubble-shooter`, `/jogos/corte-a-palavra`: jogos individuais.
-- `/jogos/ninja`: Ninja completo com 10 placas em cinco fases, Canvas e DOM simplificado, vidas, recuperação, resultado e persistência; ainda não publicado no catálogo.
-- `/jogos/corrida-individual`: Corrida individual completa com 10 portais, Canvas e DOM simplificado, HUD de score/combo/velocidade, resultado e persistência; ainda não publicada no catálogo.
+- `/jogos`: catálogo dos 13 jogos oficiais; aceita `?content=present_tobe` ou `?content=body` para filtrar por jogos compatíveis com o conteúdo estudado.
+- `/jogos/monte-a-frase`, `/jogos/caca-ao-erro`, `/jogos/contra-o-relogio`, `/jogos/cada-coisa-no-seu-lugar`, `/jogos/palavra-secreta`, `/jogos/conectando`, `/jogos/cruzando-palavras`, `/jogos/par-perfeito`, `/jogos/ouvido-afiado`, `/jogos/bubble-shooter`, `/jogos/corte-a-palavra`, `/jogos/ninja`, `/jogos/corrida-individual`: jogos individuais.
 - `/progresso`: progresso local.
 - `/perfil`: perfil local.
 
@@ -259,6 +257,19 @@ Baseline da Fase 0 aprovado em 2026-07-30 com `validateContent`, TypeScript, lin
 - Risco residual aceito, não resolvido: a suíte completa do smoke trava mais adiante em `pressKey` sobre o Canvas do Ninja (`Timeout: Ninja keyboard jump resolves an incorrect sign`), a mesma classe de instabilidade de injeção de teclado/clique já documentada e adiada nas Fases 6B–6D. Não afeta a Corrida individual. Confirmado por orientação explícita que não deveria consumir mais ciclos nesta sessão.
 - Navegador: Edge permanece fora do escopo; a validação usou Chrome via `SMOKE_BROWSER`, sem alterar o padrão do script.
 - Revisão: nenhuma revisão de subagente foi acionada nesta sessão; a validação foi feita diretamente pelo agente principal via CDP e pelos gates automatizados.
+
+### Relatório da Fase 8
+
+- Objetivo: integrar os 13 jogos no catálogo público e fechar os dois fluxos de entrada (game-first e content-first), completando o roadmap principal antes da release candidate.
+- Publicação: Ninja e Corrida individual foram adicionados a `GAME_CATALOG` (`src/games/core/catalog.ts`) e à página `/jogos` (`src/pages/GamesPage.tsx`), com previews próprios em CSS (sem novos assets WebP), seguindo o padrão já usado por Bubble Shooter e Corte a palavra. O catálogo público passou de 11 para 13 jogos, sem nenhum rótulo "Em breve".
+- Content-first: a rota `/jogos` passou a aceitar `?content=present_tobe` ou `?content=body`, resolvidos para um `ContentSelector` e filtrados com `getCompatibleGames` (função já existente em `catalog.ts`, reaproveitada sem duplicar a matriz de compatibilidade). O cabeçalho da página muda para "Jogos compatíveis" com um link de volta ao catálogo completo.
+- Pontos de entrada: os botões "Praticar em jogos" em `PracticeSetupPage.tsx` (Gramática) e em `VocabularyCategoryPage.tsx`/`VocabularyFlashcardPage.tsx` (Vocabulário `body`) passaram a navegar para a rota filtrada. O fluxo game-first já existente foi preservado sem mudanças de arquitetura.
+- Correção pontual: o badge "11" na barra lateral de Jogos foi corrigido para "13" (`src/components/AppShell.tsx`).
+- Testes: `tests/gamesFoundation.test.mjs` foi atualizado para as 13 entradas do catálogo e a compatibilidade estendida; nenhum teste novo foi necessário. Total do projeto permanece em 47 testes puros, todos verdes.
+- Gate técnico verde: conteúdo, TypeScript, lint, build (`GamesPage` cresceu para 9,74 kB isolados, entry principal praticamente inalterado), `verifyPhaserSplit` (ainda 5 rotas arcade, 1 chunk Phaser) e `git diff --check`.
+- Validação funcional via inspeção direta do DOM (Chrome, protocolo de depuração remota): catálogo completo com 13 títulos; filtro de gramática com 6 jogos e filtro de vocabulário com 10 jogos, ambos batendo exatamente com `COMPATIBILITY`; URL filtrada sobrevive a refresh; os dois botões de entrada navegam corretamente; sem overflow em 390×844.
+- Visual: catálogo completo, ambos os filtros e os novos cards de Ninja/Corrida individual foram capturados e inspecionados em 1440×900, 768×1024 e 390×844.
+- Escopo preservado: nenhuma página de Gramática/Vocabulário foi redesenhada, nenhuma nova arquitetura de navegação foi criada, nenhum conteúdo foi duplicado, nenhuma dependência foi instalada, Edge permanece fora do escopo.
 
 ## Git
 

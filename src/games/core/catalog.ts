@@ -121,6 +121,22 @@ export const GAME_CATALOG: GameCatalogEntry[] = [
     defaultRoundSize: 8,
     supportsDragAndDrop: true,
   },
+  {
+    id: "ninja",
+    title: "Ninja",
+    description: "Corra, escolha a placa certa e salte para a resposta.",
+    compatibleDomains: ["grammar"],
+    defaultRoundSize: 10,
+    supportsDragAndDrop: false,
+  },
+  {
+    id: "solo_race",
+    title: "Corrida individual",
+    description: "Acelere escolhendo a faixa com a resposta correta.",
+    compatibleDomains: ["grammar", "vocabulary"],
+    defaultRoundSize: 10,
+    supportsDragAndDrop: false,
+  },
 ];
 
 export function getGameById(id: GameId): GameCatalogEntry | undefined {

@@ -51,7 +51,7 @@ Atualizado em: 2026-08-03
    - Corrida individual.
 
    `Conectando` é o nome aprovado para associação entre palavra em inglês e imagem.
-   Os nove jogos DOM, Bubble Shooter, Corte a palavra, Ninja e Corrida individual estão funcionais em Canvas e DOM; os dois últimos aguardam publicação conjunta no catálogo na Fase 8 do roadmap canônico.
+   Os 13 jogos oficiais estão funcionais e publicados no catálogo, integrados na Fase 8 do roadmap canônico.
 
 9. Repositório
 
@@ -59,7 +59,7 @@ Atualizado em: 2026-08-03
 
 10. Jogos funcionais
 
-    Onze jogos do catálogo oficial estão implementados sobre uma fundação compartilhada (`src/games`), usando `present_tobe` e `body`. Nenhum banco de conteúdo foi duplicado; cada jogo consome os bancos canônicos via adapters.
+    Os 13 jogos do catálogo oficial estão implementados sobre uma fundação compartilhada (`src/games`), usando `present_tobe` e `body`. Nenhum banco de conteúdo foi duplicado; cada jogo consome os bancos canônicos via adapters.
 
 11. Roadmap e testes puros
 
@@ -67,7 +67,7 @@ Atualizado em: 2026-08-03
 
 12. Fluxos de entrada dos jogos
 
-    A auditoria das nove mecânicas DOM pertence à Fase 2. A configuração game-first e content-first para o catálogo completo pertence à Fase 8, depois que os quatro arcades existirem, evitando implementar duas vezes a mesma integração.
+    A auditoria das nove mecânicas DOM pertence à Fase 2. A configuração game-first (catálogo completo) e content-first (`/jogos?content=present_tobe` ou `?content=body`, filtrado por `getCompatibleGames`) foi concluída na Fase 8, com os quatro arcades já publicados.
 
 13. Code-splitting e bridge arcade
 
