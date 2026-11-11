@@ -1,6 +1,6 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const el={innerHTML:'',addEventListener(){},classList:{add(){},remove(){},toggle(){}},textContent:'',value:'',focus(){}};
-const ctx=vm.createContext({console,localStorage:{getItem(){return null},setItem(){}},document:{querySelector(){return el},addEventListener(){}},window:{scrollTo(){},setTimeout},setTimeout,clearTimeout});
+const ctx=vm.createContext({console,localStorage:{getItem(){return null},setItem(){}},document:{querySelector(s){return s==='#test-answer'?null:el},addEventListener(){}},window:{scrollTo(){},setTimeout},setTimeout,clearTimeout});
 for(const p of ['verbs.js','content.js','app.js'])vm.runInContext(fs.readFileSync('dist/'+p,'utf8'),ctx);
 const run=s=>vm.runInContext(s,ctx);
 assert.equal(run('VERBS.length'),104);assert.equal(run('new Set(VERBS.map(v=>v.base)).size'),104);
