@@ -9,3 +9,13 @@
 .memory-card:disabled{opacity:1}.option .letter{display:inline-block;min-width:15px}
 
 .audio-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:14px;margin-top:22px;padding:18px;background:#edf2fa;border-radius:11px}.audio-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}.audio-buttons .btn{padding:9px 12px;font-size:10px;gap:7px}.audio-speed{display:flex;gap:8px;align-items:center;font-size:10px;color:#71829b}.audio-speed select{padding:7px;font-size:10px}.audio-controls>span{display:block;flex-basis:100%;text-align:center;font-size:10px;color:#71829b}.embedded body{background:transparent;min-height:0}.embedded .shell{display:block;min-height:0}.embedded .sidebar,.embedded .topbar{display:none!important}.embedded .main{margin:0;width:100%}.embedded .content{padding:0;max-width:none}.embedded #toast{position:fixed;bottom:15px}.embedded .hero h2{font-size:30px}@media(max-width:680px){.audio-controls{padding:13px}.audio-buttons .btn{font-size:9px;padding:9px}.embedded .page-heading h1{font-size:23px}.embedded .content{padding:0 0 12px}}
+
+/* Progressão e legibilidade da versão de estudo. */
+:root{--muted:#5f6b7d}
+.progression-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:0 0 32px}
+.cambridge-link{display:inline-flex;align-items:center;margin:10px 12px 0 0;color:#244f91;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.feedback .cambridge-link{display:flex}
+.module-type{color:#687386}
+.flashcard small,.flashcard .translation,.flashcard .flip-hint,.help-note{color:var(--muted)}
+@media(max-width:900px){.progression-grid{gap:7px}}
+@media(max-width:680px){.level-grid,.progression-grid{grid-template-columns:1fr;gap:8px}.level-card{padding:12px}.level-card strong{font-size:11px}.level-card p{font-size:10px}.level-card .number{margin-bottom:8px}.stat p,.stat .mini,.module-type,.module-foot,.section-head span,.bottom-note{font-size:10px}.module p{font-size:11px}.forms small{font-size:9px}}

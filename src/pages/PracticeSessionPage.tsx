@@ -206,7 +206,6 @@ export default function PracticeSessionPage() {
           sessionIdRef.current,
           Math.round((correctCount / questions.length) * 100),
           bestStreak,
-          progressSummary.uniqueQuestions,
         );
         setSavedQuestionCount(progressSummary.uniqueQuestions);
       } catch {
@@ -571,7 +570,7 @@ export default function PracticeSessionPage() {
               onClick={() => setShowExit(false)}
               variant="secondary"
             >
-              Continuar jogando
+                Continuar praticando
             </PrimaryButton>
             <PrimaryButton
               onClick={() => leaveSession("/gramatica/present_tobe")}

@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { cancelPronunciation } from "../services/audio/pronunciation";
-const activities = ["home", "flash", "memory", "gaps", "time", "writing", "test"];
+// O memory game continua implementado em public/past, mas não faz parte da
+// trilha atual. Para reativá-lo, basta recolocar "memory" nesta lista e no menu.
+const activities = ["home", "flash", "gaps", "time", "writing", "test"];
 export default function PastStudioPage() {
   const { activity = "home" } = useParams();
   const section = activities.includes(activity) ? activity : "home";

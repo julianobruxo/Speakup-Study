@@ -38,12 +38,12 @@ const RAW_EXERCISES = [
 ['irregular','He ___ to the beach last weekend.','drove','drive','Drive → drove no Simple Past.',3],
 ['irregular','They ___ a blue sofa for the living room.','chose','choose','Use chose, e não chosen, na afirmativa do passado.',3],
 ['irregular','The class ___ at nine yesterday.','began','begin','Began é passado; begun é particípio.',3],
-['regular','The bus ___ in front of the school.','stopped','stop','Stop tem padrão consoante-vogal-consoante: dobre p e acrescente -ed.',3],
-['regular','We ___ a trip last year.','planned','plan','Plan → planned: dobre n antes de -ed.',3],
+['regular','The bus ___ in front of the school.','stopped','stop','Stop é um verbo curto, com uma vogal e uma consoante no final: dobre p e acrescente -ed. Compare com open → opened.',3],
+['regular','We ___ a trip last year.','planned','plan','Plan é um verbo curto, com uma vogal e uma consoante no final: dobre n antes de -ed. Compare com clean → cleaned.',3],
 ['regular','She ___ the heavy bags yesterday.','carried','carry','Consoante + y: carry → carried.',3],
 ['regular','They ___ to Brazil in 2020.','traveled|travelled','travel','Traveled (EUA) e travelled (Reino Unido) são aceitos.',3],
 ['regular','He ___ the book to the library yesterday.','returned','return','Return recebe -ed: returned.',3],
-['regular','I ___ the question to my friend.','explained','explain','Explain → explained. Não dobre a consoante final.',3],
+['regular','I ___ the answer to my friend.','explained','explain','Explain → explained. Não dobre a consoante final.',3],
 ['irregular',"She didn't ___ the answer yesterday.",'know','know','Depois de didn’t, use a forma base: know.',4],
 ['irregular','Did you ___ the message last night?','send','send','Did já marca o passado. O verbo fica na forma base.',4],
 ['irregular',"We didn't ___ any money yesterday.",'spend','spend','Use didn’t + spend, e não spent.',4],
@@ -62,12 +62,12 @@ const RAW_EXERCISES = [
 ['irregular','We ___ across the lake last summer.','swam','swim','Swim → swam → swum. Swam é o passado.',5],
 ['irregular','The lake ___ during the winter of 2020.','froze','freeze','Freeze → froze → frozen.',5],
 ['irregular','She ___ him for the mistake last week.','forgave','forgive','Forgive → forgave → forgiven.',5],
-['regular','She ___ for the exam for two hours yesterday.','prepared','prepare','Prepare termina em e: acrescente -d.',5],
-['regular','The teacher ___ the students to work together.','encouraged','encourage','Encourage → encouraged: apenas -d.',5],
-['regular','They ___ the project before the deadline.','completed','complete','Complete → completed. O contexto indica uma ação concluída.',5],
-['regular','We ___ the problem during the meeting yesterday.','discussed','discuss','Discuss já termina em ss; acrescente -ed.',5],
-['regular','The company ___ the documents last Friday.','copied','copy','Consoante + y: copy → copied.',5],
-['regular','He ___ to answer the difficult question.','managed','manage','Manage termina em e: managed.',5]
+['regular','Although she was tired, she ___ for the exam for two hours.','prepared','prepare','Prepare termina em e: acrescente -d. Although cria um contraste, mas não muda a forma do verbo.',5],
+['regular','Because the task was difficult, the teacher ___ the students to work together.','encouraged','encourage','Encourage → encouraged: apenas -d. O contexto mostra uma ação concluída.',5],
+['regular',"They ___ the project before Friday's deadline.",'completed','complete','Complete → completed. Before indica que a ação terminou antes do prazo.',5],
+['regular','After everyone shared an idea, we ___ the problem together.','discussed','discuss','Discuss já termina em ss; acrescente -ed. After organiza duas ações no passado.',5],
+['regular','Before sending the files, the company ___ the documents.','copied','copy','Consoante + y: copy → copied.',5],
+['regular','Although the question was difficult, he ___ to answer it.','managed','manage','Manage termina em e: managed. Although cria contraste entre a dificuldade e o resultado.',5]
 ];
 const EXERCISES=RAW_EXERCISES.map((x,i)=>({id:'e'+i,type:x[0],q:x[1],answers:x[2].split('|'),hint:x[3],explain:x[4],level:x[5]}));
 const EXPRESSIONS=[
@@ -82,22 +82,22 @@ const EXPRESSIONS=[
 {word:'at the weekend / on the weekend',pt:'no fim de semana',rule:'At the weekend é comum no Reino Unido; on the weekend, nos EUA. Last weekend dispensa preposição.',example:'We visited our friends last weekend.',category:'Variação de uso'}
 ];
 const TIME_QUIZ=[
-{q:'I saw her two days ___.',answers:['ago'],explain:'Ago vem depois da duração: two days ago.'},
-{q:'We travelled ___ 2020.',answers:['in'],explain:'Use in antes de um ano.'},
-{q:'She called me ___ night.',answers:['last'],explain:'Ontem à noite = last night.'},
-{q:'He arrived the day before ___.',answers:['yesterday'],explain:'The day before yesterday significa anteontem.'},
-{q:'They visited us ___ Monday.',answers:['on'],explain:'Use on com dias da semana, quando não há last.'},
-{q:'I played outside when I ___ a child.',answers:['was'],explain:'No passado, I combina com was.'},
-{q:'She left an hour ___.',answers:['ago'],explain:'An hour ago = há uma hora.'},
-{q:'We moved here ___ year.',answers:['last'],explain:'Last year = ano passado. Não acrescente in.'},
-{q:'I finished the book yesterday ___.',answers:['morning|afternoon|evening'],explain:'Yesterday morning, afternoon ou evening são possíveis. Night combina com last.'},
-{q:'They opened the shop ___ March 2019.',answers:['in'],explain:'Use in com mês e ano: in March 2019.'}
+{q:'I saw her ___ (há dois dias).',answers:['two days ago'],explain:'A expressão completa é two days ago. Ago vem depois da duração.',source:'https://dictionary.cambridge.org/grammar/british-grammar/ago'},
+{q:'We travelled to London ___ (em 2020).',answers:['in 2020'],explain:'A expressão completa é in 2020. Use in com anos.',source:'https://dictionary.cambridge.org/grammar/british-grammar/at-on-and-in-time'},
+{q:'She called me ___ (ontem à noite).',answers:['last night'],explain:'A expressão completa é last night. Evite yesterday night.',source:'https://dictionary.cambridge.org/grammar/british-grammar/at-on-and-in-time'},
+{q:'He arrived ___ (anteontem).',answers:['the day before yesterday'],explain:'The day before yesterday é a expressão fixa para anteontem.',source:'https://dictionary.cambridge.org/grammar/british-grammar/past-simple'},
+{q:'They visited us ___ (na segunda-feira passada).',answers:['last Monday'],explain:'A expressão completa é last Monday, sem on antes de last.',source:'https://dictionary.cambridge.org/grammar/british-grammar/at-on-and-in-time'},
+{q:'I played outside ___ (quando eu era criança).',answers:['when I was a child'],explain:'A expressão completa é when I was a child. Com I no passado de be, use was.',source:'https://dictionary.cambridge.org/grammar/british-grammar/past-simple'},
+{q:'She left ___ (há uma hora).',answers:['an hour ago'],explain:'A expressão completa é an hour ago. Ago aparece depois da duração.',source:'https://dictionary.cambridge.org/grammar/british-grammar/ago'},
+{q:'We moved here ___ (no ano passado).',answers:['last year'],explain:'A expressão completa é last year, sem in antes de last.',source:'https://dictionary.cambridge.org/grammar/british-grammar/at-on-and-in-time'},
+{q:'I finished the book ___ (ontem de manhã).',answers:['yesterday morning'],explain:'A expressão completa é yesterday morning, sem preposição.',source:'https://dictionary.cambridge.org/grammar/british-grammar/past-simple'},
+{q:'They opened the shop ___ (em março de 2019).',answers:['in March 2019'],explain:'A expressão completa é in March 2019. Use in com mês e ano.',source:'https://dictionary.cambridge.org/grammar/british-grammar/at-on-and-in-time'}
 ].map((x,i)=>({...x,id:'t'+i,answers:x.answers.flatMap(y=>y.split('|')),type:'time',level:2}));
 const SPECIAL_TESTS=[
 {q:'Qual frase está correta?',options:['I went to school yesterday.','I goed to school yesterday.','I go to school yesterday.','I gone to school yesterday.'],answers:['I went to school yesterday.'],explain:'Go muda para went no Simple Past.',level:1},
-{q:'Choose the correct negative sentence.',options:["She didn't went home.","She didn't go home.","She not went home.","She doesn't went home."],answers:["She didn't go home."],explain:'Didn’t é seguido do verbo na forma base: go.',level:2},
-{q:'Choose the correct question.',options:['Did you saw her?','Did you seen her?','Did you see her?','Do you saw her?'],answers:['Did you see her?'],explain:'Did + sujeito + verbo na forma base.',level:3},
-{q:'Which sentence uses be correctly?',options:["They wasn't tired.","They didn't were tired.","They weren't tired.","They not were tired."],answers:["They weren't tired."],explain:'They combina com were. Negativa: weren’t, sem did.',level:4},
-{q:'Choose the sentence with the correct past forms.',options:['She laid the book down and lay on the sofa.','She lay the book down and laid on the sofa.','She lain the book down and lied on the sofa.','She laid the book down and lain on the sofa.'],answers:['She laid the book down and lay on the sofa.'],explain:'Lay (colocar) → laid. Lie (deitar) → lay.',level:5}
+{q:'Qual frase aplica corretamente a regra do -y?',options:['She studied English yesterday.','She studyed English yesterday.','She studyd English yesterday.','She studies English yesterday.'],answers:['She studied English yesterday.'],explain:'Em study, consoante + y muda para -ied: studied.',level:2},
+{q:'Qual frase usa o Simple Past, e não o particípio?',options:['He wrote an email yesterday.','He written an email yesterday.','He writes an email yesterday.','He did wrote an email yesterday.'],answers:['He wrote an email yesterday.'],explain:'Wrote é o Simple Past de write; written é o particípio.',level:3},
+{q:'Qual pergunta está correta?',options:['Did you saw her?','Did you seen her?','Did you see her?','Do you saw her?'],answers:['Did you see her?'],explain:'Did + sujeito + verbo na forma base.',level:4},
+{q:'Qual frase usa corretamente os dois verbos?',options:['She laid the book down and lay on the sofa.','She lay the book down and laid on the sofa.','She lain the book down and lied on the sofa.','She laid the book down and lain on the sofa.'],answers:['She laid the book down and lay on the sofa.'],explain:'Lay (colocar) → laid. Lie (deitar) → lay.',level:5,source:'https://dictionary.cambridge.org/grammar/british-grammar/lay-or-lie'}
 ].map((x,i)=>({...x,id:'s'+i,type:'choice'}));
 const REGULARS={play:'played',visit:'visited',open:'opened',watch:'watched',clean:'cleaned',enjoy:'enjoyed',study:'studied',close:'closed',cry:'cried',live:'lived',stay:'stayed',try:'tried',stop:'stopped',plan:'planned',carry:'carried',travel:'traveled/travelled',return:'returned',explain:'explained',prepare:'prepared',encourage:'encouraged',complete:'completed',discuss:'discussed',copy:'copied',manage:'managed',work:'worked',walk:'walked',talk:'talked',call:'called',cook:'cooked',love:'loved',like:'liked',dance:'danced',arrive:'arrived',want:'wanted',need:'needed',help:'helped',ask:'asked',answer:'answered',start:'started',finish:'finished',listen:'listened',rain:'rained',learn:'learned/learnt',wait:'waited',look:'looked',wash:'washed',use:'used',move:'moved',happen:'happened',change:'changed',remember:'remembered'};

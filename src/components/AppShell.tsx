@@ -64,7 +64,8 @@ const NAV_ITEMS: {
 }[] = [
   { id: "home", label: "Início", icon: "home", to: "/" },
   { id: "study", label: "Estudar", icon: "book", to: "/praticar" },
-  { id: "games", label: "Jogos", icon: "game", to: "/jogos" },
+  // Jogos ficam preservados no código, mas não aparecem na trilha atual.
+  // { id: "games", label: "Jogos", icon: "game", to: "/jogos" },
   { id: "progress", label: "Progresso", icon: "chart", to: "/progresso" },
   { id: "profile", label: "Perfil", icon: "user", to: "/perfil" },
 ];
@@ -188,19 +189,33 @@ function DesktopSidebar({
         <button aria-label="Início" className={`nav-button ${location.pathname === "/" ? "active" : ""}`} onClick={() => navigate("/")}><span className="nav-icon"><AppIcon name="home" /></span><span className="sidebar-nav-label">Início</span></button>
         <button aria-label="Biblioteca" className={`nav-button ${location.pathname === "/praticar" ? "active" : ""}`} onClick={() => navigate("/praticar")}><span className="nav-icon"><AppIcon name="book" /></span><span className="sidebar-nav-label">Biblioteca</span></button>
         <div className="nav-label">O que estudar</div>
-        <button aria-label="Gramática" className={`nav-button ${location.pathname.startsWith("/gramatica") ? "active" : ""}`} onClick={() => navigate("/gramatica")}><span className="nav-icon"><AppIcon name="book" /></span><span className="sidebar-nav-label">Gramática</span></button>
+        <details className="past-menu" open={location.pathname.startsWith("/gramatica")}>
+          <summary aria-label="Gramática"><span className="nav-icon"><AppIcon name="book" /></span><span className="sidebar-nav-label">Gramática</span><span className="past-chevron">⌄</span></summary>
+          <div className="past-menu-links">
+            {[
+              ["/gramatica", "Todos os tópicos"],
+              ["/gramatica/present_tobe", "TO BE · presente"],
+              ["/gramatica/simple_present", "Simple Present"],
+              ["/gramatica/present_continuous", "Present Continuous"],
+              ["/gramatica/be_going_to", "Be Going To"],
+              ["/gramatica/there_tobe", "There Is / Are"],
+            ].map(([path, label]) => <button key={path} className={location.pathname === path ? "active" : ""} onClick={() => navigate(path)}>{label}</button>)}
+          </div>
+        </details>
         <button aria-label="Vocabulário" className={`nav-button ${location.pathname.startsWith("/vocabulario") ? "active" : ""}`} onClick={() => navigate("/vocabulario")}><span className="nav-icon"><AppIcon name="grid" /></span><span className="sidebar-nav-label">Vocabulário</span></button>
         <details className="past-menu" open={location.pathname.startsWith("/passado")}>
           <summary aria-label="Simple Past"><span className="nav-icon"><AppIcon name="clock" /></span><span className="sidebar-nav-label">Simple Past</span><span className="past-chevron">⌄</span></summary>
           <div className="past-menu-links">
             {[
-              ["home", "Visão geral"], ["flash", "Flashcards + áudio"], ["memory", "Memory game"],
-              ["gaps", "Fill in the gaps"], ["time", "Time expressions"], ["writing", "Sentence lab"], ["test", "Teste final · 5 níveis"],
+              ["home", "Visão geral"], ["flash", "Flashcards + áudio"],
+              ["gaps", "Fill in the gaps"], ["time", "Time expressions"], ["writing", "Sentence lab"], ["test", "Revisão final · 5 níveis"],
             ].map(([section, label]) => <button key={section} className={location.pathname === `/passado/${section}` ? "active" : ""} onClick={() => navigate(`/passado/${section}`)}>{label}</button>)}
           </div>
         </details>
         <div className="nav-label">Pratique e acompanhe</div>
+        {/* Jogos serão reativados quando houver uma nova decisão pedagógica.
         <button aria-label="Jogos" className={`nav-button ${active === "games" ? "active" : ""}`} onClick={() => navigate("/jogos")}><span className="nav-icon"><AppIcon name="game" /></span><span className="sidebar-nav-label">Jogos</span><b className="nav-badge sidebar-nav-label">9</b></button>
+        */}
         <button aria-label="Progresso" className={`nav-button ${active === "progress" ? "active" : ""}`} onClick={() => navigate("/progresso")}><span className="nav-icon"><AppIcon name="chart" /></span><span className="sidebar-nav-label">Progresso</span></button>
         <button aria-label="Perfil e som" className={`nav-button ${active === "profile" ? "active" : ""}`} onClick={() => navigate("/perfil")}><span className="nav-icon"><AppIcon name="user" /></span><span className="sidebar-nav-label">Perfil e som</span></button>
       </nav>

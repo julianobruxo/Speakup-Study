@@ -13,11 +13,13 @@ import {
 import { useEngagement } from "../services/progress/useEngagement";
 import { useProgressSummary } from "../services/progress/useProgressSummary";
 
+/* Jogos preservados para uma futura retomada.
 const games = [
   { route: "/jogos/contra-o-relogio", symbol: "⏱", title: "Contra o relógio", copy: "Responda rápido e mantenha a sequência." },
   { route: "/jogos/conectando", symbol: "◫", title: "Conectando", copy: "Associe palavra em inglês e imagem." },
   { route: "/jogos/monte-a-frase", symbol: "ABC", title: "Monte a frase", copy: "Organize as palavras na ordem certa." },
 ];
+*/
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -47,10 +49,10 @@ export default function HomePage() {
         <article className="hero">
           <div className="hero-content">
             <div className="pill">✦ Jornada personalizada</div>
-            <h1>Jogue, aprenda e <em>avance.</em></h1>
+            <h1>Estude, pratique e <em>avance.</em></h1>
             <p>
               Um caminho de prática criado para manter o inglês vivo todos os dias —
-              com gramática, vocabulário, jogos e desafios que evoluem junto com você.
+              com gramática, vocabulário e desafios que evoluem junto com você.
             </p>
             <div className="hero-actions">
               <button className="primary-button" onClick={() => setDialogOpen(true)}>
@@ -93,22 +95,23 @@ export default function HomePage() {
           </div>
           <div className="learning-map">
             <PathCard
-              copy={`Present TO BE · ${practiced} de 130 questões praticadas`}
+              copy={`6 tópicos disponíveis · ${practiced} questões de TO BE praticadas`}
               icon="Aa"
               progress={Math.round((practiced / 130) * 100)}
               title="Gramática essencial"
               tone="grammar"
-              onClick={() => navigate("/gramatica/present_tobe")}
+              onClick={() => navigate("/gramatica")}
             />
             <PathCard
-              copy="Partes do corpo · 24 flashcards com áudio"
+              copy="Partes do corpo · meta diária de 5 flashcards"
               icon="◫"
               progress={Math.min(100, (mission?.vocabularyCardsRevealed.length ?? 0) * 20)}
               title="Vocabulário visual"
               tone="vocab"
               onClick={() => navigate("/vocabulario/body/flashcards")}
             />
-            <PathCard copy="104 verbos com áudio · jogos, lacunas e testes" icon="↺" progress={0} title="Laboratório de Simple Past" tone="grammar" onClick={() => navigate("/passado/home")} />
+            <PathCard copy="104 verbos com áudio · lacunas, escrita e testes" icon="↺" progress={0} title="Laboratório de Simple Past" tone="grammar" onClick={() => navigate("/passado/home")} />
+            {/* Jogos preservados para reativação futura.
             <PathCard
               copy="9 jogos para reforçar TO BE e partes do corpo"
               icon="✦"
@@ -117,12 +120,14 @@ export default function HomePage() {
               tone="game"
               onClick={() => navigate("/jogos")}
             />
+            */}
           </div>
         </section>
 
         <LeagueCard snapshot={snapshot} />
       </div>
 
+      {/* Jogos preservados no código, mas retirados da experiência atual.
       <section className="games-strip section-card">
         <div className="section-header">
           <div>
@@ -148,6 +153,7 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+      */}
 
       <AppDialog
         className="practice-choice-dialog"
@@ -160,7 +166,7 @@ export default function HomePage() {
           <button onClick={() => navigate("/gramatica")}>
             <span className="mode-icon">Aa</span>
             <strong>Gramática</strong>
-            <span>Present TO BE e o laboratório de Simple Past.</span>
+            <span>Seis tópicos com explicação, prática e revisão.</span>
           </button>
           <button className="vocab" onClick={() => navigate("/vocabulario")}>
             <span className="mode-icon">◫</span>

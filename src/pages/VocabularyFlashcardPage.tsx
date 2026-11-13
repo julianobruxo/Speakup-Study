@@ -193,7 +193,7 @@ export default function VocabularyFlashcardPage() {
               ? "+25 XP de conclusão"
               : "Revele os 24 cards para ganhar o bônus de conclusão."}
           </p>
-          <p>Agora experimente as palavras nos jogos de vocabulário.</p>
+          <p>Agora revise as palavras sem olhar a tradução e tente usá-las em frases curtas.</p>
           <div className="completion-actions">
             <PrimaryButton
               icon={<AppIcon name="grid" size={19} />}

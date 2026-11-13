@@ -3,7 +3,6 @@ import AppIcon from "../components/AppIcon";
 import {
   AppCard,
   AppShell,
-  LockedCard,
   PageHeader,
 } from "../components/AppShell";
 import { ACTIVE_VOCABULARY_CATEGORIES } from "../content/taxonomy";
@@ -21,22 +20,14 @@ export default function VocabularyPage() {
         <p>Estude partes do corpo com imagens ou verbos irregulares com áudio.</p>
       </section>
       <div className="vocabulary-list">
-        {ACTIVE_VOCABULARY_CATEGORIES.map((category) => {
+        {ACTIVE_VOCABULARY_CATEGORIES
+          .filter((category) => category.id === "body" || category.id === "irregular_verbs")
+          .map((category) => {
           const count =
             category.id === "irregular_verbs"
               ? IRREGULAR_VERBS.length
               : getVocabularyEntriesByCategory(category.id).length;
           if (category.id === "irregular_verbs") return <AppCard key={category.id} description="Base, Simple Past e particípio com áudio em inglês." icon={<AppIcon name="volume" />} onClick={() => navigate("/passado/flash")} title="Verbos irregulares" trailing={<span className="count-pill">104 verbos</span>} />;
-          if (category.id !== "body") {
-            return (
-              <LockedCard
-                description={category.description}
-                key={category.id}
-                onClick={() => undefined}
-                title={category.title}
-              />
-            );
-          }
           return (
             <AppCard
               description={category.description}

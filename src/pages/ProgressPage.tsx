@@ -3,6 +3,11 @@ import { AppShell } from "../components/AppShell";
 import { getWeekKey, type AchievementId } from "../services/progress/engagement";
 import { useEngagement } from "../services/progress/useEngagement";
 import { useProgressSummary } from "../services/progress/useProgressSummary";
+import {
+  GRAMMAR_COURSE_PROGRESS_EVENT,
+  readGrammarCourseProgress,
+  summarizeGrammarCourseProgress,
+} from "../services/progress/grammarCourseProgress";
 
 const ACHIEVEMENTS: {
   id: AchievementId;
@@ -22,6 +27,12 @@ const ACHIEVEMENTS: {
 export default function ProgressPage() {
   const [past, setPast] = useState(readPastProgress);
   useEffect(() => { const update = () => setPast(readPastProgress()); window.addEventListener("past-progress", update); return () => window.removeEventListener("past-progress", update); }, []);
+  const [courseProgress, setCourseProgress] = useState(() => summarizeGrammarCourseProgress(readGrammarCourseProgress()));
+  useEffect(() => {
+    const update = () => setCourseProgress(summarizeGrammarCourseProgress(readGrammarCourseProgress()));
+    window.addEventListener(GRAMMAR_COURSE_PROGRESS_EVENT, update);
+    return () => window.removeEventListener(GRAMMAR_COURSE_PROGRESS_EVENT, update);
+  }, []);
   const { summary, loading: progressLoading } = useProgressSummary();
   const { snapshot, loading: engagementLoading } = useEngagement();
   const loading = progressLoading || engagementLoading;
@@ -50,7 +61,9 @@ export default function ProgressPage() {
         <Metric label="Sessões concluídas" value={loading ? "—" : String(summary?.completedSessions ?? 0)} />
       </div>
 
-      <section className="section-card past-progress-summary"><div className="section-eyebrow">Simple Past</div><h2>Seu progresso no laboratório</h2><div className="metric-grid"><Metric label="Verbos aprendidos" value={`${past.learned.length}/104`} /><Metric label="Respostas praticadas" value={String(past.answers)} /><Metric label="Acertos nas respostas" value={past.answers ? `${Math.round(past.correct/past.answers*100)}%` : "—"} /><Metric label="Níveis com 70% ou mais" value={`${Object.values(past.tests).filter(score => score >= 70).length}/5`} /></div><p>O laboratório preserva seu histórico anterior. Estas métricas ficam separadas do XP dos jogos e do TO BE.</p></section>
+      <section className="section-card past-progress-summary"><div className="section-eyebrow">Novos cursos</div><h2>Prática de gramática</h2><div className="metric-grid"><Metric label="Questões respondidas" value={String(courseProgress.answerCount)} /><Metric label="Precisão" value={courseProgress.accuracy === null ? "—" : `${courseProgress.accuracy}%`} /><Metric label="Níveis concluídos" value={`${courseProgress.completedLevels}/20`} /><Metric label="Revisões finais" value={String(courseProgress.reviewAttempts)} /></div><p>Simple Present, Present Continuous, Be Going To e There Is / There Are ficam salvos neste dispositivo.</p></section>
+
+      <section className="section-card past-progress-summary"><div className="section-eyebrow">Simple Past</div><h2>Seu progresso no laboratório</h2><div className="metric-grid"><Metric label="Verbos aprendidos" value={`${past.learned.length}/104`} /><Metric label="Respostas praticadas" value={String(past.answers)} /><Metric label="Acertos nas respostas" value={past.answers ? `${Math.round(past.correct/past.answers*100)}%` : "—"} /><Metric label="Níveis com 70% ou mais" value={`${Object.values(past.tests).filter(score => score >= 70).length}/5`} /></div><p>O laboratório preserva seu histórico anterior. Estas métricas ficam separadas do TO BE e dos novos cursos.</p></section>
       <div className="progress-layout">
         <section className="chart-card">
           <div className="section-header">

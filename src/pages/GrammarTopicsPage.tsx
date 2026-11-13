@@ -8,6 +8,7 @@ import {
   PageHeader,
 } from "../components/AppShell";
 import Toast from "../components/Toast";
+import { GRAMMAR_COURSE_IDS } from "../content/data/grammarCourses";
 import { ACTIVE_GRAMMAR_TOPICS } from "../content/taxonomy";
 
 export default function GrammarTopicsPage() {
@@ -23,20 +24,10 @@ export default function GrammarTopicsPage() {
     <AppShell activeNav="study" className="standard-page">
       <PageHeader backTo="/praticar" title="Gramática" />
       <section className="page-lead compact">
-        <span className="eyebrow">8 tópicos de gramática</span>
+        <span className="eyebrow">6 tópicos disponíveis</span>
         <h2>Escolha um tópico</h2>
-        <p>Escolha Present TO BE ou explore o laboratório completo de Simple Past.</p>
+        <p>Aprenda a estrutura, pratique em 5 níveis e conclua com uma revisão final.</p>
       </section>
-
-      <div className="curriculum-control" aria-label="Nível curricular">
-        <button aria-pressed="true">Iniciante</button>
-        <button
-          aria-disabled="true"
-          onClick={() => showLocked("Nível avançado")}
-        >
-          Avançado <AppIcon name="lock" size={14} />
-        </button>
-      </div>
 
       <div className="topic-list">
         {ACTIVE_GRAMMAR_TOPICS.map((topic) =>
@@ -51,8 +42,19 @@ export default function GrammarTopicsPage() {
               title="Verbo TO BE — presente"
               trailing={<span className="count-pill">130 questões</span>}
             />
+          ) : GRAMMAR_COURSE_IDS.includes(topic.id as (typeof GRAMMAR_COURSE_IDS)[number]) ? (
+            <AppCard
+              className="available-topic"
+              description={topic.description}
+              eyebrow="Explicação + prática"
+              icon={<span className="topic-number">{String(topic.sequence).padStart(2, "0")}</span>}
+              key={topic.id}
+              onClick={() => navigate(`/gramatica/${topic.id}`)}
+              title={topic.title}
+              trailing={<span className="count-pill">5 níveis</span>}
+            />
           ) : topic.id === "simple_past" ? (
-            <AppCard key={topic.id} className="available-topic" description="104 verbos com áudio, memory game, lacunas, expressões de tempo, escrita e testes." eyebrow="Disponível agora" icon={<AppIcon name="clock" />} onClick={() => navigate("/passado/home")} title="Simple Past" trailing={<span className="count-pill">6 atividades</span>} />
+            <AppCard key={topic.id} className="available-topic" description="104 verbos com áudio, lacunas, expressões de tempo, escrita e revisão final." eyebrow="Disponível agora" icon={<AppIcon name="clock" />} onClick={() => navigate("/passado/home")} title="Simple Past" trailing={<span className="count-pill">5 atividades</span>} />
           ) : (
             <LockedCard
               description={topic.description}

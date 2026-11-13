@@ -30,7 +30,7 @@ export default function PresentTobeStudyDialog({
     <AppDialog
       actions={
         <PrimaryButton onClick={closeAndRestoreFocus}>
-          Voltar ao jogo
+          Voltar à prática
         </PrimaryButton>
       }
       className="study-dialog"
@@ -122,6 +122,14 @@ export default function PresentTobeStudyDialog({
               ]}
             />
           </StudySection>
+          <a
+            className="cambridge-link"
+            href="https://dictionary.cambridge.org/grammar/british-grammar/subject-verb-agreement"
+            rel="noreferrer"
+            target="_blank"
+          >
+            Aprofundar na Cambridge: concordância entre sujeito e verbo →
+          </a>
 
           <StudySection title="Contrações">
             <p>

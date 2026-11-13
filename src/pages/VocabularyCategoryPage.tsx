@@ -72,7 +72,9 @@ export default function VocabularyCategoryPage() {
         >
           Estudar com flashcards
         </PrimaryButton>
+        {/* Atalho para jogos preservado para uma possível retomada futura.
         <PrimaryButton variant="secondary" icon={<AppIcon name="game" />} onClick={() => navigate("/jogos")}>Praticar nos jogos</PrimaryButton>
+        */}
       </AppShell>
     );
   }

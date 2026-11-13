@@ -5,8 +5,10 @@ import {
   getProgressSnapshot,
   PROGRESS_UPDATED_EVENT,
 } from "./localProgress";
+import { summarizeGrammarCourseProgress } from "./grammarCourseProgress";
 
 const ENGAGEMENT_KEY = "local-player";
+let mutationQueue: Promise<void> = Promise.resolve();
 export const ENGAGEMENT_UPDATED_EVENT = "ingles-em-jogo-engagement-updated";
 export const ENGAGEMENT_SCHEMA_VERSION = 1;
 
@@ -220,7 +222,10 @@ function unlock(
   at: string,
 ) {
   const achievement = state.achievements[id];
-  achievement.progress = Math.min(progress, target);
+  achievement.progress = Math.max(
+    achievement.progress,
+    Math.min(progress, target),
+  );
   if (!achievement.unlocked && progress >= target) {
     achievement.unlocked = true;
     achievement.unlockedAt = at;
@@ -362,13 +367,20 @@ async function writeRecord(record: EngagementRecord, announce = true): Promise<v
   }
 }
 
-async function mutate(
+function mutate(
   mutation: (record: EngagementRecord) => void | Promise<void>,
 ): Promise<EngagementSnapshot> {
-  const record = await readRecord();
-  await mutation(record);
-  await writeRecord(record);
-  return { profile: record.profile, state: record.state };
+  const operation = mutationQueue.then(async () => {
+    const record = await readRecord();
+    await mutation(record);
+    await writeRecord(record);
+    return { profile: record.profile, state: record.state };
+  });
+  mutationQueue = operation.then(
+    () => undefined,
+    () => undefined,
+  );
+  return operation;
 }
 
 export async function getEngagementSnapshot(): Promise<EngagementSnapshot> {
@@ -411,13 +423,15 @@ export async function recordGrammarSessionEngagement(
   sessionId: string,
   percentage: number,
   bestAnswerStreak: number,
-  uniqueQuestions: number,
   completedAt = new Date(),
 ): Promise<EngagementSnapshot> {
-  return mutate((record) => {
+  return mutate(async (record) => {
     const state = record.state;
     const eventId = `grammar-session:${sessionId}`;
     if (state.processedEvents[eventId]) return;
+    const legacyProgress = await getProgressSnapshot();
+    const uniqueQuestions = legacyProgress.questions.length
+      + summarizeGrammarCourseProgress().uniqueQuestions;
     state.processedEvents[eventId] = true;
     const date = localDate(completedAt);
     if (state.dailyMission.date !== date) state.dailyMission = newMission(date);

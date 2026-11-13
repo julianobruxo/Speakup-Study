@@ -95,49 +95,49 @@ export const ACTIVE_VOCABULARY_CATEGORIES: VocabularyCategory[] = [
     "clothes",
     "mvp_vocabulary",
     "Roupas",
-    "available",
+    "planned",
     "Roupas e acessórios do dia a dia",
   ),
   category(
     "furniture",
     "mvp_vocabulary",
     "Moveis",
-    "available",
+    "planned",
     "Móveis e objetos da casa",
   ),
   category(
     "animals",
     "mvp_vocabulary",
     "Animais",
-    "available",
+    "planned",
     "Animais comuns e natureza",
   ),
   category(
     "jobs",
     "mvp_vocabulary",
     "Profissoes",
-    "available",
+    "planned",
     "Profissões e locais de trabalho",
   ),
   category(
     "places",
     "mvp_vocabulary",
     "Lugares",
-    "available",
+    "planned",
     "Lugares da cidade",
   ),
   category(
     "action_verbs",
     "mvp_verbs",
     "Action Verbs",
-    "available",
+    "planned",
     "Ações simples e frequentes",
   ),
   category(
     "routine_verbs",
     "mvp_verbs",
     "Routine Verbs",
-    "available",
+    "planned",
     "Expressões da rotina diária",
   ),
   category(
@@ -175,6 +175,14 @@ function grammarTopic(
   sequence: number,
   description: string,
 ): GrammarTopic {
+  const availableTopics: GrammarTopicId[] = [
+    "present_tobe",
+    "simple_present",
+    "present_continuous",
+    "be_going_to",
+    "simple_past",
+    "there_tobe",
+  ];
   return {
     id,
     title,
@@ -182,7 +190,7 @@ function grammarTopic(
     entryLevel: "beginner",
     availableDifficulties: [...MVP_GRAMMAR_DIFFICULTIES],
     questionTargets: { ...MVP_GRAMMAR_TARGETS },
-    availabilityStatus: "planned",
+    availabilityStatus: availableTopics.includes(id) ? "available" : "planned",
     description,
   };
 }

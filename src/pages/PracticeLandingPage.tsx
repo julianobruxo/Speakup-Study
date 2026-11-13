@@ -6,6 +6,7 @@ import {
   ACTIVE_GRAMMAR_TOPICS,
   ACTIVE_VOCABULARY_CATEGORIES,
 } from "../content/taxonomy";
+import { GRAMMAR_COURSE_IDS } from "../content/data/grammarCourses";
 import { useProgressSummary } from "../services/progress/useProgressSummary";
 
 type StudyFilter = "all" | "grammar" | "vocabulary" | "review";
@@ -54,13 +55,23 @@ export default function PracticeLandingPage() {
                   topic.id === "present_tobe" && practiced
                     ? `${practiced} de 130 questões praticadas.`
                     : topic.description,
-                available: topic.id === "present_tobe" || topic.id === "simple_past",
-                action: () => navigate(topic.id === "simple_past" ? "/passado/home" : "/gramatica/present_tobe"),
-                tag: topic.id === "present_tobe" || topic.id === "simple_past" ? "Disponível" : "Em breve",
+                available: topic.availabilityStatus === "available",
+                action: () => navigate(
+                  topic.id === "simple_past"
+                    ? "/passado/home"
+                    : topic.id === "present_tobe"
+                      ? "/gramatica/present_tobe"
+                      : GRAMMAR_COURSE_IDS.includes(topic.id as (typeof GRAMMAR_COURSE_IDS)[number])
+                        ? `/gramatica/${topic.id}`
+                        : "/gramatica",
+                ),
+                tag: topic.availabilityStatus === "available" ? "Disponível" : "Em breve",
               }))
             : []),
           ...(filter === "all" || filter === "vocabulary"
-            ? ACTIVE_VOCABULARY_CATEGORIES.map((category) => ({
+            ? ACTIVE_VOCABULARY_CATEGORIES
+              .filter((category) => category.availabilityStatus === "available" && (category.id === "body" || category.id === "irregular_verbs"))
+              .map((category) => ({
                 id: category.id,
                 title: category.id === "body" ? "Partes do corpo" : category.title,
                 description: category.description,
