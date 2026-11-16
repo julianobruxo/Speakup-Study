@@ -318,6 +318,8 @@ export function PhaserArcadeSurface({
       data-runtime-board-bubble-count={runtimeDiagnostics.boardBubbleCount}
       data-runtime-camera-x={runtimeDiagnostics.cameraX}
       data-runtime-challenge-index={runtimeDiagnostics.challengeIndex}
+      data-runtime-correct-target-x={runtimeDiagnostics.correctTargetX}
+      data-runtime-correct-target-y={runtimeDiagnostics.correctTargetY}
       data-runtime-disconnected-dropped={runtimeDiagnostics.disconnectedDropped}
       data-runtime-impact-id={runtimeDiagnostics.impactId}
       data-runtime-gesture-active={runtimeDiagnostics.gestureActive}

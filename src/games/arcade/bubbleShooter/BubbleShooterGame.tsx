@@ -23,10 +23,8 @@ import {
   type GameRoundState,
 } from "../../core/sessionEngine";
 import { useGameCompletion } from "../../core/useGameCompletion";
-import {
-  createArcadeRoundAnswerGate,
-  type ArcadeAnswer,
-} from "../bridge/arcadeBridge";
+import type { ArcadeAnswer, ArcadeSceneRuntimeState } from "../bridge/arcadeBridge";
+import { createBubbleShooterAnswerGate } from "./bubbleShooterPedagogy";
 import { PhaserArcadeSurface } from "../bridge/PhaserArcadeSurface";
 import { BubbleShooterDomMode } from "./BubbleShooterDomMode";
 import { createBubbleShooterRound } from "./bubbleShooterRound";
@@ -48,6 +46,8 @@ export default function BubbleShooterGame() {
   const [mode, setMode] = useState<RenderMode>(
     () => searchParams.get("mode") === "dom" ? "dom" : "canvas",
   );
+  /** Idle until the learner explicitly starts: no round ever begins on a timer. */
+  const [started, setStarted] = useState(false);
   const [paused, setPaused] = useState(false);
   const [soundEnabled, setSoundPreference] = useState(isSoundEnabled);
   const [animationsEnabled, setAnimationPreference] = useState(areAnimationsEnabled);
@@ -56,10 +56,13 @@ export default function BubbleShooterGame() {
   );
   const [score, setScore] = useState(0);
   const [combo, setCombo] = useState(0);
-  const [liveMessage, setLiveMessage] = useState("Rodada pronta.");
+  const [liveMessage, setLiveMessage] = useState("Mire e atire na tradução correta.");
   const [result, setResult] = useState<GameRoundResult | null>(null);
   const scoreRef = useRef(0);
   const comboRef = useRef(0);
+  /** Guards so a run can only be finalised once, even if the scene re-reports. */
+  const runEndedRef = useRef(false);
+  const resultRef = useRef<GameRoundResult | null>(null);
   const reducedMotion = Boolean(systemReducedMotion) || !animationsEnabled;
   const { complete, completionError, resetSession, retryCompletion } =
     useGameCompletion("bubble_shooter", "vocabulary");
@@ -92,18 +95,18 @@ export default function BubbleShooterGame() {
       scoreRef.current += gain;
       setCombo(nextCombo);
       setScore(scoreRef.current);
-      setLiveMessage(`Resposta correta. Combo ${nextCombo}.`);
+      setLiveMessage(`Palavra coletada. Combo ${nextCombo}.`);
       playSound("correct");
     } else {
       comboRef.current = 0;
       setCombo(0);
-      setLiveMessage("Resposta incorreta. A resposta correta foi revelada.");
+      setLiveMessage("Palavra incorreta coletada.");
       playSound("wrong");
     }
   }, []);
 
   const answerGate = useMemo(
-    () => createArcadeRoundAnswerGate(round, handleAcceptedOutcome),
+    () => createBubbleShooterAnswerGate(round, handleAcceptedOutcome),
     [handleAcceptedOutcome, round],
   );
 
@@ -129,18 +132,73 @@ export default function BubbleShooterGame() {
     return () => window.clearTimeout(timer);
   }, [reducedMotion, result, round.challenges.length, roundState]);
 
-  function resetRound() {
+  /**
+   * The scene reports `runEnded` once when the run is over — including a defeat
+   * with words still unanswered. The round is finalised from the outcomes that
+   * actually happened: unreached challenges are never scored as mistakes.
+   */
+  const handleRuntimeState = useCallback((state: ArcadeSceneRuntimeState) => {
+    if (!state.runEnded || runEndedRef.current) return;
+    runEndedRef.current = true;
+
+    setRoundState((current) => {
+      if (resultRef.current) return current;
+      const finalResult = finalizeRound(
+        current,
+        new Date().toISOString(),
+        scoreRef.current,
+      );
+      resultRef.current = finalResult;
+      setResult(finalResult);
+      setLiveMessage("Rodada encerrada.");
+      playSound("complete");
+      void completeRef.current(finalResult);
+      return current;
+    });
+  }, []);
+
+  /**
+   * Returns to the idle start screen and clears every per-run guard. It never
+   * starts a round: the Phaser session is unmounted and the game waits for the
+   * learner to act.
+   */
+  const returnToStart = useCallback(() => {
     resetSession();
     scoreRef.current = 0;
     comboRef.current = 0;
-    setSeed(Date.now());
+    runEndedRef.current = false;
+    resultRef.current = null;
     setPaused(false);
     setRoundState(createRoundState("bubble_shooter"));
     setScore(0);
     setCombo(0);
-    setLiveMessage("Nova rodada pronta.");
+    setLiveMessage("Estoure ou derrube a bolha com a palavra certa.");
     setResult(null);
-  }
+    setStarted(false);
+  }, [resetSession]);
+
+  /**
+   * Starts a round. Only ever called from an explicit click, tap or key press,
+   * and guarded so a double activation cannot create two sessions.
+   */
+  const startRound = useCallback(() => {
+    setStarted((current) => {
+      if (current) return current;
+      resetSession();
+      scoreRef.current = 0;
+      comboRef.current = 0;
+      runEndedRef.current = false;
+      resultRef.current = null;
+      setSeed(Date.now());
+      setPaused(false);
+      setRoundState(createRoundState("bubble_shooter"));
+      setScore(0);
+      setCombo(0);
+      setLiveMessage("Estoure ou derrube a bolha com a palavra certa.");
+      setResult(null);
+      return true;
+    });
+  }, [resetSession]);
 
   if (result) {
     return (
@@ -149,7 +207,7 @@ export default function BubbleShooterGame() {
         gameTitle="Bubble Shooter"
         onChangeGame={() => navigate("/jogos")}
         onHome={() => navigate("/")}
-        onPlayAgain={resetRound}
+        onPlayAgain={returnToStart}
         onRetryPersistence={retryCompletion}
         reduceMotion={reducedMotion}
         result={result}
@@ -222,12 +280,34 @@ export default function BubbleShooterGame() {
           )}
         </div>
 
-        {mode === "canvas" ? (
+        {mode === "canvas" && !started ? (
+          /*
+           * Idle start screen. No round is ever created by a timer: the Phaser
+           * session only mounts once the learner activates this control with a
+           * click, a tap, or Enter/Space while it is focused.
+           */
+          <div className="bubble-shooter-start" data-testid="bubble-shooter-start">
+            <h2>Bubble Shooter</h2>
+            <p>
+              Estoure ou derrube a bolha com a palavra em inglês que corresponde
+              à pista em português.
+            </p>
+            <button
+              autoFocus
+              className="primary-button"
+              onClick={startRound}
+              type="button"
+            >
+              Jogar
+            </button>
+          </div>
+        ) : mode === "canvas" ? (
           <PhaserArcadeSurface
             ariaLabel="Bubble Shooter. Mire com o ponteiro ou com as setas e lance com toque, clique ou barra de espaço."
             className="bubble-shooter-canvas is-interactive"
             interactive
             onAnswer={submitAnswer}
+            onRuntimeState={handleRuntimeState}
             paused={paused}
             reducedMotion={reducedMotion}
             round={round}

@@ -16,7 +16,7 @@ export const ROUND_SIZES: Record<GameId, RoundSizeConfig> = {
   crossword: { count: 8, label: "até 8 palavras" },
   memory_match: { count: 6, label: "6 pares / 12 cartas" },
   listening_ear: { count: 10, label: "10 desafios" },
-  bubble_shooter: { count: 6, label: "6 lançamentos" },
+  bubble_shooter: { count: 10, label: "10 lançamentos" },
   word_slice: { count: 8, label: "8 cortes" },
   ninja: { count: 10, label: "10 placas em 5 fases" },
   solo_race: { count: 10, label: "10 portais" },

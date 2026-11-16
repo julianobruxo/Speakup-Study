@@ -61,6 +61,8 @@ export interface ArcadeSceneRuntimeState {
   boardBubbleCount?: number;
   cameraX?: number;
   challengeIndex?: number;
+  correctTargetX?: number;
+  correctTargetY?: number;
   disconnectedDropped?: number;
   impactId?: string;
   gestureActive?: boolean;

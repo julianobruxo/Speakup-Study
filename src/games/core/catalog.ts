@@ -110,7 +110,7 @@ export const GAME_CATALOG: GameCatalogEntry[] = [
     title: "Bubble Shooter",
     description: "Mire na palavra em inglês que corresponde à pista.",
     compatibleDomains: ["vocabulary"],
-    defaultRoundSize: 6,
+    defaultRoundSize: 10,
     supportsDragAndDrop: false,
   },
   {
