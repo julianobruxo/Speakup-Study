@@ -2,7 +2,7 @@
 
 App web de estudo de inglês para os alunos da escola, do nível básico ao intermediário. Reúne explicações de gramática, atividades, vocabulário e jogos simples (embaralhar palavras, flashcards e jogo da memória).
 
-Site de estudo que integra o laboratório Simple Past ao conteúdo funcional de `julianobruxo/Speakup-Study`, referência lida no commit `2547adda3db0a05959f2fa1cf377918d5df6b6eb`.
+O laboratório Simple Past (`public/past`) está integrado à navegação do app. Origem: repositório `julianobruxo/Speakup-Study`, commit `2547adda3db0a05959f2fa1cf377918d5df6b6eb`.
 
 ## Conteúdo
 
@@ -35,7 +35,7 @@ Decidido, ainda não implementado: o app passará a usar a voz grátis do navega
 
 ## Integração
 
-O shell React, os bancos e os jogos vêm da referência. O módulo anterior vive em `public/past` e é exibido como conteúdo da mesma navegação. Eventos de navegação e altura validam origem e janela remetente. Não foram feitas alterações no repositório GitHub original.
+O shell React e os bancos vêm da referência; o código dos jogos complexos continua no repositório até ser removido (decidido, ainda não implementado). O módulo anterior vive em `public/past` e é exibido como conteúdo da mesma navegação. Eventos de navegação e altura validam origem e janela remetente. Não foram feitas alterações no repositório GitHub original.
 
 A revisão de escrita é limitada a regras de Simple Past e sinaliza casos não reconhecidos. A liga da referência é local, com participantes simulados, explicitamente identificados.
 
