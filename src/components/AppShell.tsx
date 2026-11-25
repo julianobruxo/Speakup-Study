@@ -188,6 +188,41 @@ function DesktopSidebar({
         <div className="nav-label">Principal</div>
         <button aria-label="Início" className={`nav-button ${location.pathname === "/" ? "active" : ""}`} onClick={() => navigate("/")}><span className="nav-icon"><AppIcon name="home" /></span><span className="sidebar-nav-label">Início</span></button>
         <button aria-label="Biblioteca" className={`nav-button ${location.pathname === "/praticar" ? "active" : ""}`} onClick={() => navigate("/praticar")}><span className="nav-icon"><AppIcon name="book" /></span><span className="sidebar-nav-label">Biblioteca</span></button>
+        <div className="nav-label">Livros</div>
+        {[
+          {
+            id: "intro",
+            label: "Livro Intro",
+            prefix: "/livro/intro",
+            links: [
+              ["/livro/intro/gramatica", "Gramática"],
+              ["/livro/intro/vocabulario", "Vocabulário"],
+            ],
+          },
+        ].map((book) => (
+          <details
+            className="past-menu"
+            key={book.id}
+            open={location.pathname.startsWith(book.prefix)}
+          >
+            <summary aria-label={book.label}>
+              <span className="nav-icon"><AppIcon name="book" /></span>
+              <span className="sidebar-nav-label">{book.label}</span>
+              <span className="past-chevron">⌄</span>
+            </summary>
+            <div className="past-menu-links">
+              {book.links.map(([path, label]) => (
+                <button
+                  className={location.pathname.startsWith(path) ? "active" : ""}
+                  key={path}
+                  onClick={() => navigate(path)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </details>
+        ))}
         <div className="nav-label">O que estudar</div>
         <details className="past-menu" open={location.pathname.startsWith("/gramatica")}>
           <summary aria-label="Gramática"><span className="nav-icon"><AppIcon name="book" /></span><span className="sidebar-nav-label">Gramática</span><span className="past-chevron">⌄</span></summary>

@@ -9,6 +9,10 @@ import PracticeSessionPage from "./pages/PracticeSessionPage";
 import PracticeSetupPage from "./pages/PracticeSetupPage";
 import ProfilePage from "./pages/ProfilePage";
 import ProgressPage from "./pages/ProgressPage";
+import BookGrammarTopicPage from "./pages/BookGrammarTopicPage";
+import BookIntroPage from "./pages/BookIntroPage";
+import BookVocabularyFlashcardsPage from "./pages/BookVocabularyFlashcardsPage";
+import BookVocabularyMemoryPage from "./pages/BookVocabularyMemoryPage";
 import SchoolStudyPage from "./pages/SchoolStudyPage";
 import VocabularyCategoryPage from "./pages/VocabularyCategoryPage";
 import VocabularyFlashcardPage from "./pages/VocabularyFlashcardPage";
@@ -41,6 +45,17 @@ export default function App() {
       <Route
         path="/vocabulario/:categoryId"
         element={<VocabularyCategoryPage />}
+      />
+      <Route path="/livro/intro/gramatica" element={<BookIntroPage section="gramatica" />} />
+      <Route path="/livro/intro/gramatica/:topicId" element={<BookGrammarTopicPage />} />
+      <Route path="/livro/intro/vocabulario" element={<BookIntroPage section="vocabulario" />} />
+      <Route
+        path="/livro/intro/vocabulario/:setId/flashcards"
+        element={<BookVocabularyFlashcardsPage />}
+      />
+      <Route
+        path="/livro/intro/vocabulario/:setId/memoria"
+        element={<BookVocabularyMemoryPage />}
       />
       <Route path="/escola/:section?" element={<SchoolStudyPage />} />
       <Route path="/progresso" element={<ProgressPage />} />
