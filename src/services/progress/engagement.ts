@@ -6,15 +6,74 @@ import {
   PROGRESS_UPDATED_EVENT,
 } from "./localProgress";
 import { summarizeGrammarCourseProgress } from "./grammarCourseProgress";
+import {
+  enqueueLeaderboardSync,
+  type RemoteUserState,
+} from "../firebase/leaderboardSync";
 
 const ENGAGEMENT_KEY = "local-player";
 let mutationQueue: Promise<void> = Promise.resolve();
 export const ENGAGEMENT_UPDATED_EVENT = "ingles-em-jogo-engagement-updated";
 export const ENGAGEMENT_SCHEMA_VERSION = 1;
 
+export type AvatarId =
+  | "fox"
+  | "owl"
+  | "lion"
+  | "panda"
+  | "koala"
+  | "tiger"
+  | "dolphin"
+  | "eagle"
+  | "cat"
+  | "dog"
+  | "rocket"
+  | "star";
+
+export const PRESET_AVATARS: { id: AvatarId; emoji: string; label: string }[] = [
+  { id: "fox", emoji: "🦊", label: "Raposa" },
+  { id: "owl", emoji: "🦉", label: "Coruja" },
+  { id: "lion", emoji: "🦁", label: "Leão" },
+  { id: "panda", emoji: "🐼", label: "Panda" },
+  { id: "koala", emoji: "🐨", label: "Coala" },
+  { id: "tiger", emoji: "🐯", label: "Tigre" },
+  { id: "dolphin", emoji: "🐬", label: "Golfinho" },
+  { id: "eagle", emoji: "🦅", label: "Águia" },
+  { id: "cat", emoji: "🐱", label: "Gato" },
+  { id: "dog", emoji: "🐶", label: "Cachorro" },
+  { id: "rocket", emoji: "🚀", label: "Foguete" },
+  { id: "star", emoji: "⭐", label: "Estrela" },
+];
+
+export const ALLOWED_AVATAR_IDS = new Set<string>(
+  PRESET_AVATARS.map((item) => item.id),
+);
+
+export const ALLOWED_AVATAR_TONES = new Set<string>([
+  "cyan",
+  "wine",
+  "violet",
+  "green",
+  "orange",
+]);
+
+export function sanitizeAvatarTone(avatarTone?: string): string {
+  return avatarTone && ALLOWED_AVATAR_TONES.has(avatarTone)
+    ? avatarTone
+    : "cyan";
+}
+
+export function getAvatarEmoji(avatarId?: string): string {
+  return (
+    PRESET_AVATARS.find((item) => item.id === avatarId)?.emoji ??
+    PRESET_AVATARS[0].emoji
+  );
+}
+
 export interface LocalPlayerProfile {
   displayName: string;
   avatarInitial: string;
+  avatarId: AvatarId;
   avatarTone: string;
 }
 
@@ -48,6 +107,7 @@ export interface LeagueParticipant {
   id: string;
   name: string;
   initial: string;
+  avatarId: AvatarId;
   tone: string;
   baseXp: number;
 }
@@ -86,9 +146,11 @@ export interface LeagueStanding {
   id: string;
   name: string;
   initial: string;
+  avatarId: AvatarId;
   tone: string;
   xp: number;
   isPlayer: boolean;
+  isBot?: boolean;
 }
 
 export interface LevelSummary {
@@ -100,21 +162,22 @@ export interface LevelSummary {
 }
 
 const PARTICIPANTS: LeagueParticipant[] = [
-  { id: "lucas", name: "Lucas", initial: "L", tone: "gold", baseXp: 460 },
-  { id: "marina", name: "Marina", initial: "M", tone: "cyan", baseXp: 420 },
-  { id: "ana", name: "Ana", initial: "A", tone: "blue", baseXp: 390 },
-  { id: "rafael", name: "Rafael", initial: "R", tone: "violet", baseXp: 350 },
-  { id: "camila", name: "Camila", initial: "C", tone: "wine", baseXp: 320 },
-  { id: "bruno", name: "Bruno", initial: "B", tone: "orange", baseXp: 285 },
-  { id: "sofia", name: "Sofia", initial: "S", tone: "green", baseXp: 250 },
-  { id: "diego", name: "Diego", initial: "D", tone: "blue", baseXp: 215 },
-  { id: "helena", name: "Helena", initial: "H", tone: "cyan", baseXp: 180 },
-  { id: "caio", name: "Caio", initial: "C", tone: "orange", baseXp: 145 },
+  { id: "lucas", name: "Lucas", initial: "L", avatarId: "lion", tone: "gold", baseXp: 460 },
+  { id: "marina", name: "Marina", initial: "M", avatarId: "owl", tone: "cyan", baseXp: 420 },
+  { id: "ana", name: "Ana", initial: "A", avatarId: "cat", tone: "blue", baseXp: 390 },
+  { id: "rafael", name: "Rafael", initial: "R", avatarId: "eagle", tone: "violet", baseXp: 350 },
+  { id: "camila", name: "Camila", initial: "C", avatarId: "panda", tone: "wine", baseXp: 320 },
+  { id: "bruno", name: "Bruno", initial: "B", avatarId: "tiger", tone: "orange", baseXp: 285 },
+  { id: "sofia", name: "Sofia", initial: "S", avatarId: "dolphin", tone: "green", baseXp: 250 },
+  { id: "diego", name: "Diego", initial: "D", avatarId: "dog", tone: "blue", baseXp: 215 },
+  { id: "helena", name: "Helena", initial: "H", avatarId: "koala", tone: "cyan", baseXp: 180 },
+  { id: "caio", name: "Caio", initial: "C", avatarId: "rocket", tone: "orange", baseXp: 145 },
 ];
 
 const DEFAULT_PROFILE: LocalPlayerProfile = {
   displayName: "Jogador",
   avatarInitial: "J",
+  avatarId: "fox",
   avatarTone: "cyan",
 };
 
@@ -197,6 +260,22 @@ function transactionDone(transaction: IDBTransaction): Promise<void> {
 function normalizeRecord(record: EngagementRecord, now = new Date()): EngagementRecord {
   const today = localDate(now);
   const weekKey = getWeekKey(now);
+  const safeAvatarId: AvatarId = ALLOWED_AVATAR_IDS.has(record.profile?.avatarId)
+    ? record.profile.avatarId
+    : "fox";
+  const safeAvatarTone = sanitizeAvatarTone(record.profile?.avatarTone);
+  if (
+    !record.profile ||
+    record.profile.avatarId !== safeAvatarId ||
+    record.profile.avatarTone !== safeAvatarTone
+  ) {
+    record.profile = {
+      ...DEFAULT_PROFILE,
+      ...record.profile,
+      avatarId: safeAvatarId,
+      avatarTone: safeAvatarTone,
+    };
+  }
   const state = record.state;
   if (state.dailyMission.date !== today) state.dailyMission = newMission(today);
   state.dailyMission.gameGrammarCompleted ??= false;
@@ -206,6 +285,14 @@ function normalizeRecord(record: EngagementRecord, now = new Date()): Engagement
     state.weeklyXp = 0;
     state.league = { weekKey, simulatedParticipants: PARTICIPANTS };
   }
+  state.league.simulatedParticipants = state.league.simulatedParticipants.map(
+    (participant, idx) => ({
+      ...participant,
+      avatarId: ALLOWED_AVATAR_IDS.has(participant.avatarId)
+        ? participant.avatarId
+        : PARTICIPANTS[idx % PARTICIPANTS.length].avatarId,
+    }),
+  );
   state.schemaVersion = ENGAGEMENT_SCHEMA_VERSION;
   state.processedEvents ??= {};
   state.weeklyActivity ??= {};
@@ -391,14 +478,48 @@ export async function getEngagementSnapshot(): Promise<EngagementSnapshot> {
 export async function updateLocalProfile(
   displayName: string,
   avatarTone: string,
+  avatarId?: AvatarId,
 ): Promise<EngagementSnapshot> {
-  return mutate((record) => {
+  const snapshot = await mutate((record) => {
     const cleanName = displayName.trim().slice(0, 28) || "Jogador";
+    const nextAvatarId =
+      avatarId && ALLOWED_AVATAR_IDS.has(avatarId)
+        ? avatarId
+        : record.profile.avatarId;
     record.profile = {
       displayName: cleanName,
       avatarInitial: cleanName.charAt(0).toLocaleUpperCase("pt-BR"),
-      avatarTone,
+      avatarId: nextAvatarId,
+      avatarTone: sanitizeAvatarTone(avatarTone),
     };
+  });
+  void enqueueLeaderboardSync(snapshot);
+  return snapshot;
+}
+
+export async function mergeRemoteUserState(
+  remote: RemoteUserState,
+): Promise<EngagementSnapshot> {
+  return mutate((record) => {
+    const currentWeek = record.state.league.weekKey;
+    const isDefaultName = record.profile.displayName === DEFAULT_PROFILE.displayName;
+    if (isDefaultName && remote.displayName && remote.displayName !== "Jogador") {
+      record.profile = {
+        displayName: remote.displayName.slice(0, 28),
+        avatarInitial: remote.displayName.charAt(0).toLocaleUpperCase("pt-BR"),
+        avatarId: ALLOWED_AVATAR_IDS.has(remote.avatarId)
+          ? remote.avatarId
+          : record.profile.avatarId,
+        avatarTone: sanitizeAvatarTone(remote.avatarTone || record.profile.avatarTone),
+      };
+    }
+    record.state.totalXp = Math.max(record.state.totalXp, remote.totalXp);
+    if (remote.weekKey === currentWeek) {
+      record.state.weeklyXp = Math.max(record.state.weeklyXp, remote.weeklyXp);
+    }
+    for (const eventId of remote.processedEventIds) {
+      record.state.processedEvents[eventId] = true;
+    }
   });
 }
 
@@ -407,16 +528,23 @@ export async function recordGrammarAnswerEngagement(
   correct: boolean,
   answeredAt = new Date(),
 ): Promise<EngagementSnapshot> {
-  return mutate((record) => {
+  let deltaXp = 0;
+  const snapshot = await mutate((record) => {
     const state = record.state;
     if (state.processedEvents[eventId]) return;
+    const beforeXp = state.totalXp;
     state.processedEvents[eventId] = true;
     const date = localDate(answeredAt);
     if (state.dailyMission.date !== date) state.dailyMission = newMission(date);
     grantXp(state, correct ? 10 : 2, date);
     state.dailyMission.grammarAnswers += 1;
     completeMissionIfReady(state, date);
+    deltaXp = state.totalXp - beforeXp;
   });
+  if (deltaXp > 0) {
+    void enqueueLeaderboardSync(snapshot, { eventId, deltaXp });
+  }
+  return snapshot;
 }
 
 export async function recordGrammarSessionEngagement(
@@ -425,10 +553,12 @@ export async function recordGrammarSessionEngagement(
   bestAnswerStreak: number,
   completedAt = new Date(),
 ): Promise<EngagementSnapshot> {
-  return mutate(async (record) => {
+  const eventId = `grammar-session:${sessionId}`;
+  let deltaXp = 0;
+  const snapshot = await mutate(async (record) => {
     const state = record.state;
-    const eventId = `grammar-session:${sessionId}`;
     if (state.processedEvents[eventId]) return;
+    const beforeXp = state.totalXp;
     const legacyProgress = await getProgressSnapshot();
     const uniqueQuestions = legacyProgress.questions.length
       + summarizeGrammarCourseProgress().uniqueQuestions;
@@ -445,18 +575,25 @@ export async function recordGrammarSessionEngagement(
       uniqueQuestions,
       bestAnswerStreak,
     });
+    deltaXp = state.totalXp - beforeXp;
   });
+  if (deltaXp > 0) {
+    void enqueueLeaderboardSync(snapshot, { eventId, deltaXp });
+  }
+  return snapshot;
 }
 
 export async function recordFlashcardReveal(
   cardId: string,
   revealedAt = new Date(),
 ): Promise<EngagementSnapshot> {
-  return mutate((record) => {
+  const date = localDate(revealedAt);
+  const eventId = `flashcard:${date}:${cardId}`;
+  let deltaXp = 0;
+  const snapshot = await mutate((record) => {
     const state = record.state;
-    const date = localDate(revealedAt);
-    const eventId = `flashcard:${date}:${cardId}`;
     if (state.processedEvents[eventId]) return;
+    const beforeXp = state.totalXp;
     state.processedEvents[eventId] = true;
     if (state.dailyMission.date !== date) state.dailyMission = newMission(date);
     grantXp(state, 3, date);
@@ -467,7 +604,12 @@ export async function recordFlashcardReveal(
       recordActiveDay(state, date);
     }
     completeMissionIfReady(state, date);
+    deltaXp = state.totalXp - beforeXp;
   });
+  if (deltaXp > 0) {
+    void enqueueLeaderboardSync(snapshot, { eventId, deltaXp });
+  }
+  return snapshot;
 }
 
 export async function recordFlashcardCompletion(
@@ -475,16 +617,23 @@ export async function recordFlashcardCompletion(
   revealedCount: number,
   completedAt = new Date(),
 ): Promise<EngagementSnapshot> {
-  return mutate((record) => {
+  const eventId = `flashcard-completion:${completionId}`;
+  let deltaXp = 0;
+  const snapshot = await mutate((record) => {
     const state = record.state;
-    const eventId = `flashcard-completion:${completionId}`;
     if (state.processedEvents[eventId] || revealedCount < 24) return;
+    const beforeXp = state.totalXp;
     state.processedEvents[eventId] = true;
     grantXp(state, 25, localDate(completedAt));
     updateDerivedAchievements(state, completedAt.toISOString(), {
       vocabularyCompleted: true,
     });
+    deltaXp = state.totalXp - beforeXp;
   });
+  if (deltaXp > 0) {
+    void enqueueLeaderboardSync(snapshot, { eventId, deltaXp });
+  }
+  return snapshot;
 }
 
 /**
@@ -499,10 +648,12 @@ export async function recordGameRoundEngagement(
   totalChallenges: number,
   completedAt = new Date(),
 ): Promise<EngagementSnapshot> {
-  return mutate((record) => {
+  const eventId = `game-round:${sessionId}`;
+  let deltaXp = 0;
+  const snapshot = await mutate((record) => {
     const state = record.state;
-    const eventId = `game-round:${sessionId}`;
     if (state.processedEvents[eventId]) return;
+    const beforeXp = state.totalXp;
     state.processedEvents[eventId] = true;
     const date = localDate(completedAt);
     if (state.dailyMission.date !== date) state.dailyMission = newMission(date);
@@ -512,7 +663,12 @@ export async function recordGameRoundEngagement(
     if (contentDomain === "vocabulary") state.dailyMission.gameVocabularyCompleted = true;
     if (totalChallenges >= 5) recordActiveDay(state, date);
     completeMissionIfReady(state, date);
+    deltaXp = state.totalXp - beforeXp;
   });
+  if (deltaXp > 0) {
+    void enqueueLeaderboardSync(snapshot, { eventId, deltaXp });
+  }
+  return snapshot;
 }
 
 export function getLevelSummary(totalXp: number): LevelSummary {
@@ -554,24 +710,30 @@ export function getLeagueStandings(
     0,
     Math.min(6, dayDifference(snapshot.state.league.weekKey, localDate(now))),
   );
-  const simulated = snapshot.state.league.simulatedParticipants.map((participant) => {
+  const simulated: LeagueStanding[] = snapshot.state.league.simulatedParticipants.map((participant) => {
     const variance = stableHash(`${snapshot.state.league.weekKey}:${participant.id}`) % 91;
     const dailyGrowth =
       (stableHash(`${participant.id}:${localDate(now)}`) % 35) + 22;
     return {
-      ...participant,
+      id: participant.id,
+      name: participant.name,
+      initial: participant.initial,
+      avatarId: participant.avatarId,
+      tone: participant.tone,
       xp: participant.baseXp + variance + elapsedDays * dailyGrowth,
       isPlayer: false,
+      isBot: true,
     };
   });
   simulated.push({
     id: "local-player",
     name: snapshot.profile.displayName,
     initial: snapshot.profile.avatarInitial,
+    avatarId: snapshot.profile.avatarId,
     tone: snapshot.profile.avatarTone,
     xp: snapshot.state.weeklyXp,
     isPlayer: true,
-    baseXp: 0,
+    isBot: false,
   });
   return simulated.sort((left, right) => right.xp - left.xp || left.name.localeCompare(right.name));
 }

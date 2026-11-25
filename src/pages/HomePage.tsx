@@ -1,17 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppDialog from "../components/AppDialog";
 import AppIcon from "../components/AppIcon";
 import { AppShell } from "../components/AppShell";
 import Toast from "../components/Toast";
 import {
+  getAvatarEmoji,
   getLeagueStandings,
   getWeekRemaining,
   getWeeklyGoal,
   type EngagementSnapshot,
+  type LeagueStanding,
 } from "../services/progress/engagement";
 import { useEngagement } from "../services/progress/useEngagement";
 import { useProgressSummary } from "../services/progress/useProgressSummary";
+import { fetchGlobalWeeklyStandings } from "../services/firebase/leaderboardSync";
 
 /* Jogos preservados para uma futura retomada.
 const games = [
@@ -297,20 +300,53 @@ function PathCard({
 }
 
 function LeagueCard({ snapshot }: { snapshot: EngagementSnapshot | null }) {
-  const standings = snapshot ? getLeagueStandings(snapshot) : [];
+  const localStandings = snapshot ? getLeagueStandings(snapshot) : [];
+  const [liveState, setLiveState] = useState<{
+    standings: LeagueStanding[];
+    mode: "live" | "local";
+    realPlayerCount: number;
+    outsideTopLimit: boolean;
+  } | null>(null);
+
+  const weeklyXp = snapshot?.state.weeklyXp ?? 0;
+  const weekKey = snapshot?.state.league.weekKey ?? "";
+  const displayName = snapshot?.profile.displayName ?? "";
+  const avatarId = snapshot?.profile.avatarId ?? "fox";
+  const avatarTone = snapshot?.profile.avatarTone ?? "cyan";
+
+  useEffect(() => {
+    if (!snapshot) return;
+    let active = true;
+    const fallback = getLeagueStandings(snapshot);
+    void fetchGlobalWeeklyStandings(snapshot, fallback).then((result) => {
+      if (!active) return;
+      setLiveState(result);
+    });
+    return () => {
+      active = false;
+    };
+  }, [snapshot, weeklyXp, weekKey, displayName, avatarId, avatarTone]);
+
+  const standings = liveState?.standings ?? localStandings;
+  const mode = liveState?.mode ?? "local";
+  const realPlayerCount = liveState?.realPlayerCount ?? 0;
+  const outsideTopLimit = liveState?.outsideTopLimit ?? false;
   const podium = standings.slice(0, 3);
   const playerIndex = standings.findIndex((item) => item.isPlayer);
-  const nearby = standings.slice(
-    Math.max(0, Math.min(playerIndex, standings.length - 2)),
-    Math.max(0, Math.min(playerIndex, standings.length - 2)) + 2,
+  const safeStart = Math.max(
+    0,
+    Math.min(playerIndex >= 0 ? playerIndex : 0, Math.max(0, standings.length - 3)),
   );
+  const nearby = standings.slice(safeStart, safeStart + 3);
 
   return (
     <section className="section-card league-card">
       <div className="league-top">
         <div>
-          <div className="section-eyebrow">Liga da semana</div>
-          <h2>Liga Safira</h2>
+          <div className="section-eyebrow">
+            {mode === "live" ? "Liga global da semana" : "Liga da semana"}
+          </div>
+          <h2>{mode === "live" ? "Ranking Speak UP" : "Liga Safira"}</h2>
         </div>
         <span className="league-badge">{getWeekRemaining()}</span>
       </div>
@@ -318,7 +354,9 @@ function LeagueCard({ snapshot }: { snapshot: EngagementSnapshot | null }) {
         {[podium[1], podium[0], podium[2]].map((item, index) =>
           item ? (
             <div className={`podium-item ${index === 1 ? "first" : ""}`} key={item.id}>
-              <div className={`podium-avatar avatar-${item.tone}`}>{item.initial}</div>
+              <div className={`podium-avatar avatar-${item.tone}`} aria-hidden="true">
+                {getAvatarEmoji(item.avatarId)}
+              </div>
               <div className="podium-name">{item.name}</div>
               <div className="podium-points">{item.xp.toLocaleString("pt-BR")} XP</div>
               <div className="podium-base">{index === 1 ? 1 : index === 0 ? 2 : 3}</div>
@@ -329,14 +367,28 @@ function LeagueCard({ snapshot }: { snapshot: EngagementSnapshot | null }) {
       <div className="rank-list">
         {nearby.map((item) => (
           <div className={`rank-row ${item.isPlayer ? "me" : ""}`} key={item.id}>
-            <span className="rank-no">{standings.indexOf(item) + 1}</span>
-            <span className={`rank-avatar avatar-${item.tone}`}>{item.initial}</span>
-            <span className="rank-name">{item.isPlayer ? `${item.name} · Você` : item.name}</span>
+            <span className="rank-no">
+              {item.isPlayer && outsideTopLimit
+                ? "25+"
+                : standings.indexOf(item) + 1}
+            </span>
+            <span className={`rank-avatar avatar-${item.tone}`} aria-hidden="true">
+              {getAvatarEmoji(item.avatarId)}
+            </span>
+            <span className="rank-name">
+              {item.isPlayer ? `${item.name} · Você` : item.name}
+            </span>
             <span className="rank-xp">{item.xp} XP</span>
           </div>
         ))}
       </div>
-      <p className="league-disclosure">Liga local com participantes simulados.</p>
+      <p className="league-disclosure">
+        {mode === "live"
+          ? realPlayerCount < 10
+            ? `Ranking global ativo (${realPlayerCount} aluno${realPlayerCount === 1 ? "" : "s"} nesta semana · bots completam até 10 vagas).`
+            : `Ranking global semanal com ${realPlayerCount} alunos ativos.`
+          : "Modo local/offline — seu XP sincroniza automaticamente ao reconectar."}
+      </p>
     </section>
   );
 }

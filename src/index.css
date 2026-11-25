@@ -5980,3 +5980,46 @@ html[data-animations="off"] *::after {
   .past-menu[open]:hover .past-menu-links,
   .past-menu[open]:focus-within .past-menu-links{display:grid}
 }
+
+/* Slice 3: Preset avatars & optional Google account card */
+.google-account-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  background: rgba(37, 99, 235, 0.06);
+  border: 1px solid rgba(37, 99, 235, 0.16);
+}
+.google-account-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.google-account-copy strong {
+  font-size: 15px;
+}
+.google-account-copy small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+.avatar-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+.avatar-preset-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  cursor: pointer;
+}
+.avatar-preset-btn.selected {
+  border-color: #0f1738;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
+}

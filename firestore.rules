@@ -1,0 +1,230 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// This security rules file assumes the following data structures
+// for the Speak Up Study global weekly leaderboard (Slice 3):
+//
+// Collection: users
+// Document ID: {uid} (Firebase Auth UID)
+// Visibility: Private to the authenticated owner only; deletes denied (allow delete: if false)
+// Fields (all required; NO PII such as email, photoURL, fullName, or classCode):
+//   - displayName: string (required, length 1..28) - player display nickname
+//   - avatarId: string (required, enum of 12 allowed avatar IDs) - chosen avatar icon
+//   - avatarTone: string (required, enum of 5 allowed tones) - avatar accent color
+//   - totalXp: int (required, 0..10000000; <= 50000 on create; bounded +0..500 per update) - cumulative XP
+//   - weeklyXp: int (required, 0..100000; <= 5000 on create; weeklyXp <= totalXp; bounded +0..500 per update in same week, <= 500 on forward-only week rollover) - current week XP
+//   - weekKey: string (required, matches ^[0-9]{4}-[0-9]{2}-[0-9]{2}$; forward-only weekKey > resource.data.weekKey on rollover) - active week identifier
+//   - processedEventIds: list (required, max 500 items) - deduplication IDs for XP events
+//   - updatedAt: timestamp | string (required, string max 64 chars) - last sync timestamp
+//
+// Collection: leaderboard_weekly/{weekKey}/entries
+// Document ID: {uid} (Firebase Auth UID)
+// Visibility: Readable by any authenticated user; creatable/updatable only by owner {uid}; deletes denied (allow delete: if false)
+// Fields (all required; NO PII such as email, photoURL, fullName, or classCode):
+//   - displayName: string (required, length 1..28) - player display nickname
+//   - avatarId: string (required, enum of 12 allowed avatar IDs) - chosen avatar icon
+//   - avatarTone: string (required, enum of 5 allowed tones) - avatar accent color
+//   - weeklyXp: int (required, 0..100000; <= 5000 on create; weeklyXp <= totalXp; bounded +0..500 per update) - week XP
+//   - totalXp: int (required, 0..10000000; <= 50000 on create; bounded +0..500 per update) - cumulative XP
+//   - weekKey: string (required, matches path {weekKey} and ^[0-9]{4}-[0-9]{2}-[0-9]{2}$, immutable on update)
+//   - updatedAt: timestamp | string (required, string max 64 chars) - last sync timestamp
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Check if the request is from an authenticated Firebase Auth user
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if the authenticated user owns the path-scoped document
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // Check that the incoming document contains only the allowed fields
+    function hasOnlyAllowedFields(data, fields) {
+      return data.keys().hasOnly(fields);
+    }
+
+    // Check that the incoming document contains all required fields
+    function hasRequiredFields(data, fields) {
+      return data.keys().hasAll(fields);
+    }
+
+    // Validate displayName string bounds
+    function isValidDisplayName(name) {
+      return name is string && name.size() >= 1 && name.size() <= 28;
+    }
+
+    // Validate avatarId against the allowed avatar catalog
+    function isValidAvatarId(avatarId) {
+      return avatarId is string && avatarId in [
+        'fox', 'owl', 'lion', 'panda', 'koala', 'tiger',
+        'dolphin', 'eagle', 'cat', 'dog', 'rocket', 'star'
+      ];
+    }
+
+    // Validate avatarTone against the allowed palette
+    function isValidAvatarTone(avatarTone) {
+      return avatarTone is string && avatarTone in [
+        'cyan', 'wine', 'violet', 'green', 'orange'
+      ];
+    }
+
+    // Validate weekKey format (YYYY-MM-DD)
+    function isValidWeekKey(weekKey) {
+      return weekKey is string && weekKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    // Validate cumulative XP integer range
+    function isValidTotalXp(xp) {
+      return xp is int && xp >= 0 && xp <= 10000000;
+    }
+
+    // Validate weekly XP integer range
+    function isValidWeeklyXp(xp) {
+      return xp is int && xp >= 0 && xp <= 100000;
+    }
+
+    // Validate processedEventIds list size and boundary element sanity
+    function isValidProcessedEventIds(eventIds) {
+      return eventIds is list &&
+             eventIds.size() <= 500 &&
+             (eventIds.size() == 0 ||
+              (eventIds[0] is string &&
+               eventIds[0].size() >= 1 &&
+               eventIds[0].size() <= 160 &&
+               eventIds[eventIds.size() - 1] is string &&
+               eventIds[eventIds.size() - 1].size() >= 1 &&
+               eventIds[eventIds.size() - 1].size() <= 160));
+    }
+
+    // Validate updatedAt as Firestore timestamp or bounded ISO string (blocks DoS strings)
+    function isValidUpdatedAt(val) {
+      return val is timestamp ||
+             (val is string && val.size() >= 1 && val.size() <= 64);
+    }
+
+    // Validate bounded non-negative XP increment between existing and incoming value
+    function isValidXpDelta(prevXp, nextXp, maxDelta) {
+      return nextXp >= prevXp && (nextXp - prevXp) <= maxDelta;
+    }
+
+    // ===============================================================
+    // Domain Validators (Called in BOTH create and update)
+    // ===============================================================
+
+    // Strict schema validator for private users/{uid} progress document
+    function isValidUserProgress(data) {
+      let allowedFields = [
+        'displayName',
+        'avatarId',
+        'avatarTone',
+        'totalXp',
+        'weeklyXp',
+        'weekKey',
+        'processedEventIds',
+        'updatedAt'
+      ];
+      return hasOnlyAllowedFields(data, allowedFields) &&
+             hasRequiredFields(data, allowedFields) &&
+             isValidDisplayName(data.displayName) &&
+             isValidAvatarId(data.avatarId) &&
+             isValidAvatarTone(data.avatarTone) &&
+             isValidTotalXp(data.totalXp) &&
+             isValidWeeklyXp(data.weeklyXp) &&
+             data.weeklyXp <= data.totalXp &&
+             isValidWeekKey(data.weekKey) &&
+             isValidProcessedEventIds(data.processedEventIds) &&
+             isValidUpdatedAt(data.updatedAt);
+    }
+
+    // Enforce bounded XP growth and forward-only weekly rollover on users/{uid} updates
+    function isValidUserXpTransition() {
+      let sameWeek = resource.data.weekKey == request.resource.data.weekKey;
+      return isValidXpDelta(resource.data.totalXp, request.resource.data.totalXp, 500) &&
+             (sameWeek
+               ? isValidXpDelta(resource.data.weeklyXp, request.resource.data.weeklyXp, 500)
+               : (request.resource.data.weekKey > resource.data.weekKey &&
+                  request.resource.data.weeklyXp <= 500));
+    }
+
+    // Strict schema validator for leaderboard_weekly/{weekKey}/entries/{uid}
+    function isValidLeaderboardEntry(data, weekKey) {
+      let allowedFields = [
+        'displayName',
+        'avatarId',
+        'avatarTone',
+        'weeklyXp',
+        'totalXp',
+        'weekKey',
+        'updatedAt'
+      ];
+      return isValidWeekKey(weekKey) &&
+             hasOnlyAllowedFields(data, allowedFields) &&
+             hasRequiredFields(data, allowedFields) &&
+             data.weekKey == weekKey &&
+             isValidDisplayName(data.displayName) &&
+             isValidAvatarId(data.avatarId) &&
+             isValidAvatarTone(data.avatarTone) &&
+             isValidWeeklyXp(data.weeklyXp) &&
+             isValidTotalXp(data.totalXp) &&
+             data.weeklyXp <= data.totalXp &&
+             isValidUpdatedAt(data.updatedAt);
+    }
+
+    // Enforce bounded XP growth and immutable weekKey on leaderboard entry updates
+    function isValidLeaderboardXpTransition() {
+      return request.resource.data.weekKey == resource.data.weekKey &&
+             isValidXpDelta(resource.data.weeklyXp, request.resource.data.weeklyXp, 500) &&
+             isValidXpDelta(resource.data.totalXp, request.resource.data.totalXp, 500);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // Private user progress & profile backup (no PII stored; owner-only access)
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow delete: if false;
+      allow create: if isOwner(uid) &&
+                       isValidUserProgress(request.resource.data) &&
+                       request.resource.data.totalXp <= 50000 &&
+                       request.resource.data.weeklyXp <= 5000;
+      allow update: if isOwner(uid) &&
+                       isValidUserProgress(request.resource.data) &&
+                       isValidUserXpTransition();
+    }
+
+    // Authenticated global weekly leaderboard entries (strictly non-PII)
+    match /leaderboard_weekly/{weekKey}/entries/{uid} {
+      allow read: if isAuthenticated();
+      allow delete: if false;
+      allow create: if isOwner(uid) &&
+                       isValidLeaderboardEntry(request.resource.data, weekKey) &&
+                       request.resource.data.totalXp <= 50000 &&
+                       request.resource.data.weeklyXp <= 5000;
+      allow update: if isOwner(uid) &&
+                       isValidLeaderboardEntry(request.resource.data, weekKey) &&
+                       isValidLeaderboardXpTransition();
+    }
+
+    // ===============================================================
+    // Default Deny-All Fallback
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

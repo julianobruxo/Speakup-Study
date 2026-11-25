@@ -1,12 +1,15 @@
-import type { PropsWithChildren, ReactNode } from "react";
+import { useEffect, useRef, type PropsWithChildren, type ReactNode } from "react";
 import { motion, type HTMLMotionProps } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
+  getAvatarEmoji,
   getLevelSummary,
   getWeekKey,
   type EngagementSnapshot,
 } from "../services/progress/engagement";
 import { useEngagement } from "../services/progress/useEngagement";
+import { ensureAnonymousSession } from "../services/firebase/auth";
+import { enqueueLeaderboardSync } from "../services/firebase/leaderboardSync";
 import AppIcon from "./AppIcon";
 
 interface AppShellProps {
@@ -25,6 +28,29 @@ export function AppShell({
 }: PropsWithChildren<AppShellProps>) {
   const showGlobalNavigation = Boolean(activeNav) && !hideNavigation;
   const { snapshot } = useEngagement();
+  const latestSnapshotRef = useRef<EngagementSnapshot | null>(null);
+  const initialSyncTriggeredRef = useRef(false);
+
+  latestSnapshotRef.current = snapshot;
+
+  useEffect(() => {
+    void ensureAnonymousSession();
+    const handleOnline = () => {
+      if (latestSnapshotRef.current) {
+        void enqueueLeaderboardSync(latestSnapshotRef.current);
+      }
+    };
+    window.addEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!snapshot || initialSyncTriggeredRef.current) return;
+    initialSyncTriggeredRef.current = true;
+    void enqueueLeaderboardSync(snapshot);
+  }, [snapshot]);
 
   return (
     <div className="app-viewport">
@@ -102,6 +128,7 @@ function GlobalHeader({
   const profile = snapshot?.profile ?? {
     displayName: "Jogador",
     avatarInitial: "J",
+    avatarId: "fox" as const,
     avatarTone: "cyan",
   };
   const level = getLevelSummary(snapshot?.state.totalXp ?? 0);
@@ -121,8 +148,8 @@ function GlobalHeader({
         className="profile-button"
         onClick={() => navigate("/perfil")}
       >
-        <span className={`avatar avatar-${profile.avatarTone}`}>
-          {profile.avatarInitial}
+        <span className={`avatar avatar-${profile.avatarTone}`} aria-hidden="true">
+          {getAvatarEmoji(profile.avatarId)}
         </span>
         <span className="profile-copy">
           <strong>{profile.displayName}</strong>

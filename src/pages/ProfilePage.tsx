@@ -1,11 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AppDialog from "../components/AppDialog";
 import AppIcon from "../components/AppIcon";
 import { AppShell, PrimaryButton } from "../components/AppShell";
+import Toast from "../components/Toast";
 import {
+  getAvatarEmoji,
   getLevelSummary,
+  mergeRemoteUserState,
+  PRESET_AVATARS,
   resetAllLocalData,
   updateLocalProfile,
+  type AvatarId,
 } from "../services/progress/engagement";
 import { useEngagement } from "../services/progress/useEngagement";
 import { useProgressSummary } from "../services/progress/useProgressSummary";
@@ -14,6 +19,16 @@ import {
   playSound,
   setSoundEnabled,
 } from "../services/audio/sound";
+import {
+  connectGoogleAccount,
+  signOutToAnonymous,
+  subscribeAuthStatus,
+  type AuthStatus,
+} from "../services/firebase/auth";
+import {
+  enqueueLeaderboardSync,
+  pullRemoteUserState,
+} from "../services/firebase/leaderboardSync";
 
 const AVATAR_TONES = ["cyan", "wine", "violet", "green", "orange"];
 
@@ -28,17 +43,53 @@ export default function ProfilePage() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [name, setName] = useState("Jogador");
   const [tone, setTone] = useState("cyan");
+  const [avatarId, setAvatarId] = useState<AvatarId>("fox");
+  const [authStatus, setAuthStatus] = useState<AuthStatus>({
+    configured: false,
+    ready: false,
+    uid: null,
+    isAnonymous: false,
+    isGoogleLinked: false,
+  });
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const level = getLevelSummary(snapshot?.state.totalXp ?? 0);
   const profile = snapshot?.profile ?? {
     displayName: "Jogador",
     avatarInitial: "J",
+    avatarId: "fox" as AvatarId,
     avatarTone: "cyan",
   };
 
   useEffect(() => {
     setName(profile.displayName);
     setTone(profile.avatarTone);
-  }, [profile.avatarTone, profile.displayName]);
+    setAvatarId(profile.avatarId);
+  }, [profile.avatarId, profile.avatarTone, profile.displayName]);
+
+  useEffect(() => subscribeAuthStatus(setAuthStatus), []);
+
+  useEffect(() => {
+    return () => {
+      if (noticeTimerRef.current !== null) {
+        clearTimeout(noticeTimerRef.current);
+        noticeTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  function showNotice(message: string) {
+    if (noticeTimerRef.current !== null) {
+      clearTimeout(noticeTimerRef.current);
+    }
+    setNotice(message);
+    noticeTimerRef.current = setTimeout(() => {
+      noticeTimerRef.current = null;
+      setNotice("");
+    }, 3200);
+  }
 
   function toggleSound() {
     const next = !sound;
@@ -55,9 +106,44 @@ export default function ProfilePage() {
   }
 
   async function saveProfile() {
-    await updateLocalProfile(name, tone);
+    await updateLocalProfile(name, tone, avatarId);
     await reload();
     setEditing(false);
+    showNotice("Perfil atualizado.");
+  }
+
+  async function handleGoogleConnect() {
+    if (googleBusy) return;
+    setGoogleBusy(true);
+    try {
+      const result = await connectGoogleAccount();
+      if (result.status === "signed_in_existing" && result.uid) {
+        const remote = await pullRemoteUserState(result.uid);
+        if (remote) {
+          const merged = await mergeRemoteUserState(remote);
+          await enqueueLeaderboardSync(merged);
+        } else if (snapshot) {
+          await enqueueLeaderboardSync(snapshot);
+        }
+        await reload();
+      } else if (result.status === "linked" && snapshot) {
+        await enqueueLeaderboardSync(snapshot);
+      }
+      showNotice(result.message);
+    } finally {
+      setGoogleBusy(false);
+    }
+  }
+
+  async function handleGoogleSignOut() {
+    if (googleBusy) return;
+    setGoogleBusy(true);
+    try {
+      await signOutToAnonymous();
+      showNotice("Sessão Google desconectada. Você continua no modo anônimo.");
+    } finally {
+      setGoogleBusy(false);
+    }
   }
 
   async function resetData() {
@@ -70,14 +156,19 @@ export default function ProfilePage() {
     <AppShell activeNav="profile" className="standard-page profile-page">
       <div className="profile-layout">
         <section className="profile-main">
-          <div className={`profile-big-avatar avatar-${profile.avatarTone}`}>
-            {profile.avatarInitial}
+          <div
+            aria-hidden="true"
+            className={`profile-big-avatar avatar-${profile.avatarTone}`}
+          >
+            {getAvatarEmoji(profile.avatarId)}
           </div>
           <h1>{profile.displayName}</h1>
           <p>
             {level.title} · Nível {level.level}
             <br />
-            Seu progresso está salvo neste dispositivo.
+            {authStatus.isGoogleLinked
+              ? "Conta Google conectada · progresso sincronizado."
+              : "Seu progresso funciona offline e sincroniza na liga semanal."}
           </p>
           <div className="level-progress" aria-label={`${level.progress}% do nível atual`}>
             <span style={{ width: `${level.progress}%` }} />
@@ -88,7 +179,7 @@ export default function ProfilePage() {
             <div><strong>{summary?.completedSessions ?? 0}</strong><span>sessões</span></div>
           </div>
           <button className="profile-edit-button" onClick={() => setEditing(true)}>
-            Editar perfil
+            Editar perfil e avatar
           </button>
         </section>
 
@@ -99,6 +190,45 @@ export default function ProfilePage() {
               <h2>Personalize sua experiência</h2>
             </div>
           </div>
+
+          <div className="google-account-card">
+            <div className="google-account-copy">
+              <strong>
+                {authStatus.isGoogleLinked
+                  ? "Conta Google conectada"
+                  : "Salvar progresso com Google (opcional)"}
+              </strong>
+              <small>
+                {!authStatus.configured
+                  ? "Sincronização em nuvem desativada neste ambiente local."
+                  : authStatus.isGoogleLinked
+                    ? "Seu apelido e avatar continuam privados — seu e-mail e foto do Google nunca aparecem no ranking."
+                    : "O app funciona sem login. Vincule o Google só se quiser recuperar seu XP em outro celular ou computador."}
+              </small>
+            </div>
+            {authStatus.configured && (
+              authStatus.isGoogleLinked ? (
+                <button
+                  className="secondary-button"
+                  disabled={googleBusy}
+                  onClick={handleGoogleSignOut}
+                  type="button"
+                >
+                  Desconectar Google
+                </button>
+              ) : (
+                <button
+                  className="primary-button"
+                  disabled={googleBusy}
+                  onClick={handleGoogleConnect}
+                  type="button"
+                >
+                  {googleBusy ? "Conectando..." : "Entrar / Vincular com Google"}
+                </button>
+              )
+            )}
+          </div>
+
           <SettingToggle
             checked={sound}
             description="Feedback sonoro e leitura dos flashcards."
@@ -124,14 +254,14 @@ export default function ProfilePage() {
           <div className="setting-row static">
             <span className="setting-icon"><AppIcon name="settings" /></span>
             <span>
-              <strong>Armazenamento local</strong>
-              <small>Progresso e perfil ficam apenas neste navegador.</small>
+              <strong>Privacidade no ranking</strong>
+              <small>Apenas seu apelido e avatar escolhido aparecem na liga semanal.</small>
             </span>
           </div>
           <button className="setting-row danger" onClick={() => setConfirmReset(true)}>
             <span className="setting-icon"><AppIcon name="refresh" /></span>
             <span>
-              <strong>Resetar dados</strong>
+              <strong>Resetar dados locais</strong>
               <small>Apaga progresso, XP, perfil e conquistas deste navegador.</small>
             </span>
           </button>
@@ -140,32 +270,51 @@ export default function ProfilePage() {
 
       <AppDialog
         actions={<PrimaryButton onClick={saveProfile}>Salvar perfil</PrimaryButton>}
-        description="Esse nome aparece apenas neste dispositivo."
+        description="Escolha seu apelido, avatar e cor para aparecer no ranking semanal."
         onClose={() => setEditing(false)}
         open={editing}
-        title="Editar perfil local"
+        title="Editar perfil e avatar"
       >
         <label className="profile-name-field">
-          <span>Nome de exibição</span>
+          <span>Apelido de exibição</span>
           <input
             maxLength={28}
             onChange={(event) => setName(event.target.value)}
             value={name}
           />
         </label>
+
         <fieldset className="avatar-tone-field">
-          <legend>Cor do avatar</legend>
+          <legend>Avatar</legend>
+          <div className="avatar-preset-grid">
+            {PRESET_AVATARS.map((preset) => (
+              <button
+                aria-label={`Avatar ${preset.label}`}
+                aria-pressed={avatarId === preset.id}
+                className={`avatar-preset-btn avatar-${tone} ${avatarId === preset.id ? "selected" : ""}`}
+                key={preset.id}
+                onClick={() => setAvatarId(preset.id)}
+                type="button"
+              >
+                <span aria-hidden="true">{preset.emoji}</span>
+              </button>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="avatar-tone-field">
+          <legend>Cor de fundo</legend>
           <div>
             {AVATAR_TONES.map((option) => (
               <button
-                aria-label={`Usar avatar ${option}`}
+                aria-label={`Usar cor ${option}`}
                 aria-pressed={tone === option}
                 className={`avatar-${option}`}
                 key={option}
                 onClick={() => setTone(option)}
                 type="button"
               >
-                {(name.trim() || "J").charAt(0).toLocaleUpperCase("pt-BR")}
+                {getAvatarEmoji(avatarId)}
               </button>
             ))}
           </div>
@@ -186,8 +335,9 @@ export default function ProfilePage() {
         description="Esta ação não pode ser desfeita e afeta somente este navegador."
         onClose={() => setConfirmReset(false)}
         open={confirmReset}
-        title="Resetar todo o progresso?"
+        title="Resetar todo o progresso local?"
       />
+      <Toast message={notice} />
     </AppShell>
   );
 }
@@ -216,4 +366,3 @@ function SettingToggle({
     </button>
   );
 }
-
