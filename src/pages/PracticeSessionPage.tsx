@@ -49,6 +49,7 @@ export default function PracticeSessionPage() {
   const difficulty = parseDifficulty(params.get("difficulty"));
   const count = parseCount(params.get("count"));
   const seed = Number(params.get("seed")) || 1;
+  const includeOptionalChallenge = params.get("challenge") === "1";
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
@@ -84,6 +85,7 @@ export default function PracticeSessionPage() {
             count,
             seed,
             snapshot.questions,
+            includeOptionalChallenge,
           ),
         );
       })
@@ -91,13 +93,20 @@ export default function PracticeSessionPage() {
         if (!active) return;
         setStorageWarning("O progresso local não pôde ser carregado. A rodada continua normalmente.");
         setQuestions(
-          selectPracticeQuestions(PRESENT_TOBE_QUESTIONS, difficulty, count, seed),
+          selectPracticeQuestions(
+            PRESENT_TOBE_QUESTIONS,
+            difficulty,
+            count,
+            seed,
+            [],
+            includeOptionalChallenge,
+          ),
         );
       });
     return () => {
       active = false;
     };
-  }, [count, difficulty, seed]);
+  }, [count, difficulty, includeOptionalChallenge, seed]);
 
   const currentQuestion = questions?.[currentIndex];
   const options = useMemo(
@@ -307,6 +316,9 @@ export default function PracticeSessionPage() {
       count: String(count),
       seed: String(Date.now()),
     });
+    if (difficulty === "medium" && includeOptionalChallenge) {
+      nextParams.set("challenge", "1");
+    }
     navigate(`/praticar/present_tobe/sessao?${nextParams.toString()}`, {
       replace: true,
     });

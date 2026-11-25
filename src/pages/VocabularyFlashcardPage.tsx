@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import AppIcon from "../components/AppIcon";
 import { AppShell, PageHeader, PrimaryButton } from "../components/AppShell";
 import { getVocabularyEntriesByCategory } from "../content/data/vocabulary";
-import { VisualAsset } from "../games/assets/visualResolver";
+import { VisualAsset } from "../content/assets/visualResolver";
 import {
   cancelPronunciation,
   isPronunciationAvailable,

@@ -4,18 +4,34 @@ import type {
 } from "../../content/model/content";
 import type { QuestionProgress } from "../progress/progress";
 
+export const PRESENT_TOBE_B2_OPTIONAL_IDS = new Set<string>([
+  "present_tobe_medium_017",
+  "present_tobe_medium_021",
+  "present_tobe_medium_024",
+  "present_tobe_medium_025",
+  "present_tobe_medium_031",
+  "present_tobe_medium_056",
+]);
+
 export function selectPracticeQuestions(
   questions: GrammarPracticeQuestion[],
   difficulty: MvpGrammarDifficulty,
   count: number,
   seed: number,
   progress: QuestionProgress[] = [],
+  includeOptionalChallenge = false,
 ): GrammarPracticeQuestion[] {
-  const pool = questions.filter(
+  const basePool = questions.filter(
     (question) =>
       question.topicId === "present_tobe" &&
       question.difficulty === difficulty,
   );
+  const filteredPool = includeOptionalChallenge
+    ? basePool
+    : basePool.filter(
+        (question) => !PRESENT_TOBE_B2_OPTIONAL_IDS.has(question.id),
+      );
+  const pool = filteredPool.length >= count ? filteredPool : basePool;
 
   if (pool.length < count) {
     throw new Error("Não há perguntas suficientes para esta sessão.");
@@ -51,6 +67,17 @@ export function shuffleOptions(
   seed: number,
 ): string[] {
   return shuffleWithSeed([...options], seed);
+}
+
+export function orderQuestionOptions(
+  options: readonly string[],
+  key: string,
+): string[] {
+  let hash = 2166136261;
+  for (const character of key) {
+    hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
+  }
+  return shuffleOptions(options, hash >>> 0);
 }
 
 function shuffleWithSeed<T>(items: T[], seed: number): T[] {

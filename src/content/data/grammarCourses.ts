@@ -107,7 +107,7 @@ const simplePresentQuestions: GrammarCourseQuestion[] = [
   question("sp-5-1", 5, "Lucas ___ English, but he ___ French.", ["speaks / doesn't speak", "speak / don't speak", "speaks / doesn't speaks"], "speaks / doesn't speak", "Afirmativa: speaks. Depois de doesn't: speak.", "O -s aparece na afirmativa, mas desaparece depois de doesn't."),
   question("sp-5-2", 5, "How often ___ your parents ___ abroad?", ["do / travel", "does / travel", "do / travels"], "do / travel", "Parents é plural: do + travel.", "Sujeito plural usa do e o verbo na forma base."),
   question("sp-5-3", 5, "Which sentence is correct?", ["The store opens at 9 tomorrow.", "The store open at 9 tomorrow.", "The store is open at 9 tomorrow every day."], "The store opens at 9 tomorrow.", "Horários programados podem usar Simple Present.", "The store equivale a it, então usamos opens."),
-  inputQuestion("sp-5-4", 5, "Complete a frase inteira com live e stay: She ___ in Brazil, but this month she ___ in Canada.", "She lives in Brazil, but this month she is staying in Canada.", ["She lives in Brazil but this month she is staying in Canada"], "Lives mostra a situação estável; is staying mostra algo temporário.", "Use She lives... para a situação estável e she is staying... para o período temporário."),
+  inputQuestion("sp-5-4", 5, "Complete a frase inteira com live e stay: She ___ in Brazil, but this month she ___ in Canada.", "She lives in Brazil, but this month she is staying in Canada.", ["She lives in Brazil but this month she is staying in Canada", "She lives in Brazil, but this month she's staying in Canada", "She lives in Brazil but this month she's staying in Canada"], "Lives mostra a situação estável; is staying mostra algo temporário.", "Use She lives... para a situação estável e she is staying... para o período temporário."),
 ];
 
 const presentContinuousQuestions: GrammarCourseQuestion[] = [
@@ -134,7 +134,7 @@ const presentContinuousQuestions: GrammarCourseQuestion[] = [
   question("pc-5-1", 5, "Choose the best sentence.", ["I understand the question now.", "I am understanding the question now.", "I understanding the question now."], "I understand the question now.", "Understand normalmente não é usado no continuous.", "Alguns verbos de estado, como understand, costumam usar Simple Present."),
   question("pc-5-2", 5, "This week, Marta ___ from home because her office is closed.", ["is working", "works always", "does working"], "is working", "This week indica uma situação temporária.", "Para algo temporário ao redor de agora, use is working."),
   question("pc-5-3", 5, "We ___ our teacher at 3 p.m. tomorrow. Everything is arranged.", ["are meeting", "meet every day", "are going meet"], "are meeting", "O Present Continuous pode indicar um compromisso já combinado.", "Para um arranjo futuro definido, am/is/are + -ing é natural."),
-  inputQuestion("pc-5-4", 5, "Complete a frase inteira com drive e take: He usually ___, but today he ___ the bus.", "He usually drives, but today he is taking the bus.", ["He usually drives but today he is taking the bus"], "Usually drives é hábito; today he is taking mostra uma situação temporária.", "Use He usually drives..., mas he is taking... para a situação de hoje."),
+  inputQuestion("pc-5-4", 5, "Complete a frase inteira com drive e take: He usually ___, but today he ___ the bus.", "He usually drives, but today he is taking the bus.", ["He usually drives but today he is taking the bus", "He usually drives, but today he's taking the bus", "He usually drives but today he's taking the bus"], "Usually drives é hábito; today he is taking mostra uma situação temporária.", "Use He usually drives..., mas he is taking... para a situação de hoje."),
 ];
 
 const beGoingToQuestions: GrammarCourseQuestion[] = [
@@ -196,7 +196,7 @@ const commonLevels: GrammarCourse["levels"] = [
   { level: 2, title: "Formar", focus: "Monte frases afirmativas com segurança." },
   { level: 3, title: "Negar", focus: "Pratique as formas negativas." },
   { level: 4, title: "Perguntar", focus: "Trabalhe perguntas e respostas curtas." },
-  { level: 5, title: "Usar no contexto", focus: "Escolha a estrutura pelo sentido da frase." },
+  { level: 5, title: "Use in context (B1)", focus: "Choose the structure that fits the meaning in natural US English." },
 ];
 
 export const GRAMMAR_COURSES: Record<GrammarCourseId, GrammarCourse> = {
@@ -207,7 +207,7 @@ export const GRAMMAR_COURSES: Record<GrammarCourseId, GrammarCourse> = {
     summary: "Fale sobre rotinas, hábitos, fatos gerais e horários.",
     goal: "Distinguir rotina de ação momentânea e usar do/does sem tropeçar no -s.",
     accent: "#1f6feb",
-    cambridgeUrl: "https://dictionary.cambridge.org/grammar/british-grammar/present-simple",
+    cambridgeUrl: "https://dictionary.cambridge.org/us/dictionary/english/present-simple",
     levels: commonLevels,
     studySections: [
       {
@@ -248,7 +248,7 @@ export const GRAMMAR_COURSES: Record<GrammarCourseId, GrammarCourse> = {
     summary: "Descreva ações em progresso, situações temporárias e arranjos próximos.",
     goal: "Combinar am/is/are com a forma -ing e separar ação momentânea de rotina.",
     accent: "#7c3aed",
-    cambridgeUrl: "https://dictionary.cambridge.org/grammar/british-grammar/present-continuous",
+    cambridgeUrl: "https://dictionary.cambridge.org/us/dictionary/english/present-continuous",
     levels: commonLevels,
     studySections: [
       {
@@ -289,7 +289,7 @@ export const GRAMMAR_COURSES: Record<GrammarCourseId, GrammarCourse> = {
     summary: "Fale sobre planos já decididos e previsões com evidência.",
     goal: "Usar am/is/are going to com o verbo base em afirmações, negativas e perguntas.",
     accent: "#c2410c",
-    cambridgeUrl: "https://dictionary.cambridge.org/grammar/british-grammar/will-or-be-going-to",
+    cambridgeUrl: "https://dictionary.cambridge.org/us/dictionary/english/be-going-to",
     levels: commonLevels,
     studySections: [
       {
@@ -330,7 +330,7 @@ export const GRAMMAR_COURSES: Record<GrammarCourseId, GrammarCourse> = {
     summary: "Diga que pessoas, objetos ou lugares existem e onde estão.",
     goal: "Fazer a concordância com singular, plural e substantivos incontáveis.",
     accent: "#0f766e",
-    cambridgeUrl: "https://dictionary.cambridge.org/us/grammar/british-grammar/there-is-are",
+    cambridgeUrl: "https://dictionary.cambridge.org/us/dictionary/english/there",
     levels: commonLevels,
     studySections: [
       {

@@ -3,15 +3,9 @@ import { BodyPartIllustration } from "../../components/BodyPartIllustration";
 import { getBodyPhotoAsset } from "./bodyPhotoAssetManifest";
 
 /**
- * Central visual resolver: every consumer (flashcards, Conectando, Par
- * perfeito, Cada coisa no seu lugar, Ouvido afiado) renders vocabulary art
- * through this component, keyed by `visualKey`. No consumer may hardcode or
- * duplicate a physical asset path.
- *
- * Resolution order: photographic asset (`bodyPhotoAssetManifest`) → drawn
- * SVG fallback (`BodyPartIllustration`) → plain text label. The SVG fallback
- * also covers a failed image load (`onError`), so a broken/missing photo
- * never renders as nothing.
+ * Central visual resolver for vocabulary art, keyed by `visualKey`.
+ * Resolution order: photographic asset (`bodyPhotoAssetManifest`) -> drawn
+ * SVG fallback (`BodyPartIllustration`) -> plain text label.
  */
 export function VisualAsset({
   visualKey,
@@ -55,4 +49,3 @@ export function VisualAsset({
 function joinClassNames(...values: (string | undefined)[]): string {
   return values.filter(Boolean).join(" ");
 }
-

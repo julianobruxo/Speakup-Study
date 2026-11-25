@@ -56,8 +56,8 @@ const RAW_EXERCISES = [
 ['regular','Did you ___ the door before leaving?','close','close','Em perguntas com did, o verbo principal fica na forma base.',4],
 ['regular',"She didn't ___ us last Sunday.",'visit','visit','Use didn’t visit, e não didn’t visited.',4],
 ['regular','Where did they ___ last year?','live','live','Pergunta com where + did + sujeito + forma base.',4],
-['irregular','She ___ down on the sofa after lunch yesterday.','lay','lie','Lie (deitar) → lay → lain. Não confunda com lay (colocar).',5],
-['irregular','He ___ the book on the desk yesterday.','laid','lay','Lay (colocar) → laid → laid. Aqui existe um objeto: the book.',5],
+['irregular','She ___ down on the sofa after lunch yesterday.','lay','lie','[Desafio opcional] Lie (deitar) → lay → lain. Não confunda com lay (colocar).',5,true],
+['irregular','He ___ the book on the desk yesterday.','laid','lay','[Desafio opcional] Lay (colocar) → laid → laid. Aqui existe um objeto: the book.',5,true],
 ['irregular','The sun ___ at six yesterday.','rose','rise','Rise → rose → risen. Use rose para o Simple Past.',5],
 ['irregular','We ___ across the lake last summer.','swam','swim','Swim → swam → swum. Swam é o passado.',5],
 ['irregular','The lake ___ during the winter of 2020.','froze','freeze','Freeze → froze → frozen.',5],
@@ -69,7 +69,7 @@ const RAW_EXERCISES = [
 ['regular','Before sending the files, the company ___ the documents.','copied','copy','Consoante + y: copy → copied.',5],
 ['regular','Although the question was difficult, he ___ to answer it.','managed','manage','Manage termina em e: managed. Although cria contraste entre a dificuldade e o resultado.',5]
 ];
-const EXERCISES=RAW_EXERCISES.map((x,i)=>({id:'e'+i,type:x[0],q:x[1],answers:x[2].split('|'),hint:x[3],explain:x[4],level:x[5]}));
+const EXERCISES=RAW_EXERCISES.map((x,i)=>({id:'e'+i,type:x[0],q:x[1],answers:x[2].split('|'),hint:x[3],explain:x[4],level:x[5],optional:Boolean(x[6])}));
 const EXPRESSIONS=[
 {word:'yesterday',pt:'ontem',rule:'Sem preposição. Também: yesterday morning, yesterday afternoon, yesterday evening.',example:'I worked from home yesterday.',category:'Dia anterior'},
 {word:'last night',pt:'ontem à noite',rule:'Use last night. Não use yesterday night.',example:'We watched a film last night.',category:'Noite anterior'},
@@ -82,22 +82,22 @@ const EXPRESSIONS=[
 {word:'at the weekend / on the weekend',pt:'no fim de semana',rule:'At the weekend é comum no Reino Unido; on the weekend, nos EUA. Last weekend dispensa preposição.',example:'We visited our friends last weekend.',category:'Variação de uso'}
 ];
 const TIME_QUIZ=[
-{q:'I saw her ___ (há dois dias).',answers:['two days ago'],explain:'A expressão completa é two days ago. Ago vem depois da duração.',source:'https://dictionary.cambridge.org/grammar/british-grammar/ago'},
-{q:'We travelled to London ___ (em 2020).',answers:['in 2020'],explain:'A expressão completa é in 2020. Use in com anos.',source:'https://dictionary.cambridge.org/grammar/british-grammar/at-on-and-in-time'},
-{q:'She called me ___ (ontem à noite).',answers:['last night'],explain:'A expressão completa é last night. Evite yesterday night.',source:'https://dictionary.cambridge.org/grammar/british-grammar/at-on-and-in-time'},
-{q:'He arrived ___ (anteontem).',answers:['the day before yesterday'],explain:'The day before yesterday é a expressão fixa para anteontem.',source:'https://dictionary.cambridge.org/grammar/british-grammar/past-simple'},
-{q:'They visited us ___ (na segunda-feira passada).',answers:['last Monday'],explain:'A expressão completa é last Monday, sem on antes de last.',source:'https://dictionary.cambridge.org/grammar/british-grammar/at-on-and-in-time'},
-{q:'I played outside ___ (quando eu era criança).',answers:['when I was a child'],explain:'A expressão completa é when I was a child. Com I no passado de be, use was.',source:'https://dictionary.cambridge.org/grammar/british-grammar/past-simple'},
-{q:'She left ___ (há uma hora).',answers:['an hour ago'],explain:'A expressão completa é an hour ago. Ago aparece depois da duração.',source:'https://dictionary.cambridge.org/grammar/british-grammar/ago'},
-{q:'We moved here ___ (no ano passado).',answers:['last year'],explain:'A expressão completa é last year, sem in antes de last.',source:'https://dictionary.cambridge.org/grammar/british-grammar/at-on-and-in-time'},
-{q:'I finished the book ___ (ontem de manhã).',answers:['yesterday morning'],explain:'A expressão completa é yesterday morning, sem preposição.',source:'https://dictionary.cambridge.org/grammar/british-grammar/past-simple'},
-{q:'They opened the shop ___ (em março de 2019).',answers:['in March 2019'],explain:'A expressão completa é in March 2019. Use in com mês e ano.',source:'https://dictionary.cambridge.org/grammar/british-grammar/at-on-and-in-time'}
+{q:'I saw her ___ (há dois dias).',answers:['two days ago'],explain:'A expressão completa é two days ago. Ago vem depois da duração.',source:'https://dictionary.cambridge.org/us/dictionary/english/ago'},
+{q:'We traveled to London ___ (em 2020).',answers:['in 2020'],explain:'A expressão completa é in 2020. Use in com anos.',source:'https://dictionary.cambridge.org/us/dictionary/english/in'},
+{q:'She called me ___ (ontem à noite).',answers:['last night'],explain:'A expressão completa é last night. Evite yesterday night.',source:'https://dictionary.cambridge.org/us/dictionary/english/last'},
+{q:'He arrived ___ (anteontem).',answers:['the day before yesterday'],explain:'The day before yesterday é a expressão fixa para anteontem.',source:'https://dictionary.cambridge.org/us/dictionary/english/yesterday'},
+{q:'They visited us ___ (na segunda-feira passada).',answers:['last Monday'],explain:'A expressão completa é last Monday, sem on antes de last.',source:'https://dictionary.cambridge.org/us/dictionary/english/last'},
+{q:'I played outside ___ (quando eu era criança).',answers:['when I was a child'],explain:'A expressão completa é when I was a child. Com I no passado de be, use was.',source:'https://dictionary.cambridge.org/us/dictionary/english/when'},
+{q:'She left ___ (há uma hora).',answers:['an hour ago'],explain:'A expressão completa é an hour ago. Ago aparece depois da duração.',source:'https://dictionary.cambridge.org/us/dictionary/english/ago'},
+{q:'We moved here ___ (no ano passado).',answers:['last year'],explain:'A expressão completa é last year, sem in antes de last.',source:'https://dictionary.cambridge.org/us/dictionary/english/last'},
+{q:'I finished the book ___ (ontem de manhã).',answers:['yesterday morning'],explain:'A expressão completa é yesterday morning, sem preposição.',source:'https://dictionary.cambridge.org/us/dictionary/english/yesterday'},
+{q:'They opened the shop ___ (em março de 2019).',answers:['in March 2019'],explain:'A expressão completa é in March 2019. Use in com mês e ano.',source:'https://dictionary.cambridge.org/us/dictionary/english/in'}
 ].map((x,i)=>({...x,id:'t'+i,answers:x.answers.flatMap(y=>y.split('|')),type:'time',level:2}));
 const SPECIAL_TESTS=[
 {q:'Qual frase está correta?',options:['I went to school yesterday.','I goed to school yesterday.','I go to school yesterday.','I gone to school yesterday.'],answers:['I went to school yesterday.'],explain:'Go muda para went no Simple Past.',level:1},
 {q:'Qual frase aplica corretamente a regra do -y?',options:['She studied English yesterday.','She studyed English yesterday.','She studyd English yesterday.','She studies English yesterday.'],answers:['She studied English yesterday.'],explain:'Em study, consoante + y muda para -ied: studied.',level:2},
 {q:'Qual frase usa o Simple Past, e não o particípio?',options:['He wrote an email yesterday.','He written an email yesterday.','He writes an email yesterday.','He did wrote an email yesterday.'],answers:['He wrote an email yesterday.'],explain:'Wrote é o Simple Past de write; written é o particípio.',level:3},
 {q:'Qual pergunta está correta?',options:['Did you saw her?','Did you seen her?','Did you see her?','Do you saw her?'],answers:['Did you see her?'],explain:'Did + sujeito + verbo na forma base.',level:4},
-{q:'Qual frase usa corretamente os dois verbos?',options:['She laid the book down and lay on the sofa.','She lay the book down and laid on the sofa.','She lain the book down and lied on the sofa.','She laid the book down and lain on the sofa.'],answers:['She laid the book down and lay on the sofa.'],explain:'Lay (colocar) → laid. Lie (deitar) → lay.',level:5,source:'https://dictionary.cambridge.org/grammar/british-grammar/lay-or-lie'}
+{q:'[Desafio opcional] Qual frase usa corretamente os dois verbos?',options:['She laid the book down and lay on the sofa.','She lay the book down and laid on the sofa.','She lain the book down and lied on the sofa.','She laid the book down and lain on the sofa.'],answers:['She laid the book down and lay on the sofa.'],explain:'Lay (colocar) → laid. Lie (deitar) → lay.',level:5,optional:true,source:'https://dictionary.cambridge.org/us/dictionary/english/lie'}
 ].map((x,i)=>({...x,id:'s'+i,type:'choice'}));
 const REGULARS={play:'played',visit:'visited',open:'opened',watch:'watched',clean:'cleaned',enjoy:'enjoyed',study:'studied',close:'closed',cry:'cried',live:'lived',stay:'stayed',try:'tried',stop:'stopped',plan:'planned',carry:'carried',travel:'traveled/travelled',return:'returned',explain:'explained',prepare:'prepared',encourage:'encouraged',complete:'completed',discuss:'discussed',copy:'copied',manage:'managed',work:'worked',walk:'walked',talk:'talked',call:'called',cook:'cooked',love:'loved',like:'liked',dance:'danced',arrive:'arrived',want:'wanted',need:'needed',help:'helped',ask:'asked',answer:'answered',start:'started',finish:'finished',listen:'listened',rain:'rained',learn:'learned/learnt',wait:'waited',look:'looked',wash:'washed',use:'used',move:'moved',happen:'happened',change:'changed',remember:'remembered'};

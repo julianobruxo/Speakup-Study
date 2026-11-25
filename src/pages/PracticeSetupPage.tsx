@@ -34,6 +34,9 @@ export default function PracticeSetupPage() {
       ? requestedCount
       : preferences.questionCount,
   );
+  const [includeOptionalChallenge, setIncludeOptionalChallenge] = useState(
+    searchParams.get("challenge") === "1",
+  );
 
   function startSession() {
     savePracticePreferences({
@@ -46,6 +49,9 @@ export default function PracticeSetupPage() {
       count: String(count),
       seed: String(Date.now()),
     });
+    if (difficulty === "medium" && includeOptionalChallenge) {
+      params.set("challenge", "1");
+    }
     navigate(`/praticar/present_tobe/sessao?${params.toString()}`);
   }
 
@@ -123,6 +129,20 @@ export default function PracticeSetupPage() {
               ))}
             </div>
           </fieldset>
+
+          {difficulty === "medium" && (
+            <label className="setting-row" style={{ cursor: "pointer" }}>
+              <input
+                checked={includeOptionalChallenge}
+                onChange={(event) => setIncludeOptionalChallenge(event.target.checked)}
+                type="checkbox"
+              />
+              <span>
+                <strong>Incluir desafio opcional (B2)</strong>
+                <small>Concordância avançada (neither, none of, news, scissors).</small>
+              </span>
+            </label>
+          )}
 
           <div className="session-summary">
             <span className="summary-icon">

@@ -270,7 +270,7 @@ function validateBodyPhotoManifest(bodyVisualKeys) {
   assertUnique(bodyVisualKeys, "body visualKey values");
 
   const manifestSource = readFileSync(
-    "src/games/assets/bodyPhotoAssetManifest.ts",
+    "src/content/assets/bodyPhotoAssetManifest.ts",
     "utf8",
   );
 

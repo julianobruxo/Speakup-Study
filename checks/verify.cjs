@@ -17,8 +17,8 @@ const cases=[
  ['I went to the park yesterday.','good'],["She didn't went to school yesterday.",'bad'],['Did you watched the film last night?','bad'],['They was tired last week.','bad'],['I were tired.','bad'],['Were she tired yesterday?','bad'],['I goed to the park yesterday.','bad'],['She studyed English yesterday.','bad'],['He stoped the car yesterday.','bad'],['I have seen the film.','unknown'],['The purple elephant contemplates infinity.','unknown'],['I worked yesterday.','good'],["They didn't work yesterday.",'good'],['Did she buy the book yesterday?','good'],['We were happy last week.','good'],['She eaten a sandwich yesterday.','bad'],['I went to the cinema yesterday night.','bad'],['I went home in last week.','bad'],['I saw her ago two days.','bad'],['I went home tomorrow.','bad'],['I was go to school yesterday.','bad'],['He is happy yesterday.','bad'],['She goes to school yesterday.','bad']
 ];
 let failed=0;for(const [s,status]of cases){ctx.testInput=s;const r=run('analyzeSentence(testInput)');if(r.status!==status){console.log('FAIL',s,'expected',status,'got',r);failed++}}
-for(const r of ['home','flash','memory','gaps','time','writing','test']){run(`route='${r}';render()`);assert(el.innerHTML.length>500)}
-console.log('Verified 104 verbs, 60 exercises, 5 distinct memory sets, 5 ten-question tests, 7 rendered routes. Sentence checks:',cases.length-failed,'/',cases.length);
+for(const r of ['home','flash','gaps','time','writing','test']){run(`route='${r}';render()`);assert(el.innerHTML.length>500)}
+console.log('Verified 104 verbs, 60 exercises, 5 distinct memory sets, 5 ten-question tests, 6 rendered routes. Sentence checks:',cases.length-failed,'/',cases.length);
 if(failed)process.exitCode=1;
 for(let n=0;n<5;n++){
  run(`memoryLevel=${n};newGame()`);

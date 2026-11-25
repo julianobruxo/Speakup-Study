@@ -176,10 +176,10 @@ function DesktopSidebar({
       aria-label="Navegação principal"
       className={`app-sidebar sidebar ${hidden ? "nav-hidden" : ""}`}
     >
-      <button aria-label="Início · Inglês em Jogo" className="brand sidebar-brand" onClick={() => navigate("/")}>
+      <button aria-label="Início · Speak Up Study" className="brand sidebar-brand" onClick={() => navigate("/")}>
         <span className="brand-mark" aria-hidden="true" />
         <span className="brand-copy">
-          <strong>Inglês<br />em Jogo</strong>
+          <strong>Speak Up<br />Study</strong>
           <small>Speak UP!</small>
         </span>
       </button>
@@ -203,6 +203,7 @@ function DesktopSidebar({
           </div>
         </details>
         <button aria-label="Vocabulário" className={`nav-button ${location.pathname.startsWith("/vocabulario") ? "active" : ""}`} onClick={() => navigate("/vocabulario")}><span className="nav-icon"><AppIcon name="grid" /></span><span className="sidebar-nav-label">Vocabulário</span></button>
+        <button aria-label="Acervo da escola" className={`nav-button ${location.pathname.startsWith("/escola") ? "active" : ""}`} onClick={() => navigate("/escola/vocabulario")}><span className="nav-icon"><AppIcon name="sparkles" /></span><span className="sidebar-nav-label">Acervo da escola</span></button>
         <details className="past-menu" open={location.pathname.startsWith("/passado")}>
           <summary aria-label="Simple Past"><span className="nav-icon"><AppIcon name="clock" /></span><span className="sidebar-nav-label">Simple Past</span><span className="past-chevron">⌄</span></summary>
           <div className="past-menu-links">

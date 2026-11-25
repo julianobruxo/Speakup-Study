@@ -124,11 +124,11 @@ export default function PresentTobeStudyDialog({
           </StudySection>
           <a
             className="cambridge-link"
-            href="https://dictionary.cambridge.org/grammar/british-grammar/subject-verb-agreement"
+            href="https://dictionary.cambridge.org/us/dictionary/english/be"
             rel="noreferrer"
             target="_blank"
           >
-            Aprofundar na Cambridge: concordância entre sujeito e verbo →
+            Aprofundar na Cambridge (US): verbo to be e concordância →
           </a>
 
           <StudySection title="Contrações">

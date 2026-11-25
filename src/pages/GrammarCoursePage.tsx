@@ -8,6 +8,7 @@ import {
   type GrammarCourseId,
   type GrammarCourseQuestion,
 } from "../content/data/grammarCourses";
+import { orderQuestionOptions } from "../services/sessions/selectPracticeQuestions";
 import {
   recordCourseAnswer,
   recordCourseCompletion,
@@ -251,7 +252,7 @@ function PracticeStage({
           <h3>{question.prompt}</h3>
           {question.kind === "choice" ? (
             <div className="course-options">
-            {question.options!.map((option) => {
+            {orderQuestionOptions(question.options!, `${sessionId}:${question.id}`).map((option) => {
               const state = submitted
                 ? option === question.answer
                   ? "correct"
@@ -387,7 +388,7 @@ function ReviewStage({ courseId, courseTitle, onStudy, questions }: { courseId: 
           <h3>{question.prompt}</h3>
           {question.kind === "choice" ? (
             <div className="course-options">
-            {question.options!.map((option) => {
+            {orderQuestionOptions(question.options!, `${sessionId}:${question.id}`).map((option) => {
               const state = submitted ? option === question.answer ? "correct" : option === selected ? "wrong" : "" : selected === option ? "selected" : "";
               return <button className={state} disabled={submitted} key={option} onClick={() => setSelected(option)}>{option}</button>;
             })}

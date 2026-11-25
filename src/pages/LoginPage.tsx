@@ -21,7 +21,7 @@ export default function LoginPage() {
           SU
         </div>
         <GradientText as="h1" className="text-3xl">
-          Inglês em Jogo
+          Speak Up Study
         </GradientText>
         <p className="text-cream/70 max-w-xs">
           Estude e pratique inglês no seu ritmo, feito para os alunos da

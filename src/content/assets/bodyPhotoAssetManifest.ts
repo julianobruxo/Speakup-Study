@@ -26,7 +26,7 @@ import tongue from "../../assets/body-parts-photo-flashcards/tongue.webp";
 /**
  * The 24 `body` visualKey values, in the same order as
  * `src/content/data/vocabulary.ts`. This is the single source of truth for
- * which keys have a photographic asset — `scripts/validateContent.mjs`
+ * which keys have a photographic asset — `checks/validate-repo-content.mjs`
  * checks the manifest against this list.
  */
 export const BODY_PHOTO_VISUAL_KEYS = [
@@ -103,4 +103,3 @@ export function getBodyPhotoAsset(visualKey?: string): string | undefined {
   }
   return BODY_PHOTO_ASSET_MANIFEST[visualKey];
 }
-

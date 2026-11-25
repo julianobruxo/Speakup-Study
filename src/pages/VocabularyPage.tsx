@@ -39,6 +39,13 @@ export default function VocabularyPage() {
             />
           );
         })}
+        <AppCard
+          description="10 conjuntos de vocabulário (229 termos), 50 verbos de ação, alfabeto e números com áudio."
+          icon={<AppIcon name="sparkles" size={20} />}
+          onClick={() => navigate("/escola/vocabulario")}
+          title="Acervo da escola"
+          trailing={<span className="count-pill">229 termos</span>}
+        />
       </div>
     </AppShell>
   );
