@@ -28,23 +28,33 @@ for (const topic of SCHOOL_GRAMMAR_TOPICS) {
   assert(!serialized.includes("\u2019"), `Curly apostrophe found in school grammar topic ${topic.id}`);
 }
 
-// Verify structural teacher-review gate for unreviewed `there-is-there-are`
+// Verify teacher-approved `there-is-there-are` refinements & un-gated student exposure
+const thereTopic = SCHOOL_GRAMMAR_TOPICS.find((t) => t.id === "there-is-there-are");
+assert(thereTopic, "Missing there-is-there-are school grammar topic");
+const thereSerialized = JSON.stringify(thereTopic);
+assert(
+  thereSerialized.includes("There are a lot of people at the bus stop."),
+  "there-is-there-are must use US-natural 'a lot of people' example",
+);
+assert(
+  !thereSerialized.includes("in the garden"),
+  "there-is-there-are must use US 'in the backyard' instead of 'in the garden'",
+);
+assert(
+  typeof thereTopic.structure === "object" &&
+    "affirmative" in thereTopic.structure &&
+    thereTopic.structure.affirmative.includes("uncountable"),
+  "there-is-there-are structure.affirmative must cover uncountables",
+);
+
 const schoolPageSource = readFileSync("src/pages/SchoolStudyPage.tsx", "utf8");
 assert(
-  /TEACHER_REVIEW_PENDING_IDS\s*=\s*new\s+Set(?:<string>)?\(\s*\[\s*[^]]*"there-is-there-are"/s.test(
-    schoolPageSource,
-  ),
-  "SchoolStudyPage must include there-is-there-are in TEACHER_REVIEW_PENDING_IDS",
+  !schoolPageSource.includes("TEACHER_REVIEW_PENDING_IDS"),
+  "SchoolStudyPage must expose all 10 approved grammar topics after teacher review",
 );
 assert(
-  /APPROVED_SCHOOL_GRAMMAR\s*=\s*SCHOOL_GRAMMAR_TOPICS\.filter\(\s*\(topic\)\s*=>\s*!TEACHER_REVIEW_PENDING_IDS\.has\(topic\.id\)/s.test(
-    schoolPageSource,
-  ),
-  "SchoolStudyPage must filter TEACHER_REVIEW_PENDING_IDS out of APPROVED_SCHOOL_GRAMMAR",
-);
-assert(
-  !/SCHOOL_GRAMMAR_TOPICS\.map\(/.test(schoolPageSource),
-  "SchoolStudyPage must render APPROVED_SCHOOL_GRAMMAR, never SCHOOL_GRAMMAR_TOPICS directly",
+  /SCHOOL_GRAMMAR_TOPICS\.map\(/.test(schoolPageSource),
+  "SchoolStudyPage must render all SCHOOL_GRAMMAR_TOPICS",
 );
 
 // 2. Vocabulary sets: completeness, uniqueness, valid image paths
@@ -128,7 +138,7 @@ console.log(
   JSON.stringify(
     {
       schoolGrammarTopics: SCHOOL_GRAMMAR_TOPICS.length,
-      teacherReviewGatedTopics: ["there-is-there-are"],
+      teacherReviewGatedTopics: [],
       schoolVocabularySets: SCHOOL_VOCABULARY_SETS.length,
       schoolVocabularyItems: totalVocabItems,
       schoolVocabularyWithImages: vocabWithImages,

@@ -6,29 +6,68 @@ import { SCHOOL_ACTION_VERBS } from "../content/school/actionVerbs";
 import { SCHOOL_ALPHABET } from "../content/school/alphabet";
 import { SCHOOL_GRAMMAR_TOPICS } from "../content/school/grammarTopics";
 import { SCHOOL_NUMBERS } from "../content/school/numbers";
+import type { SchoolExample, SchoolGrammarTopic } from "../content/school/types";
 import { SCHOOL_VOCABULARY_SETS } from "../content/school/vocabularySets";
 import { cancelPronunciation, speakEnglish } from "../services/audio/pronunciation";
-
-/**
- * Topics pending teacher review are excluded from student-facing views.
- * See `BACKLOG.md` and `src/content/school/CORRECTIONS.md`.
- */
-export const TEACHER_REVIEW_PENDING_IDS = new Set<string>([
-  "there-is-there-are",
-]);
-
-const APPROVED_SCHOOL_GRAMMAR = SCHOOL_GRAMMAR_TOPICS.filter(
-  (topic) => !TEACHER_REVIEW_PENDING_IDS.has(topic.id),
-);
 
 type SchoolSection = "vocabulario" | "verbos" | "gramatica" | "base";
 
 const SECTIONS: { id: SchoolSection; label: string }[] = [
   { id: "vocabulario", label: "Vocabulário (10)" },
   { id: "verbos", label: "Verbos de ação (50)" },
-  { id: "gramatica", label: "Guias de gramática (9)" },
+  { id: "gramatica", label: `Guias de gramática (${SCHOOL_GRAMMAR_TOPICS.length})` },
   { id: "base", label: "Alfabeto e números" },
 ];
+
+const STRUCTURE_LABELS: Record<string, string> = {
+  affirmative: "Afirmativa",
+  negative: "Negativa",
+  interrogative: "Interrogativa",
+  singular: "Singular",
+  plural: "Plural",
+};
+
+function getStructureLines(
+  structure: SchoolGrammarTopic["structure"],
+): { label: string; text: string }[] {
+  if ("lines" in structure && Array.isArray(structure.lines)) {
+    return structure.lines;
+  }
+  return Object.entries(structure).map(([key, text]) => ({
+    label: STRUCTURE_LABELS[key] ?? key,
+    text,
+  }));
+}
+
+function ExampleGroup({
+  title,
+  examples,
+}: {
+  title: string;
+  examples: SchoolExample[];
+}) {
+  if (!examples.length) return null;
+  return (
+    <div style={{ marginTop: 14 }}>
+      <h5>{title}</h5>
+      <div className="study-examples">
+        {examples.map((ex) => (
+          <button
+            className="word-preview"
+            key={`${title}-${ex.english}`}
+            onClick={() => speakEnglish(ex.english)}
+            type="button"
+          >
+            <strong>
+              {ex.english} <AppIcon name="volume" size={14} />
+            </strong>
+            <span>{ex.portuguese}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function SchoolStudyPage() {
   const navigate = useNavigate();
@@ -40,7 +79,7 @@ export default function SchoolStudyPage() {
     SCHOOL_VOCABULARY_SETS[0]?.id ?? "",
   );
   const [selectedTopicId, setSelectedTopicId] = useState(
-    APPROVED_SCHOOL_GRAMMAR[0]?.id ?? "",
+    SCHOOL_GRAMMAR_TOPICS[0]?.id ?? "",
   );
 
   useEffect(() => cancelPronunciation, [activeSection, selectedSetId, selectedTopicId]);
@@ -49,8 +88,9 @@ export default function SchoolStudyPage() {
     SCHOOL_VOCABULARY_SETS.find((item) => item.id === selectedSetId) ??
     SCHOOL_VOCABULARY_SETS[0];
   const activeTopic =
-    APPROVED_SCHOOL_GRAMMAR.find((item) => item.id === selectedTopicId) ??
-    APPROVED_SCHOOL_GRAMMAR[0];
+    SCHOOL_GRAMMAR_TOPICS.find((item) => item.id === selectedTopicId) ??
+    SCHOOL_GRAMMAR_TOPICS[0];
+  const structureLines = activeTopic ? getStructureLines(activeTopic.structure) : [];
 
   return (
     <AppShell activeNav="study" className="standard-page">
@@ -154,7 +194,7 @@ export default function SchoolStudyPage() {
       {activeSection === "gramatica" && activeTopic && (
         <section className="section-card" aria-label="Guias de gramática">
           <div className="filter-row">
-            {APPROVED_SCHOOL_GRAMMAR.map((topic) => (
+            {SCHOOL_GRAMMAR_TOPICS.map((topic) => (
               <button
                 aria-pressed={topic.id === activeTopic.id}
                 className={`filter-chip ${topic.id === activeTopic.id ? "active" : ""}`}
@@ -172,26 +212,101 @@ export default function SchoolStudyPage() {
             {activeTopic.explanation.map((line) => (
               <p key={line}>{line}</p>
             ))}
-            <h4>Exemplos</h4>
-            <div className="study-examples">
-              {activeTopic.examples.affirmative.slice(0, 4).map((ex) => (
-                <button
-                  className="word-preview"
-                  key={ex.english}
-                  onClick={() => speakEnglish(ex.english)}
-                  type="button"
-                >
-                  <strong>{ex.english}</strong>
-                  <span>{ex.portuguese}</span>
-                </button>
-              ))}
-            </div>
-            <h4>Erro comum</h4>
-            <p>
-              <strong>Evite:</strong> {activeTopic.commonMistake.wrong} ·{" "}
-              <strong>Use:</strong> {activeTopic.commonMistake.correct} —{" "}
-              {activeTopic.commonMistake.note}
-            </p>
+
+            {structureLines.length > 0 && (
+              <section style={{ marginTop: 18 }}>
+                <h4>Estrutura</h4>
+                <div className="study-examples">
+                  {structureLines.map((line) => (
+                    <div className="word-preview" key={`${line.label}-${line.text}`}>
+                      <strong>{line.label}</strong>
+                      <span>{line.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <section style={{ marginTop: 18 }}>
+              <h4>Exemplos</h4>
+              <ExampleGroup
+                examples={activeTopic.examples.affirmative}
+                title="Afirmativas"
+              />
+              <ExampleGroup
+                examples={activeTopic.examples.negative}
+                title="Negativas"
+              />
+              <ExampleGroup
+                examples={activeTopic.examples.interrogative}
+                title="Perguntas"
+              />
+            </section>
+
+            {activeTopic.shortAnswers.length > 0 && (
+              <section style={{ marginTop: 18 }}>
+                <h4>Respostas curtas</h4>
+                <div className="study-examples">
+                  {activeTopic.shortAnswers.map((item) => (
+                    <button
+                      className="word-preview"
+                      key={item.question}
+                      onClick={() =>
+                        speakEnglish(`${item.question} ${item.yes} ${item.no}`)
+                      }
+                      type="button"
+                    >
+                      <strong>
+                        {item.question} <AppIcon name="volume" size={14} />
+                      </strong>
+                      <span>
+                        {item.yes} · {item.no}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {activeTopic.extraSections && activeTopic.extraSections.length > 0 && (
+              <section style={{ marginTop: 18 }}>
+                <h4>Pontos importantes</h4>
+                {activeTopic.extraSections.map((extra) => (
+                  <div key={extra.title} style={{ marginTop: 14 }}>
+                    <h5>{extra.title}</h5>
+                    {extra.paragraphs.map((paragraph) => (
+                      <p key={paragraph}>{paragraph}</p>
+                    ))}
+                    {extra.examples && extra.examples.length > 0 && (
+                      <div className="study-examples">
+                        {extra.examples.map((ex) => (
+                          <button
+                            className="word-preview"
+                            key={`${extra.title}-${ex.english}`}
+                            onClick={() => speakEnglish(ex.english)}
+                            type="button"
+                          >
+                            <strong>
+                              {ex.english} <AppIcon name="volume" size={14} />
+                            </strong>
+                            <span>{ex.portuguese}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </section>
+            )}
+
+            <section style={{ marginTop: 18 }}>
+              <h4>Erro comum</h4>
+              <p>
+                <strong>Evite:</strong> {activeTopic.commonMistake.wrong} ·{" "}
+                <strong>Use:</strong> {activeTopic.commonMistake.correct} —{" "}
+                {activeTopic.commonMistake.note}
+              </p>
+            </section>
           </article>
         </section>
       )}

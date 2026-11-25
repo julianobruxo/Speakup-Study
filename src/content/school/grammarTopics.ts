@@ -795,7 +795,7 @@ export const SCHOOL_GRAMMAR_TOPICS: SchoolGrammarTopic[] = [
       "perguntar se algo existe"
     ],
     "structure": {
-      "affirmative": "There is + a/an + singular. / There are + plural.",
+      "affirmative": "There is + a/an + singular / There is + some + uncountable. / There are + plural.",
       "negative": "There isn't + a/an + singular. / There aren't any + plural.",
       "interrogative": "Is there + a/an + singular? / Are there any + plural?"
     },
@@ -822,7 +822,7 @@ export const SCHOOL_GRAMMAR_TOPICS: SchoolGrammarTopic[] = [
           "portuguese": "Tem dois alunos na sala de aula."
         },
         {
-          "english": "There are many people at the bus stop.",
+          "english": "There are a lot of people at the bus stop.",
           "portuguese": "Tem muita gente no ponto de ônibus."
         },
         {
@@ -844,8 +844,8 @@ export const SCHOOL_GRAMMAR_TOPICS: SchoolGrammarTopic[] = [
           "portuguese": "Não tem leite na geladeira."
         },
         {
-          "english": "There aren't any chairs in the garden.",
-          "portuguese": "Não tem cadeiras no jardim."
+          "english": "There aren't any chairs in the backyard.",
+          "portuguese": "Não tem cadeiras no quintal."
         },
         {
           "english": "There aren't any students in the library.",
@@ -971,12 +971,12 @@ export const SCHOOL_GRAMMAR_TOPICS: SchoolGrammarTopic[] = [
         ],
         "examples": [
           {
-            "english": "There is a cat in the garden. It is black.",
-            "portuguese": "Tem um gato no jardim. Ele é preto."
+            "english": "There is a cat in the backyard. It is black.",
+            "portuguese": "Tem um gato no quintal. Ele é preto."
           },
           {
-            "english": "There are two dogs in the garden. They are small.",
-            "portuguese": "Tem dois cachorros no jardim. Eles são pequenos."
+            "english": "There are two dogs in the backyard. They are small.",
+            "portuguese": "Tem dois cachorros no quintal. Eles são pequenos."
           }
         ]
       }

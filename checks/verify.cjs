@@ -34,3 +34,20 @@ for(let n=0;n<5;n++){
  assert.equal(run('test.score'),0);assert.equal(run(`progress.tests[${n+1}]`),100);
 }
 console.log('Verified completion of all 5 memory games; 100% and 0% grading in all 5 tests; best scores retained.');
+// Permanent F2 regression guard: optional lie/lay items (e48, e49, s4) excluded by default, included on opt-in.
+run("includeOptionalPast=false; gapLevel='5'; gapType='mixed'; newGap()");
+assert.equal(run('gap.questions.length'),10);
+assert.equal(run('gap.questions.every(q=>!q.optional)'),true);
+run('includeOptionalPast=false; testLevel=5; makeTest()');
+assert.equal(run('test.questions.length'),10);
+assert.equal(run('new Set(test.questions.map(q=>q.id)).size'),10);
+assert.equal(run('test.questions.every(q=>!q.optional)'),true);
+run("includeOptionalPast=true; gapLevel='5'; gapType='mixed'; newGap()");
+assert.equal(run('gap.questions.length'),12);
+assert.equal(run("gap.questions.some(q=>q.id==='e48') && gap.questions.some(q=>q.id==='e49')"),true);
+run('includeOptionalPast=true; testLevel=5; makeTest()');
+assert.equal(run('test.questions.length'),10);
+assert.equal(run('new Set(test.questions.map(q=>q.id)).size'),10);
+assert.equal(run("test.questions.some(q=>q.id==='s4')"),true);
+run('includeOptionalPast=false');
+console.log('Verified F2 optional gate: default excludes e48/e49/s4 (10 unique non-optional L5 test items); opt-in includes them.');
