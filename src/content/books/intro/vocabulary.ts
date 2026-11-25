@@ -109,7 +109,7 @@ export const INTRO_VOCABULARY_SETS: BookVocabularySet[] = [
     items: [
       item("intro-house-sofa", "sofa", "sofá", "home", "🛋️", "1f6cb", "/study-area/flashcards/furniture/sofa.jpg"),
       item("intro-house-bed", "bed", "cama", "home", "🛏️", "1f6cf", "/study-area/flashcards/furniture/bed.jpg"),
-      item("intro-house-table", "table", "mesa", "home", "🪑", "1fa91"),
+      item("intro-house-table", "table", "mesa", "home", "🍽️", "1f37d"),
       item("intro-house-chair", "chair", "cadeira", "home", "🪑", "1fa91"),
       item("intro-house-lamp", "lamp", "luminária", "home", "💡", "1f4a1"),
       item("intro-house-kitchen", "kitchen", "cozinha", "home", "🍳", "1f373"),

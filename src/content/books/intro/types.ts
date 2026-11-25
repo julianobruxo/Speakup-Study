@@ -57,6 +57,7 @@ export interface BookMultipleChoiceItem {
   options: string[];
   correctIndex: number;
   explanation: string;
+  audioText?: string;
 }
 
 export interface BookWordScrambleItem {

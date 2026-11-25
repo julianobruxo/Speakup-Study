@@ -5,7 +5,7 @@ import { INTRO_VOCABULARY_SETS, getIntroVocabularySet } from "./vocabulary.ts";
 export const LIVRO_INTRO: BookDefinition = {
   id: "intro",
   title: "Livro Intro",
-  subtitle: "Interchange Intro — gramatica e vocabulario",
+  subtitle: "Interchange Intro — gramática e vocabulário",
   grammarTopics: INTRO_GRAMMAR_TOPICS,
   vocabularySets: INTRO_VOCABULARY_SETS,
 };

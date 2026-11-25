@@ -161,6 +161,7 @@ export default function BookVocabularyFlashcardsPage() {
             toggleFlip();
           }}
           onKeyDown={(event) => {
+            if ((event.target as HTMLElement).closest("button")) return;
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
               toggleFlip();

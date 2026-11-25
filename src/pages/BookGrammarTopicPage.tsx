@@ -15,6 +15,7 @@ import {
   recordGrammarAnswerEngagement,
   recordGrammarSessionEngagement,
 } from "../services/progress/engagement";
+import { orderQuestionOptions } from "../services/sessions/selectPracticeQuestions";
 
 interface IndexedToken {
   idx: number;
@@ -207,6 +208,26 @@ function GrammarActivityRunner({
   const mcItem = mode === "multiple_choice" ? topic.multiple_choice[index] : undefined;
   const scrambleItem = mode === "word_scramble" ? topic.word_scramble[index] : undefined;
 
+  const orderedGapOptions = useMemo(() => {
+    if (!gapItem) return [];
+    return orderQuestionOptions(
+      gapItem.options,
+      `${sessionIdRef.current}:${gapItem.id}`,
+    );
+  }, [gapItem]);
+
+  const orderedMcOptions = useMemo(() => {
+    if (!mcItem) return [];
+    const orderedTexts = orderQuestionOptions(
+      mcItem.options,
+      `${sessionIdRef.current}:${mcItem.id}`,
+    );
+    return orderedTexts.map((text) => ({
+      text,
+      optIdx: mcItem.options.indexOf(text),
+    }));
+  }, [mcItem]);
+
   const scrambledBank = useMemo(() => {
     if (!scrambleItem) return [];
     return deterministicShuffleTokens(
@@ -239,7 +260,7 @@ function GrammarActivityRunner({
     } else if (mode === "multiple_choice" && mcItem) {
       right = selectedMcIndex === mcItem.correctIndex;
       itemId = mcItem.id;
-      audioText = mcItem.options[mcItem.correctIndex] ?? "";
+      audioText = mcItem.audioText ?? "";
     } else if (mode === "word_scramble" && scrambleItem) {
       right = placedTokens.map((t) => t.word).join(" ") === scrambleItem.target;
       itemId = scrambleItem.id;
@@ -253,7 +274,7 @@ function GrammarActivityRunner({
     setStreak(nextStreak);
     setBestStreak((prev) => Math.max(prev, nextStreak));
 
-    if (audioText && /^[A-Za-z]/.test(audioText)) {
+    if (audioText) {
       speakEnglish(audioText);
     }
 
@@ -346,7 +367,7 @@ function GrammarActivityRunner({
         <div style={{ marginTop: 12 }}>
           <h4 style={{ fontSize: "1.15rem" }}>{gapItem.sentence}</h4>
           <div className="course-options" style={{ marginTop: 12 }}>
-            {gapItem.options.map((option) => {
+            {orderedGapOptions.map((option) => {
               const state = submitted
                 ? option === gapItem.answer
                   ? "correct"
@@ -376,7 +397,7 @@ function GrammarActivityRunner({
         <div style={{ marginTop: 12 }}>
           <h4 style={{ fontSize: "1.15rem" }}>{mcItem.prompt}</h4>
           <div className="course-options" style={{ marginTop: 12 }}>
-            {mcItem.options.map((option, optIdx) => {
+            {orderedMcOptions.map(({ text: option, optIdx }) => {
               const state = submitted
                 ? optIdx === mcItem.correctIndex
                   ? "correct"

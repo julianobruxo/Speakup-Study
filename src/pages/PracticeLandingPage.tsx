@@ -48,37 +48,59 @@ export default function PracticeLandingPage() {
         : []
       : [
           ...(filter === "all" || filter === "grammar"
-            ? ACTIVE_GRAMMAR_TOPICS.map((topic) => ({
-                id: topic.id,
-                title: topic.title,
-                description:
-                  topic.id === "present_tobe" && practiced
-                    ? `${practiced} de 130 questões praticadas.`
-                    : topic.description,
-                available: topic.availabilityStatus === "available",
-                action: () => navigate(
-                  topic.id === "simple_past"
-                    ? "/passado/home"
-                    : topic.id === "present_tobe"
-                      ? "/gramatica/present_tobe"
-                      : GRAMMAR_COURSE_IDS.includes(topic.id as (typeof GRAMMAR_COURSE_IDS)[number])
-                        ? `/gramatica/${topic.id}`
-                        : "/gramatica",
-                ),
-                tag: topic.availabilityStatus === "available" ? "Disponível" : "Em breve",
-              }))
+            ? [
+                {
+                  id: "livro-intro-grammar",
+                  title: "Livro Intro · Gramática",
+                  description:
+                    "18 tópicos com explicação, áudio en-US e 3 modos de prática.",
+                  available: true,
+                  action: () => navigate("/livro/intro/gramatica"),
+                  tag: "Livro Intro",
+                },
+                ...ACTIVE_GRAMMAR_TOPICS.map((topic) => ({
+                  id: topic.id,
+                  title: topic.title,
+                  description:
+                    topic.id === "present_tobe" && practiced
+                      ? `${practiced} de 130 questões praticadas.`
+                      : topic.description,
+                  available: topic.availabilityStatus === "available",
+                  action: () => navigate(
+                    topic.id === "simple_past"
+                      ? "/passado/home"
+                      : topic.id === "present_tobe"
+                        ? "/gramatica/present_tobe"
+                        : GRAMMAR_COURSE_IDS.includes(topic.id as (typeof GRAMMAR_COURSE_IDS)[number])
+                          ? `/gramatica/${topic.id}`
+                          : "/gramatica",
+                  ),
+                  tag: topic.availabilityStatus === "available" ? "Disponível" : "Em breve",
+                })),
+              ]
             : []),
           ...(filter === "all" || filter === "vocabulary"
-            ? ACTIVE_VOCABULARY_CATEGORIES
-              .filter((category) => category.availabilityStatus === "available" && (category.id === "body" || category.id === "irregular_verbs"))
-              .map((category) => ({
-                id: category.id,
-                title: category.id === "body" ? "Partes do corpo" : category.title,
-                description: category.description,
-                available: category.id === "body" || category.id === "irregular_verbs",
-                action: () => navigate(category.id === "irregular_verbs" ? "/passado/flash" : "/vocabulario/body"),
-                tag: category.id === "body" ? "24 cards" : category.id === "irregular_verbs" ? "104 verbos + áudio" : "Em breve",
-              }))
+            ? [
+                {
+                  id: "livro-intro-vocab",
+                  title: "Livro Intro · Vocabulário",
+                  description:
+                    "14 conjuntos com flashcards clássicos (EN-US -> PT-BR) e Jogo da Memória.",
+                  available: true,
+                  action: () => navigate("/livro/intro/vocabulario"),
+                  tag: "Livro Intro",
+                },
+                ...ACTIVE_VOCABULARY_CATEGORIES
+                  .filter((category) => category.availabilityStatus === "available" && (category.id === "body" || category.id === "irregular_verbs"))
+                  .map((category) => ({
+                    id: category.id,
+                    title: category.id === "body" ? "Partes do corpo" : category.title,
+                    description: category.description,
+                    available: category.id === "body" || category.id === "irregular_verbs",
+                    action: () => navigate(category.id === "irregular_verbs" ? "/passado/flash" : "/vocabulario/body"),
+                    tag: category.id === "body" ? "24 cards" : category.id === "irregular_verbs" ? "104 verbos + áudio" : "Em breve",
+                  })),
+              ]
             : []),
         ];
 

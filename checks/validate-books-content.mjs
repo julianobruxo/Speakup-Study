@@ -178,7 +178,7 @@ for (const set of INTRO_VOCABULARY_SETS) {
   }
 }
 
-// 3. Validate BookVisual fallback chain (clipart -> image -> svg -> emoji)
+// 3. Validate BookVisual fallback chain (clipart -> image -> svg -> emoji) & F1-F5 guards
 const bookVisualSource = readFileSync("src/components/BookVisual.tsx", "utf8");
 assert(
   /type FallbackStage = "clipart" \| "image" \| "svg" \| "emoji"/.test(bookVisualSource),
@@ -188,6 +188,73 @@ assert(
   bookVisualSource.includes("onError={() => setStage("),
   "BookVisual must degrade gracefully on image onError",
 );
+
+// F1: Verify proper PT-BR diacritics in Livro Intro grammar & metadata (no unaccented regressions)
+const grammarRaw = readFileSync("src/content/books/intro/grammar.ts", "utf8");
+for (const unaccented of [" voce ", " nao ", " ingles", " entao ", " tambem ", " sabados", " manha"]) {
+  assert(
+    !grammarRaw.toLowerCase().includes(unaccented),
+    `Found unaccented PT-BR word "${unaccented.trim()}" in src/content/books/intro/grammar.ts`,
+  );
+}
+assert(
+  LIVRO_INTRO.subtitle.includes("gramática") && LIVRO_INTRO.subtitle.includes("vocabulário"),
+  "LIVRO_INTRO.subtitle must use proper PT-BR diacritics",
+);
+
+// F2: Verify Portuguese-option MC items do not set audioText and BookGrammarTopicPage only speaks explicit audioText
+const ptOnlyMcIds = new Set(["g3-mc-2", "g6-mc-1", "g13-mc-2", "g14-mc-3"]);
+for (const topic of INTRO_GRAMMAR_TOPICS) {
+  for (const item of topic.multiple_choice) {
+    if (ptOnlyMcIds.has(item.id)) {
+      assert.equal(
+        item.audioText,
+        undefined,
+        `Portuguese-option MC item ${item.id} must not define en-US audioText`,
+      );
+    } else {
+      assert(
+        typeof item.audioText === "string" && item.audioText.trim().length > 0,
+        `English-option MC item ${item.id} must define explicit audioText`,
+      );
+    }
+  }
+}
+const bookGrammarPageSource = readFileSync("src/pages/BookGrammarTopicPage.tsx", "utf8");
+assert(
+  bookGrammarPageSource.includes("audioText = mcItem.audioText ?? \"\""),
+  "BookGrammarTopicPage must only speak explicit mcItem.audioText on multiple_choice",
+);
+assert(
+  bookGrammarPageSource.includes("orderQuestionOptions("),
+  "BookGrammarTopicPage must deterministically order exercise options",
+);
+
+// F3: Verify flashcard onKeyDown guards nested buttons
+const flashcardPageSource = readFileSync("src/pages/BookVocabularyFlashcardsPage.tsx", "utf8");
+assert(
+  /onKeyDown=\{\(event\)\s*=>\s*\{\s*if\s*\(\(event\.target as HTMLElement\)\.closest\("button"\)\)\s*return;/s.test(
+    flashcardPageSource,
+  ),
+  "BookVocabularyFlashcardsPage onKeyDown must ignore Enter/Space from nested buttons",
+);
+
+// F4: Verify mobile reachability to Livro Intro via /praticar (PracticeLandingPage)
+const practiceLandingSource = readFileSync("src/pages/PracticeLandingPage.tsx", "utf8");
+assert(
+  practiceLandingSource.includes("/livro/intro/gramatica") &&
+    practiceLandingSource.includes("/livro/intro/vocabulario"),
+  "PracticeLandingPage (/praticar) must link to Livro Intro grammar and vocabulary for mobile reachability",
+);
+
+// F5: Verify intro-house-table and intro-house-chair use distinct visuals
+const houseSet = INTRO_VOCABULARY_SETS.find((s) => s.id === "house-furniture");
+assert(houseSet, "Missing house-furniture set");
+const tableItem = houseSet.items.find((i) => i.id === "intro-house-table");
+const chairItem = houseSet.items.find((i) => i.id === "intro-house-chair");
+assert(tableItem && chairItem, "Missing intro-house-table or intro-house-chair");
+assert.notEqual(tableItem.clipartUrl, chairItem.clipartUrl, "table and chair must have distinct clipartUrl");
+assert.notEqual(tableItem.emoji, chairItem.emoji, "table and chair must have distinct emoji");
 
 console.log(
   JSON.stringify(
