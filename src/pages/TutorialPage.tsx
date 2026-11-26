@@ -3,12 +3,19 @@ import { useNavigate } from "react-router-dom";
 import GlassCard from "../components/GlassCard";
 import GlowButton from "../components/GlowButton";
 
-// TODO: tornar de fato swipável (framer-motion drag / biblioteca de carrossel).
-// Por ora, navegação por botão como esqueleto funcional.
 const SLIDES = [
-  { title: "Estudar", text: "Revise a explicação de cada tópico no seu ritmo." },
-  { title: "Praticar", text: "Faça quizzes rápidos — pode pular direto pra cá se quiser." },
-  { title: "Vocabulário", text: "Flashcards com som, tradução e imagem pra fixar palavras novas." },
+  {
+    title: "Estudar",
+    text: "Revise a explicação de cada tópico no seu ritmo.",
+  },
+  {
+    title: "Praticar",
+    text: "Faça quizzes rápidos — pode pular direto pra cá se quiser.",
+  },
+  {
+    title: "Vocabulário",
+    text: "Flashcards com som, tradução e imagem pra fixar palavras novas.",
+  },
 ];
 
 export default function TutorialPage() {
@@ -18,29 +25,32 @@ export default function TutorialPage() {
   const isLast = step === SLIDES.length - 1;
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-6 gap-6">
-      <GlassCard className="w-full max-w-sm text-center">
-        <h2 className="font-display font-bold text-xl mb-2">{slide.title}</h2>
-        <p className="text-cream/80">{slide.text}</p>
+    <div className="auth-page">
+      <GlassCard className="auth-card">
+        <h2 className="auth-card__title">{slide.title}</h2>
+        <p className="auth-card__text">{slide.text}</p>
       </GlassCard>
 
-      <div className="flex gap-2">
+      <div className="progress-dots" aria-label={`Passo ${step + 1} de ${SLIDES.length}`}>
         {SLIDES.map((_, i) => (
           <span
             key={i}
-            className={`w-2 h-2 rounded-full ${i === step ? "bg-red" : "bg-cream/30"}`}
+            className={`progress-dot ${
+              i === step
+                ? "progress-dot--active"
+                : i < step
+                  ? "progress-dot--done"
+                  : ""
+            }`}
           />
         ))}
       </div>
 
       <GlowButton
-        onClick={() =>
-          isLast ? navigate("/hub") : setStep((s) => s + 1)
-        }
+        onClick={() => (isLast ? navigate("/hub") : setStep((s) => s + 1))}
       >
         {isLast ? "Começar" : "Próximo"}
       </GlowButton>
     </div>
   );
 }
-

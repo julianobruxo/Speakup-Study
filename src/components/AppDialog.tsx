@@ -55,10 +55,11 @@ export default function AppDialog({
         <div className="dialog-header">
           <button
             aria-label="Fechar"
-            className="dialog-close icon-button"
+            className="dialog-close"
             onClick={onClose}
+            type="button"
           >
-            <AppIcon name="close" size={20} />
+            <AppIcon name="close" size={20} strokeWidth={1.85} />
           </button>
           <h2 id={titleId}>{title}</h2>
           {description && <p id={descriptionId}>{description}</p>}
@@ -69,4 +70,3 @@ export default function AppDialog({
     </dialog>
   );
 }
-

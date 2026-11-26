@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AppIcon from "../components/AppIcon";
-import { AppShell, PageHeader, PrimaryButton } from "../components/AppShell";
+import { AppShell, PageHeader } from "../components/AppShell";
 import { BookVisual } from "../components/BookVisual";
 import {
   getIntroVocabularySet,
   type BookVocabularyItem,
 } from "../content/books/intro";
-import {
-  cancelPronunciation,
-  speakEnglish,
-} from "../services/audio/pronunciation";
 import { recordGameRoundEngagement } from "../services/progress/engagement";
+import "../styles/activities.css";
 
 interface MemoryCard {
   uid: string;
@@ -34,7 +31,10 @@ function shuffleCards<T>(source: readonly T[]): T[] {
 }
 
 function buildDeck(items: readonly BookVocabularyItem[]): MemoryCard[] {
-  const chosen = shuffleCards(items).slice(0, Math.min(PAIRS_PER_ROUND, items.length));
+  const chosen = shuffleCards(items).slice(
+    0,
+    Math.min(PAIRS_PER_ROUND, items.length),
+  );
   const cards: MemoryCard[] = chosen.flatMap((item) => [
     { uid: `${item.id}:en`, pairId: item.id, side: "en", item },
     { uid: `${item.id}:pt`, pairId: item.id, side: "pt", item },
@@ -53,7 +53,12 @@ export default function BookVocabularyMemoryPage() {
   const [openIndices, setOpenIndices] = useState<number[]>([]);
   const [matchedIds, setMatchedIds] = useState<string[]>([]);
   const [moves, setMoves] = useState(0);
+  const [combo, setCombo] = useState(0);
   const [locked, setLocked] = useState(false);
+  const [feedbackFx, setFeedbackFx] = useState<{
+    id: number;
+    kind: "match" | "mismatch";
+  } | null>(null);
 
   const lockedRef = useRef(false);
   const mismatchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -70,7 +75,6 @@ export default function BookVocabularyMemoryPage() {
   const resetRound = useCallback(
     (items: readonly BookVocabularyItem[]) => {
       clearPendingTimer();
-      cancelPronunciation();
       lockedRef.current = false;
       completionRecordedRef.current = false;
       sessionIdRef.current = crypto.randomUUID();
@@ -78,6 +82,8 @@ export default function BookVocabularyMemoryPage() {
       setOpenIndices([]);
       setMatchedIds([]);
       setMoves(0);
+      setCombo(0);
+      setFeedbackFx(null);
       setCards(buildDeck(items));
     },
     [clearPendingTimer],
@@ -89,7 +95,6 @@ export default function BookVocabularyMemoryPage() {
     }
     return () => {
       clearPendingTimer();
-      cancelPronunciation();
     };
   }, [clearPendingTimer, resetRound, vocabSet]);
 
@@ -97,28 +102,35 @@ export default function BookVocabularyMemoryPage() {
     return (
       <AppShell activeNav="study" className="standard-page">
         <PageHeader backTo="/livro/intro/vocabulario" title="Jogo da Memória" />
-        <section className="empty-state">
-          <h2>Conjunto não encontrado</h2>
-          <PrimaryButton onClick={() => navigate("/livro/intro/vocabulario")}>
-            Voltar ao vocabulário
-          </PrimaryButton>
-        </section>
+        <div className="activity-page-container">
+          <section className="empty-state">
+            <h2 className="empty-state__title">Conjunto não encontrado</h2>
+            <p className="empty-state__body">
+              Volte ao vocabulário do Livro Intro para escolher um conjunto.
+            </p>
+            <button
+              className="btn-3d-primary"
+              onClick={() => navigate("/livro/intro/vocabulario")}
+              type="button"
+            >
+              Voltar ao vocabulário
+            </button>
+          </section>
+        </div>
       </AppShell>
     );
   }
 
   const totalPairs = Math.floor(cards.length / 2);
   const done = totalPairs > 0 && matchedIds.length === totalPairs;
+  const progress =
+    totalPairs > 0 ? Math.round((matchedIds.length / totalPairs) * 100) : 0;
 
   function handleCardClick(index: number) {
     if (lockedRef.current || done) return;
     const card = cards[index];
     if (!card) return;
     if (matchedIds.includes(card.pairId) || openIndices.includes(index)) return;
-
-    if (card.side === "en") {
-      speakEnglish(card.item.en);
-    }
 
     const nextOpen = [...openIndices, index];
     setOpenIndices(nextOpen);
@@ -133,10 +145,17 @@ export default function BookVocabularyMemoryPage() {
     const first = cards[firstIdx];
     const second = cards[secondIdx];
 
-    if (first && second && first.pairId === second.pairId && first.side !== second.side) {
+    if (
+      first &&
+      second &&
+      first.pairId === second.pairId &&
+      first.side !== second.side
+    ) {
       const nextMatched = [...matchedIds, first.pairId];
       setMatchedIds(nextMatched);
       setOpenIndices([]);
+      setCombo((prev) => prev + 1);
+      setFeedbackFx({ id: Date.now(), kind: "match" });
       lockedRef.current = false;
       setLocked(false);
 
@@ -152,114 +171,137 @@ export default function BookVocabularyMemoryPage() {
       return;
     }
 
+    setCombo(0);
+    setFeedbackFx({ id: Date.now(), kind: "mismatch" });
     clearPendingTimer();
     mismatchTimerRef.current = setTimeout(() => {
       mismatchTimerRef.current = null;
       setOpenIndices([]);
+      setFeedbackFx(null);
       lockedRef.current = false;
       setLocked(false);
     }, MISMATCH_DELAY_MS);
   }
 
   return (
-    <AppShell className="standard-page" hideNavigation>
-      <PageHeader
-        onBack={() => navigate("/livro/intro/vocabulario")}
-        title={`Memória · ${vocabSet.title}`}
-      />
+    <AppShell className="memory-session-page" hideNavigation>
+      <header className="fc-topbar">
+        <button
+          aria-label="Voltar para Vocabulário"
+          className="icon-btn-minimal"
+          onClick={() => navigate("/livro/intro/vocabulario")}
+          type="button"
+        >
+          <AppIcon name="close" size={20} strokeWidth={1.8} />
+        </button>
 
-      <section className="page-lead compact">
-        <span className="eyebrow">Livro Intro · Vocabulário</span>
-        <h2>Encontre os {totalPairs} pares</h2>
-        <p>
-          Combine a carta em inglês com a tradução em português. Tentativas:{" "}
-          <strong>{moves}</strong> · Pares encontrados:{" "}
-          <strong>
-            {matchedIds.length}/{totalPairs}
-          </strong>
-        </p>
-      </section>
+        <div
+          aria-label={`Pares encontrados: ${matchedIds.length} de ${totalPairs}`}
+          aria-valuemax={totalPairs}
+          aria-valuemin={0}
+          aria-valuenow={matchedIds.length}
+          className="fc-topbar__progress"
+          role="progressbar"
+        >
+          <span className="fc-topbar__fill" style={{ width: `${progress}%` }} />
+        </div>
 
-      {done && (
-        <section className="section-card" role="status" style={{ marginBottom: 18 }}>
-          <span className="eyebrow">Rodada concluída · +{ROUND_XP} XP</span>
-          <h3>Parabéns! Todos os pares encontrados em {moves} tentativas.</h3>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
-            <PrimaryButton
-              icon={<AppIcon name="refresh" size={18} />}
-              onClick={() => resetRound(vocabSet.items)}
-            >
-              Jogar novamente
-            </PrimaryButton>
-            <PrimaryButton
-              icon={<AppIcon name="book" size={18} />}
-              onClick={() => navigate("/livro/intro/vocabulario")}
-              variant="secondary"
-            >
-              Outros conjuntos
-            </PrimaryButton>
-          </div>
-        </section>
-      )}
+        <span className="fc-counter-pill">
+          {matchedIds.length}/{totalPairs}
+        </span>
+      </header>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(135px, 1fr))",
-          gap: 12,
-        }}
-      >
-        {cards.map((card, index) => {
-          const isMatched = matchedIds.includes(card.pairId);
-          const isRevealed = isMatched || openIndices.includes(index);
-          return (
-            <button
-              aria-label={
-                isRevealed
-                  ? `${card.side === "en" ? card.item.en : card.item.pt}`
-                  : `Virar carta ${index + 1}`
-              }
-              aria-pressed={isRevealed}
-              className="section-card"
-              disabled={isMatched || locked || openIndices.includes(index)}
-              key={card.uid}
-              onClick={() => handleCardClick(index)}
-              style={{
-                minHeight: 132,
-                padding: 12,
-                display: "grid",
-                placeItems: "center",
-                textAlign: "center",
-                gap: 6,
-                cursor: isMatched ? "default" : "pointer",
-                opacity: isMatched ? 0.72 : 1,
-                border: isMatched
-                  ? "2px solid #16a34a"
-                  : isRevealed
-                    ? "2px solid #2563eb"
-                    : undefined,
-              }}
-              type="button"
-            >
-              {isRevealed ? (
-                card.side === "en" ? (
-                  <>
-                    <BookVisual item={card.item} size={48} />
-                    <strong>{card.item.en}</strong>
-                    <small>EN-US</small>
-                  </>
+      <div className="memory-body">
+        <div className="memory-stats">
+          <span>
+            <strong>{vocabSet.title}</strong> · Combine {totalPairs} pares
+          </span>
+          {combo >= 2 && (
+            <span className="combo-pill" aria-live="polite">
+              {combo} pares seguidos!
+            </span>
+          )}
+          <span>
+            Tentativas: <strong>{moves}</strong>
+          </span>
+        </div>
+
+        {done && (
+          <section className="activity-completion" role="status">
+            <span className="activity-completion__icon" aria-hidden="true">
+              <AppIcon name="check" size={30} />
+            </span>
+            <span className="activity-completion__kicker">
+              Rodada concluída · +{ROUND_XP} XP
+            </span>
+            <h3>Todos os pares encontrados em {moves} tentativas!</h3>
+            <p>Continue treinando para fixar o vocabulário em inglês.</p>
+            <div className="activity-completion__actions">
+              <button
+                className="btn-3d-primary"
+                onClick={() => resetRound(vocabSet.items)}
+                type="button"
+              >
+                <AppIcon name="refresh" size={18} />
+                <span>Jogar novamente</span>
+              </button>
+              <button
+                className="btn-pill-outline"
+                onClick={() => navigate("/livro/intro/vocabulario")}
+                type="button"
+              >
+                <AppIcon name="book" size={18} />
+                <span>Outros conjuntos</span>
+              </button>
+            </div>
+          </section>
+        )}
+
+        <div className="memory-grid">
+          {cards.map((card, index) => {
+            const isMatched = matchedIds.includes(card.pairId);
+            const isOpen = openIndices.includes(index);
+            const isRevealed = isMatched || isOpen;
+            const isMismatching =
+              isOpen && locked && feedbackFx?.kind === "mismatch";
+            return (
+              <button
+                aria-label={
+                  isRevealed
+                    ? `${card.side === "en" ? card.item.en : card.item.pt}`
+                    : `Virar carta ${index + 1}`
+                }
+                aria-pressed={isRevealed}
+                className={`memory-tile${isRevealed ? " is-revealed" : ""}${
+                  isMatched ? " is-matched" : ""
+                }${isMismatching ? " is-mismatching" : ""}`}
+                disabled={isMatched || locked || openIndices.includes(index)}
+                key={card.uid}
+                onClick={() => handleCardClick(index)}
+                type="button"
+              >
+                {isRevealed ? (
+                  card.side === "en" ? (
+                    <>
+                      <BookVisual item={card.item} size={46} />
+                      <strong className="memory-tile__text">{card.item.en}</strong>
+                      <small className="memory-tile__lang">EN-US</small>
+                    </>
+                  ) : (
+                    <>
+                      <span className="memory-tile__lang">PT-BR</span>
+                      <strong className="memory-tile__text">{card.item.pt}</strong>
+                    </>
+                  )
                 ) : (
-                  <>
-                    <span className="eyebrow">PT-BR</span>
-                    <strong>{card.item.pt}</strong>
-                  </>
-                )
-              ) : (
-                <AppIcon name="grid" size={24} />
-              )}
-            </button>
-          );
-        })}
+                  <span className="memory-tile__back-emblem" aria-hidden="true">
+                    <AppIcon name="grid" size={20} />
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </AppShell>
   );

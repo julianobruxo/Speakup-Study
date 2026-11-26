@@ -11,9 +11,11 @@ export default function GradientText({
   className = "",
 }: PropsWithChildren<GradientTextProps>) {
   return (
-    <Tag className={`gradient-text font-display font-bold ${className}`}>
+    <Tag
+      className={`font-bold tracking-tight ${className}`}
+      style={{ color: "var(--text-primary)" }}
+    >
       {children}
     </Tag>
   );
 }
-

@@ -12,13 +12,12 @@ import AppDialog from "../components/AppDialog";
 import AppIcon from "../components/AppIcon";
 import PresentTobeStudyDialog from "../components/PresentTobeStudyDialog";
 import Toast from "../components/Toast";
-import {
-  AppShell,
-  PageHeader,
-  PrimaryButton,
-} from "../components/AppShell";
+import { AppShell } from "../components/AppShell";
 import { PRESENT_TOBE_QUESTIONS } from "../content/data/presentTobeQuestions";
-import type { MvpGrammarDifficulty } from "../content/model/content";
+import type {
+  GrammarPracticeQuestion,
+  MvpGrammarDifficulty,
+} from "../content/model/content";
 import {
   isSoundEnabled,
   playSound,
@@ -34,11 +33,11 @@ import {
   recordQuestionAnswer,
   saveCompletedSession,
 } from "../services/progress/localProgress";
-import type { GrammarPracticeQuestion } from "../content/model/content";
 import {
   recordGrammarAnswerEngagement,
   recordGrammarSessionEngagement,
 } from "../services/progress/engagement";
+import "../styles/activities.css";
 
 const CORRECT_TRANSITION_MS = 2000;
 
@@ -61,8 +60,12 @@ export default function PracticeSessionPage() {
   const [finished, setFinished] = useState(false);
   const [sessionCompleted, setSessionCompleted] = useState(false);
   const [sound, setSound] = useState(isSoundEnabled);
-  const [questions, setQuestions] = useState<GrammarPracticeQuestion[] | null>(null);
-  const [savedQuestionCount, setSavedQuestionCount] = useState<number | null>(null);
+  const [questions, setQuestions] = useState<GrammarPracticeQuestion[] | null>(
+    null,
+  );
+  const [savedQuestionCount, setSavedQuestionCount] = useState<number | null>(
+    null,
+  );
   const [storageWarning, setStorageWarning] = useState("");
   const feedbackRef = useRef<HTMLDivElement>(null);
   const historyActionRef = useRef<(() => void) | null>(null);
@@ -91,7 +94,9 @@ export default function PracticeSessionPage() {
       })
       .catch(() => {
         if (!active) return;
-        setStorageWarning("O progresso local não pôde ser carregado. A rodada continua normalmente.");
+        setStorageWarning(
+          "O progresso local não pôde ser carregado. A rodada continua normalmente.",
+        );
         setQuestions(
           selectPracticeQuestions(
             PRESENT_TOBE_QUESTIONS,
@@ -118,10 +123,9 @@ export default function PracticeSessionPage() {
   );
   const isCorrect =
     confirmed && selectedOption === currentQuestion?.correctAnswer;
-  const progress =
-    questions
-      ? ((currentIndex + (confirmed ? 1 : 0)) / questions.length) * 100
-      : 0;
+  const progress = questions
+    ? ((currentIndex + (confirmed ? 1 : 0)) / questions.length) * 100
+    : 0;
 
   useEffect(() => {
     if (finished) return;
@@ -260,9 +264,9 @@ export default function PracticeSessionPage() {
         )
         .then(() => undefined)
         .catch(() => {
-        setStorageWarning(
-          "Esta resposta não pôde ser salva no dispositivo. A rodada continua normalmente.",
-        );
+          setStorageWarning(
+            "Esta resposta não pôde ser salva no dispositivo. A rodada continua normalmente.",
+          );
         });
       answerWritesRef.current.push(write);
     }
@@ -340,14 +344,26 @@ export default function PracticeSessionPage() {
   if (!questions || !currentQuestion) {
     return (
       <AppShell className="session-page" hideNavigation>
-        <PageHeader
-          onBack={() => navigate("/gramatica/present_tobe", { replace: true })}
-          title="Verbo TO BE — presente"
-        />
-        <section className="session-loading" aria-live="polite">
-          <AppIcon name="refresh" size={24} />
-          <strong>Preparando sua rodada...</strong>
-        </section>
+        <header className="fc-topbar">
+          <button
+            aria-label="Voltar"
+            className="icon-btn-minimal"
+            onClick={() => navigate("/gramatica/present_tobe", { replace: true })}
+            type="button"
+          >
+            <AppIcon name="close" size={20} strokeWidth={1.8} />
+          </button>
+          <div className="fc-topbar__progress">
+            <span className="fc-topbar__fill" style={{ width: "0%" }} />
+          </div>
+          <span className="fc-counter-pill">...</span>
+        </header>
+        <div className="practice-session-body" style={{ justifyContent: "center" }}>
+          <section className="empty-state" aria-live="polite">
+            <AppIcon name="refresh" size={26} />
+            <h2 className="empty-state__title">Preparando sua rodada...</h2>
+          </section>
+        </div>
         <Toast message={storageWarning} />
       </AppShell>
     );
@@ -378,77 +394,92 @@ export default function PracticeSessionPage() {
 
   return (
     <AppShell className="session-page" hideNavigation>
-      <PageHeader
-        action={
-          <button
-            aria-label={sound ? "Desativar sons" : "Ativar sons"}
-            className="icon-button"
-            onClick={toggleSound}
-          >
-            <AppIcon name={sound ? "volume" : "volume-off"} size={20} />
-          </button>
-        }
-        onBack={() => setShowExit(true)}
-        title="Verbo TO BE — presente"
-      />
+      <header className="fc-topbar">
+        <button
+          aria-label="Sair da sessão"
+          className="icon-btn-minimal"
+          onClick={() => setShowExit(true)}
+          type="button"
+        >
+          <AppIcon name="close" size={20} strokeWidth={1.8} />
+        </button>
 
-      <section className="session-meta">
-        <div>
+        <div
+          aria-label={`${Math.round(progress)}% da sessão concluída`}
+          aria-valuemax={100}
+          aria-valuemin={0}
+          aria-valuenow={Math.round(progress)}
+          className="fc-topbar__progress"
+          role="progressbar"
+        >
+          <motion.span
+            animate={{ width: `${progress}%` }}
+            className="fc-topbar__fill"
+            transition={{ duration: reduceMotion ? 0 : 0.25 }}
+          />
+        </div>
+
+        <button
+          aria-label={sound ? "Desativar sons" : "Ativar sons"}
+          className="icon-btn-minimal"
+          onClick={toggleSound}
+          type="button"
+        >
+          <AppIcon name={sound ? "volume" : "volume-off"} size={19} />
+        </button>
+      </header>
+
+      <div className="practice-session-body">
+        <div className="practice-session-meta">
           <span>
             {difficulty === "easy" ? "Fácil" : "Médio"} · Questão{" "}
-            {currentIndex + 1} de {questions.length}
+            <strong className="tabular-nums">
+              {currentIndex + 1} de {questions.length}
+            </strong>
           </span>
-          <strong>
-            {streak > 1
-              ? `${streak} acertos seguidos`
-              : "Escolha a melhor alternativa"}
-          </strong>
+          {streak > 1 ? (
+            <span className="combo-pill">{streak} seguidos!</span>
+          ) : (
+            <span>Verbo TO BE</span>
+          )}
         </div>
-      </section>
 
-      <div
-        aria-label={`${Math.round(progress)}% da sessão concluída`}
-        aria-valuemax={100}
-        aria-valuemin={0}
-        aria-valuenow={Math.round(progress)}
-        className="session-progress"
-        role="progressbar"
-      >
-        <motion.i
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: reduceMotion ? 0 : 0.25 }}
-        />
-      </div>
+        <AnimatePresence mode="wait">
+          <motion.section
+            animate={{ opacity: 1, x: 0 }}
+            className="practice-question-card"
+            exit={{ opacity: 0, x: reduceMotion ? 0 : -16 }}
+            initial={{ opacity: 0, x: reduceMotion ? 0 : 16 }}
+            key={currentQuestion.id}
+            transition={{ duration: reduceMotion ? 0 : 0.2 }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <span className="pill-tag pill-tag--blue" style={{ width: "fit-content" }}>
+                Complete a frase
+              </span>
+              <h1>{currentQuestion.question}</h1>
+            </div>
 
-      <AnimatePresence mode="wait">
-        <motion.section
-          animate={{ opacity: 1, x: 0 }}
-          className="question-card"
-          exit={{ opacity: 0, x: reduceMotion ? 0 : -18 }}
-          initial={{ opacity: 0, x: reduceMotion ? 0 : 18 }}
-          key={currentQuestion.id}
-          transition={{ duration: reduceMotion ? 0 : 0.2 }}
-        >
-          <div className="question-prompt">
-            <span className="question-label">Complete a frase</span>
-            <h1>{currentQuestion.question}</h1>
-          </div>
-          <div className="question-response">
-            <div className="answer-options" role="radiogroup" aria-label="Alternativas">
+            <div
+              className="practice-options-list"
+              role="radiogroup"
+              aria-label="Alternativas"
+            >
               {options.map((option, index) => {
                 const selected = selectedOption === option;
-                const correct = confirmed && option === currentQuestion.correctAnswer;
+                const correct =
+                  confirmed && option === currentQuestion.correctAnswer;
                 const wrong = confirmed && selected && !correct;
                 const dimmed = confirmed && !correct && !wrong;
                 return (
                   <motion.button
                     aria-checked={selected}
                     className={[
+                      "practice-option-btn",
                       selected ? "selected" : "",
                       correct ? "correct" : "",
                       wrong ? "wrong" : "",
                       dimmed ? "dimmed" : "",
-                      confirmed ? "locked" : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
@@ -456,9 +487,12 @@ export default function PracticeSessionPage() {
                     key={option}
                     onClick={() => chooseOption(option)}
                     role="radio"
+                    type="button"
                     whileTap={confirmed ? undefined : { scale: 0.99 }}
                   >
-                    <span>{String.fromCharCode(65 + index)}</span>
+                    <span className="practice-option-btn__letter">
+                      {String.fromCharCode(65 + index)}
+                    </span>
                     <strong>{option}</strong>
                     {correct && <AppIcon name="check" size={19} />}
                     {wrong && <AppIcon name="close" size={19} />}
@@ -473,17 +507,15 @@ export default function PracticeSessionPage() {
                   animate={{ opacity: 1, y: 0 }}
                   aria-label="Resposta correta. Próxima questão em 2 segundos."
                   aria-live="polite"
-                  className="answer-feedback correct correct-transition"
+                  className="status-banner status-banner--success"
                   initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
                   key="correct"
                   ref={feedbackRef}
                   role="status"
                   tabIndex={-1}
                 >
-                  <span className="feedback-icon">
-                    <AppIcon name="check" size={20} />
-                  </span>
-                  <div className="correct-transition-copy">
+                  <AppIcon name="check" size={20} />
+                  <div style={{ flex: 1 }}>
                     <strong>Correto!</strong>
                     <div
                       aria-label="Avanço automático em 2 segundos"
@@ -503,7 +535,7 @@ export default function PracticeSessionPage() {
                 <motion.div
                   animate={{ opacity: 1, y: 0 }}
                   aria-live="polite"
-                  className="answer-feedback wrong"
+                  className="status-banner status-banner--error"
                   initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
                   key="wrong"
                   onClick={(event) => {
@@ -513,25 +545,24 @@ export default function PracticeSessionPage() {
                   ref={feedbackRef}
                   role="status"
                   tabIndex={-1}
+                  style={{ cursor: "pointer", alignItems: "flex-start" }}
                 >
-                  <span className="feedback-icon">
-                    <AppIcon name="book" size={20} />
-                  </span>
-                  <div className="wrong-feedback-copy">
-                    <strong>Vamos entender.</strong>
-                    <span>
-                      Resposta correta: <b>{currentQuestion.correctAnswer}</b>
-                    </span>
-                    <p>{currentQuestion.feedback}</p>
+                  <AppIcon name="book" size={20} />
+                  <div className="wrong-feedback-box">
+                    <strong>
+                      Resposta correta: {currentQuestion.correctAnswer}
+                    </strong>
+                    <p style={{ margin: 0 }}>{currentQuestion.feedback}</p>
                     <div className="wrong-feedback-footer">
                       <button
-                        className="study-topic-button"
+                        className="btn-pill-outline"
                         onClick={openStudy}
                         ref={studyTriggerRef}
+                        style={{ minHeight: 36, padding: "0 14px", fontSize: "var(--text-xs)" }}
                         type="button"
                       >
-                        <AppIcon name="book" size={17} />
-                        Estudar esse tópico
+                        <AppIcon name="book" size={15} />
+                        <span>Estudar esse tópico</span>
                       </button>
                       <small>Toque no card para continuar</small>
                     </div>
@@ -541,29 +572,37 @@ export default function PracticeSessionPage() {
             </AnimatePresence>
 
             {!isCorrect && (
-              <div className="session-action">
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
                 {!confirmed ? (
-                  <PrimaryButton
+                  <button
+                    className="btn-3d-primary"
                     disabled={!selectedOption}
                     onClick={confirmAnswer}
+                    style={{ width: "100%" }}
+                    type="button"
                   >
                     Confirmar resposta
-                  </PrimaryButton>
+                  </button>
                 ) : (
-                  <PrimaryButton
-                    icon={<AppIcon name="chevron-right" />}
+                  <button
+                    className="btn-3d-primary"
                     onClick={advanceIncorrect}
+                    style={{ width: "100%" }}
+                    type="button"
                   >
-                    {currentIndex === questions.length - 1
-                      ? "Ver resultado"
-                      : "Continuar"}
-                  </PrimaryButton>
+                    <span>
+                      {currentIndex === questions.length - 1
+                        ? "Ver resultado"
+                        : "Continuar"}
+                    </span>
+                    <AppIcon name="chevron-right" size={18} />
+                  </button>
                 )}
               </div>
             )}
-          </div>
-        </motion.section>
-      </AnimatePresence>
+          </motion.section>
+        </AnimatePresence>
+      </div>
 
       {selectedOption && (
         <PresentTobeStudyDialog
@@ -578,18 +617,20 @@ export default function PracticeSessionPage() {
       <AppDialog
         actions={
           <>
-            <PrimaryButton
+            <button
+              className="btn-pill-outline"
               onClick={() => setShowExit(false)}
-              variant="secondary"
+              type="button"
             >
-                Continuar praticando
-            </PrimaryButton>
-            <PrimaryButton
+              Continuar praticando
+            </button>
+            <button
+              className="btn-danger-outline"
               onClick={() => leaveSession("/gramatica/present_tobe")}
-              variant="quiet"
+              type="button"
             >
               Sair da sessão
-            </PrimaryButton>
+            </button>
           </>
         }
         description="As respostas já confirmadas ficam salvas, mas uma rodada interrompida não entra no histórico de sessões."
@@ -639,91 +680,77 @@ function ResultScreen({
 
   return (
     <AppShell className="result-page" hideNavigation>
-      {!reduceMotion && (
-        <div className="confetti" aria-hidden="true">
-          {Array.from({ length: 18 }, (_, index) => (
-            <motion.i
-              animate={{ opacity: [0, 1, 0], y: [0, 150], rotate: index * 38 }}
-              key={index}
-              style={{ left: `${5 + ((index * 29) % 90)}%` }}
-              transition={{ delay: index * 0.035, duration: 1.4 }}
-            />
-          ))}
-        </div>
-      )}
       <div className="result-layout">
         <motion.section
           animate={{ scale: 1 }}
-          className="result-hero"
+          className="result-hero-card"
           initial={{ scale: reduceMotion ? 1 : 0.98 }}
-          transition={{ duration: reduceMotion ? 0 : 0.28 }}
+          transition={{ duration: reduceMotion ? 0 : 0.24 }}
         >
-          <span className="result-burst" aria-hidden="true" />
-          <span className="result-icon">
-            <AppIcon name="trophy" size={40} />
+          <span className="result-trophy-badge" aria-hidden="true">
+            <AppIcon name="trophy" size={34} />
           </span>
-          <span className="eyebrow">Sessão concluída</span>
-          <h1>{message}</h1>
-          <p>
+          <span className="pill-tag pill-tag--blue">Sessão concluída</span>
+          <h1 style={{ fontSize: "var(--text-3xl)", fontWeight: 700 }}>{message}</h1>
+          <p style={{ color: "var(--text-secondary)" }}>
             Você completou o desafio de Verbo TO BE — presente no nível{" "}
             {difficulty === "easy" ? "Fácil" : "Médio"}.
           </p>
-          <p className="result-progress-copy">
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)" }}>
             {savedQuestionCount === null
               ? "Salvando seu progresso neste dispositivo..."
               : `Você já praticou ${savedQuestionCount} das 130 questões disponíveis.`}
           </p>
         </motion.section>
 
-        <div className="result-summary">
-          <section className="score-panel">
-            <div
-              className="score-ring"
-              style={{ "--score": percentage } as CSSProperties}
-            >
+        <section className="result-summary-card">
+          <div
+            className="score-ring-visual"
+            style={{ "--score": percentage } as CSSProperties}
+          >
+            <div className="score-ring-visual__inner">
               <strong>{percentage}%</strong>
               <span>de acertos</span>
             </div>
-            <div className="score-stats">
-              <div>
-                <strong>{count}</strong>
-                <span>Total</span>
-              </div>
-              <div>
-                <strong>{correct}</strong>
-                <span>Acertos</span>
-              </div>
-              <div>
-                <strong>{wrong}</strong>
-                <span>Erros</span>
-              </div>
-              <div>
-                <strong>{bestStreak}</strong>
-                <span>Melhor sequência</span>
-              </div>
-              <div>
-                <strong>+{xpEarned}</strong>
-                <span>XP na rodada</span>
-              </div>
-            </div>
-          </section>
-
-          <div className="result-actions">
-            <PrimaryButton icon={<AppIcon name="refresh" />} onClick={onRestart}>
-              Jogar novamente
-            </PrimaryButton>
-            <PrimaryButton onClick={onChange} variant="secondary">
-              Trocar configuração
-            </PrimaryButton>
-            <PrimaryButton
-              icon={<AppIcon name="home" size={19} />}
-              onClick={onHome}
-              variant="quiet"
-            >
-              Voltar à home
-            </PrimaryButton>
           </div>
-        </div>
+
+          <div className="score-stats-grid">
+            <div className="score-stat-cell">
+              <strong>{count}</strong>
+              <span>Total</span>
+            </div>
+            <div className="score-stat-cell">
+              <strong>{correct}</strong>
+              <span>Acertos</span>
+            </div>
+            <div className="score-stat-cell">
+              <strong>{wrong}</strong>
+              <span>Erros</span>
+            </div>
+            <div className="score-stat-cell">
+              <strong>{bestStreak}</strong>
+              <span>Sequência</span>
+            </div>
+            <div className="score-stat-cell">
+              <strong>+{xpEarned}</strong>
+              <span>XP</span>
+            </div>
+          </div>
+
+          <div className="activity-completion__actions">
+            <button className="btn-3d-primary" onClick={onRestart} type="button">
+              <AppIcon name="refresh" size={18} />
+              <span>Jogar novamente</span>
+            </button>
+            <button className="btn-pill-outline" onClick={onChange} type="button">
+              Trocar configuração
+            </button>
+            <button className="btn-soft" onClick={onHome} type="button">
+              <AppIcon name="home" size={18} />
+              <span>Voltar à home</span>
+            </button>
+          </div>
+        </section>
       </div>
       <Toast message={storageWarning} />
     </AppShell>
@@ -738,4 +765,3 @@ function parseCount(value: string | null): 10 | 20 | 30 {
   const parsed = Number(value);
   return parsed === 20 || parsed === 30 ? parsed : 10;
 }
-

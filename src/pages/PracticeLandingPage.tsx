@@ -8,6 +8,7 @@ import {
 } from "../content/taxonomy";
 import { GRAMMAR_COURSE_IDS } from "../content/data/grammarCourses";
 import { useProgressSummary } from "../services/progress/useProgressSummary";
+import "../styles/activities.css";
 
 type StudyFilter = "all" | "grammar" | "vocabulary" | "review";
 
@@ -37,7 +38,8 @@ export default function PracticeLandingPage() {
               action: () =>
                 navigate(
                   `/gramatica/present_tobe?difficulty=${
-                    (summary?.mediumReviewCount ?? 0) > (summary?.easyReviewCount ?? 0)
+                    (summary?.mediumReviewCount ?? 0) >
+                    (summary?.easyReviewCount ?? 0)
                       ? "medium"
                       : "easy"
                   }&count=10`,
@@ -66,16 +68,22 @@ export default function PracticeLandingPage() {
                       ? `${practiced} de 130 questões praticadas.`
                       : topic.description,
                   available: topic.availabilityStatus === "available",
-                  action: () => navigate(
-                    topic.id === "simple_past"
-                      ? "/passado/home"
-                      : topic.id === "present_tobe"
-                        ? "/gramatica/present_tobe"
-                        : GRAMMAR_COURSE_IDS.includes(topic.id as (typeof GRAMMAR_COURSE_IDS)[number])
-                          ? `/gramatica/${topic.id}`
-                          : "/gramatica",
-                  ),
-                  tag: topic.availabilityStatus === "available" ? "Disponível" : "Em breve",
+                  action: () =>
+                    navigate(
+                      topic.id === "simple_past"
+                        ? "/livro/intro/gramatica/simple-past"
+                        : topic.id === "present_tobe"
+                          ? "/gramatica/present_tobe"
+                          : GRAMMAR_COURSE_IDS.includes(
+                                topic.id as (typeof GRAMMAR_COURSE_IDS)[number],
+                              )
+                            ? `/gramatica/${topic.id}`
+                            : "/gramatica",
+                    ),
+                  tag:
+                    topic.availabilityStatus === "available"
+                      ? "Disponível"
+                      : "Em breve",
                 })),
               ]
             : []),
@@ -90,85 +98,132 @@ export default function PracticeLandingPage() {
                   action: () => navigate("/livro/intro/vocabulario"),
                   tag: "Livro Intro",
                 },
-                ...ACTIVE_VOCABULARY_CATEGORIES
-                  .filter((category) => category.availabilityStatus === "available" && (category.id === "body" || category.id === "irregular_verbs"))
-                  .map((category) => ({
-                    id: category.id,
-                    title: category.id === "body" ? "Partes do corpo" : category.title,
-                    description: category.description,
-                    available: category.id === "body" || category.id === "irregular_verbs",
-                    action: () => navigate(category.id === "irregular_verbs" ? "/passado/flash" : "/vocabulario/body"),
-                    tag: category.id === "body" ? "24 cards" : category.id === "irregular_verbs" ? "104 verbos + áudio" : "Em breve",
-                  })),
+                ...ACTIVE_VOCABULARY_CATEGORIES.filter(
+                  (category) =>
+                    category.availabilityStatus === "available" &&
+                    (category.id === "body" || category.id === "irregular_verbs"),
+                ).map((category) => ({
+                  id: category.id,
+                  title:
+                    category.id === "body" ? "Partes do corpo" : category.title,
+                  description: category.description,
+                  available:
+                    category.id === "body" || category.id === "irregular_verbs",
+                  action: () =>
+                    navigate(
+                      category.id === "irregular_verbs"
+                        ? "/livro/intro/vocabulario"
+                        : "/vocabulario/body",
+                    ),
+                  tag:
+                    category.id === "body"
+                      ? "24 cards"
+                      : category.id === "irregular_verbs"
+                        ? "104 verbos + áudio"
+                        : "Em breve",
+                })),
               ]
             : []),
         ];
 
   return (
-    <AppShell activeNav="study" className="standard-page study-library-page">
-      <div className="learn-layout">
-        <section className="learn-hero">
-          <div className="section-eyebrow">Biblioteca de aprendizagem</div>
-          <h1>Escolha o que quer dominar hoje.</h1>
-          <p>
-            Conteúdos organizados por habilidade, com uma trilha clara entre estudar,
-            praticar e revisar.
-          </p>
-          <div className="filter-row" role="group" aria-label="Filtrar conteúdo">
-            {FILTERS.map((option) => (
-              <button
-                aria-pressed={filter === option.id}
-                className={`filter-chip ${filter === option.id ? "active" : ""}`}
-                key={option.id}
-                onClick={() => setFilter(option.id)}
+    <AppShell activeNav="study" className="standard-page">
+      <div className="activity-page-container">
+        <div className="learn-layout">
+          <section style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div className="activity-lead-card">
+              <span className="pill-tag pill-tag--blue" style={{ width: "fit-content" }}>
+                Biblioteca de aprendizagem
+              </span>
+              <h1>Escolha o que quer dominar hoje.</h1>
+              <p>
+                Conteúdos organizados por habilidade, com uma trilha clara entre
+                estudar, praticar e revisar.
+              </p>
+              <div
+                className="filter-row"
+                role="group"
+                aria-label="Filtrar conteúdo"
+                style={{ marginTop: 8 }}
               >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          {filter === "review" && !cards.length ? (
-            <div className="library-empty">
-              <span><AppIcon name="check" size={26} /></span>
-              <h2>Nenhuma questão para revisar.</h2>
-              <p>Seus erros mais recentes aparecerão aqui.</p>
+                {FILTERS.map((option) => (
+                  <button
+                    aria-pressed={filter === option.id}
+                    className={`filter-chip ${filter === option.id ? "active" : ""}`}
+                    key={option.id}
+                    onClick={() => setFilter(option.id)}
+                    type="button"
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          ) : (
-            <div className="topic-grid">
-              {cards.map((card) => (
-                <button
-                  aria-disabled={!card.available}
-                  className={`topic-card ${card.available ? "available" : ""}`}
-                  key={card.id}
-                  onClick={card.available ? card.action : undefined}
-                >
-                  <span className="tag">{card.tag}</span>
-                  <strong>{card.title}</strong>
-                  <p>{card.description}</p>
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
 
-        <aside className="route-card">
-          <div className="section-eyebrow">Rota recomendada</div>
-          <h2>Fundamentos do inglês</h2>
-          <p>Uma sequência curta para consolidar o básico antes de avançar.</p>
-          <div className="route-progress">
-            <span style={{ width: `${Math.min(100, Math.round((practiced / 20) * 100))}%` }} />
-          </div>
-          <div className="route-list">
-            <RouteStep done={practiced >= 5} index={1} label="Present TO BE · afirmações" />
-            <RouteStep done={practiced >= 10} index={2} label="Present TO BE · negativas" />
-            <RouteStep done={practiced >= 15} index={3} label="Perguntas e respostas curtas" />
-            <RouteStep done={false} index={4} label="Partes do corpo" />
-            <RouteStep done={false} index={5} label="Revisão mista" />
-          </div>
-          <button className="secondary-button" onClick={() => navigate("/gramatica/present_tobe")}>
-            Continuar rota
-          </button>
-        </aside>
+            {filter === "review" && !cards.length ? (
+              <div className="empty-state">
+                <span className="activity-completion__icon" aria-hidden="true">
+                  <AppIcon name="check" size={26} />
+                </span>
+                <h2 className="empty-state__title">Nenhuma questão para revisar.</h2>
+                <p className="empty-state__body">
+                  Seus erros mais recentes aparecerão aqui.
+                </p>
+              </div>
+            ) : (
+              <div className="topic-grid">
+                {cards.map((card) => (
+                  <button
+                    aria-disabled={!card.available}
+                    className={`topic-card ${card.available ? "available" : ""}`}
+                    key={card.id}
+                    onClick={card.available ? card.action : undefined}
+                    type="button"
+                  >
+                    <span className="pill-tag pill-tag--blue">{card.tag}</span>
+                    <strong>{card.title}</strong>
+                    <p>{card.description}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <aside className="route-card">
+            <span className="pill-tag" style={{ width: "fit-content" }}>
+              Rota recomendada
+            </span>
+            <h2 style={{ fontSize: "var(--text-2xl)", fontWeight: 700 }}>
+              Fundamentos do inglês
+            </h2>
+            <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>
+              Uma sequência curta para consolidar o básico antes de avançar.
+            </p>
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${Math.min(100, Math.round((practiced / 20) * 100))}%`,
+                }}
+              />
+            </div>
+            <div className="route-list">
+              <RouteStep done={practiced >= 5} index={1} label="Present TO BE · afirmações" />
+              <RouteStep done={practiced >= 10} index={2} label="Present TO BE · negativas" />
+              <RouteStep done={practiced >= 15} index={3} label="Perguntas e respostas curtas" />
+              <RouteStep done={false} index={4} label="Partes do corpo" />
+              <RouteStep done={false} index={5} label="Revisão mista" />
+            </div>
+            <button
+              className="btn-pill-outline"
+              onClick={() => navigate("/gramatica/present_tobe")}
+              style={{ width: "100%" }}
+              type="button"
+            >
+              Continuar rota
+            </button>
+          </aside>
+        </div>
       </div>
     </AppShell>
   );
@@ -190,4 +245,3 @@ function RouteStep({
     </div>
   );
 }
-

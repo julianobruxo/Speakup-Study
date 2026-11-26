@@ -1,3 +1,5 @@
+import "../styles/estudar.css";
+
 interface BodyPartIllustrationProps {
   label: string;
   part: string;

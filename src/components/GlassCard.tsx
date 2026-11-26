@@ -13,10 +13,9 @@ export default function GlassCard({
   return (
     <div
       onClick={onClick}
-      className={`glass-card p-6 ${onClick ? "cursor-pointer active:scale-[0.98] transition-transform" : ""} ${className}`}
+      className={`surface-card p-6 ${onClick ? "surface-card--interactive cursor-pointer" : ""} ${className}`}
     >
       {children}
     </div>
   );
 }
-

@@ -47,16 +47,6 @@ assert(
   "there-is-there-are structure.affirmative must cover uncountables",
 );
 
-const schoolPageSource = readFileSync("src/pages/SchoolStudyPage.tsx", "utf8");
-assert(
-  !schoolPageSource.includes("TEACHER_REVIEW_PENDING_IDS"),
-  "SchoolStudyPage must expose all 10 approved grammar topics after teacher review",
-);
-assert(
-  /SCHOOL_GRAMMAR_TOPICS\.map\(/.test(schoolPageSource),
-  "SchoolStudyPage must render all SCHOOL_GRAMMAR_TOPICS",
-);
-
 // 2. Vocabulary sets: completeness, uniqueness, valid image paths
 assert.equal(SCHOOL_VOCABULARY_SETS.length, 10, "Expected 10 school vocabulary sets");
 const vocabSetIds = new Set();

@@ -2,7 +2,7 @@ import { motion, useReducedMotion, type PanInfo } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppIcon from "../components/AppIcon";
-import { AppShell, PageHeader, PrimaryButton } from "../components/AppShell";
+import { AppShell } from "../components/AppShell";
 import { getVocabularyEntriesByCategory } from "../content/data/vocabulary";
 import { VisualAsset } from "../content/assets/visualResolver";
 import {
@@ -19,9 +19,53 @@ import {
   recordFlashcardCompletion,
   recordFlashcardReveal,
 } from "../services/progress/engagement";
+import "../styles/activities.css";
 
 const BODY_PARTS = getVocabularyEntriesByCategory("body");
 const SWIPE_THRESHOLD = 70;
+
+function SpeakerFilledIcon() {
+  return (
+    <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M11.2 5.4c.5-.4 1.3-.05 1.3.6v12c0 .65-.8 1-1.3.6L7.1 15H4.5C3.67 15 3 14.33 3 13.5v-3C3 9.67 3.67 9 4.5 9h2.6l4.1-3.6Z"
+        fill="currentColor"
+      />
+      <path
+        d="M15.8 8.8a4.5 4.5 0 0 1 0 6.4M18.3 6.3a8 8 0 0 1 0 11.4"
+        stroke="currentColor"
+        strokeWidth="2.1"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function HeartMasteryBadge({ count }: { count: number }) {
+  return (
+    <span
+      className="fc-heart-badge"
+      title={`${count} palavras reveladas nesta sessão`}
+      aria-label={`${count} palavras reveladas`}
+    >
+      <svg aria-hidden="true" width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <path
+          d="M14 23.2c-.4 0-.8-.14-1.12-.4C8.4 19.1 4 15.4 4 10.6 4 7.45 6.48 5 9.6 5c1.78 0 3.45.84 4.4 2.18C14.95 5.84 16.62 5 18.4 5 21.52 5 24 7.45 24 10.6c0 4.8-4.4 8.5-8.88 12.2-.32.26-.72.4-1.12.4Z"
+          fill="#FF6E54"
+        />
+        <path
+          d="M8.5 8.2c-1.1.3-2 1.25-2.1 2.4"
+          stroke="#FFFFFF"
+          strokeOpacity="0.45"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+        <circle cx="21.5" cy="20.5" r="4.5" fill="#F78F1C" stroke="#F6F7FC" strokeWidth="1.4" />
+        <circle cx="21.5" cy="20.5" r="1.9" fill="#FFE45E" />
+      </svg>
+    </span>
+  );
+}
 
 export default function VocabularyFlashcardPage() {
   const navigate = useNavigate();
@@ -31,30 +75,43 @@ export default function VocabularyFlashcardPage() {
   const [completed, setCompleted] = useState(false);
   const [soundEnabled, setSoundPreference] = useState(isSoundEnabled);
   const [speechAvailable] = useState(isPronunciationAvailable);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [revealedCount, setRevealedCount] = useState(0);
   const [announcement, setAnnouncement] = useState("");
   const draggedRef = useRef(false);
   const completionIdRef = useRef(crypto.randomUUID());
   const revealedRunRef = useRef(new Set<string>());
+  const speakTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [completionXp, setCompletionXp] = useState(false);
   const entry = BODY_PARTS[currentIndex];
+
+  const clearSpeakTimer = useCallback(() => {
+    if (speakTimerRef.current !== null) {
+      clearTimeout(speakTimerRef.current);
+      speakTimerRef.current = null;
+    }
+    setIsSpeaking(false);
+  }, []);
 
   const goToCard = useCallback(
     (nextIndex: number) => {
       if (nextIndex < 0 || nextIndex >= BODY_PARTS.length) return;
       cancelPronunciation();
+      clearSpeakTimer();
       setFlipped(false);
       setCurrentIndex(nextIndex);
       setAnnouncement(
         `Flashcard ${nextIndex + 1} de ${BODY_PARTS.length}: ${
-          BODY_PARTS[nextIndex].translation
+          BODY_PARTS[nextIndex].term
         }.`,
       );
     },
-    [],
+    [clearSpeakTimer],
   );
 
   const finish = useCallback(() => {
     cancelPronunciation();
+    clearSpeakTimer();
     setFlipped(false);
     setCompleted(true);
     const validCompletion = revealedRunRef.current.size === BODY_PARTS.length;
@@ -64,7 +121,7 @@ export default function VocabularyFlashcardPage() {
       revealedRunRef.current.size,
     );
     setAnnouncement("Sessão de flashcards concluída.");
-  }, []);
+  }, [clearSpeakTimer]);
 
   const goNext = useCallback(() => {
     if (currentIndex === BODY_PARTS.length - 1) {
@@ -88,8 +145,9 @@ export default function VocabularyFlashcardPage() {
     return () => {
       window.removeEventListener(SOUND_PREFERENCE_EVENT, syncSound);
       cancelPronunciation();
+      clearSpeakTimer();
     };
-  }, []);
+  }, [clearSpeakTimer]);
 
   useEffect(() => {
     if (completed) return;
@@ -107,31 +165,46 @@ export default function VocabularyFlashcardPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [completed, goNext, goPrevious]);
 
+  function triggerSpeak(term: string) {
+    const spoken = speakEnglish(term);
+    if (spoken) {
+      setIsSpeaking(true);
+      if (speakTimerRef.current !== null) clearTimeout(speakTimerRef.current);
+      speakTimerRef.current = setTimeout(() => {
+        speakTimerRef.current = null;
+        setIsSpeaking(false);
+      }, 1100);
+    }
+    return spoken;
+  }
+
   function revealCard() {
     if (flipped) {
       cancelPronunciation();
+      clearSpeakTimer();
       setFlipped(false);
-      setAnnouncement(`${entry.translation}. Frente do flashcard.`);
+      setAnnouncement(`${entry.term}. Tradução oculta.`);
       return;
     }
 
     setFlipped(true);
     revealedRunRef.current.add(entry.id);
+    setRevealedCount(revealedRunRef.current.size);
     void recordFlashcardReveal(entry.id);
-    const spoken = speakEnglish(entry.term);
+    const spoken = triggerSpeak(entry.term);
     if (spoken) {
-      setAnnouncement(`${entry.term}. Pronúncia reproduzida.`);
+      setAnnouncement(`${entry.term}: ${entry.translation}. Pronúncia reproduzida.`);
     } else if (!speechAvailable) {
       setAnnouncement(
-        `${entry.term}. Não foi possível reproduzir a pronúncia neste dispositivo.`,
+        `${entry.term}: ${entry.translation}. Não foi possível reproduzir a pronúncia neste dispositivo.`,
       );
     } else {
-      setAnnouncement(`${entry.term}. O som está desativado.`);
+      setAnnouncement(`${entry.term}: ${entry.translation}. O som está desativado.`);
     }
   }
 
   function repeatPronunciation() {
-    const spoken = speakEnglish(entry.term);
+    const spoken = triggerSpeak(entry.term);
     if (spoken) {
       setAnnouncement(`${entry.term}. Pronúncia repetida.`);
     }
@@ -165,9 +238,11 @@ export default function VocabularyFlashcardPage() {
 
   function restart() {
     cancelPronunciation();
+    clearSpeakTimer();
     setCurrentIndex(0);
     setFlipped(false);
     setCompleted(false);
+    setRevealedCount(0);
     completionIdRef.current = crypto.randomUUID();
     revealedRunRef.current = new Set();
     setCompletionXp(false);
@@ -177,46 +252,69 @@ export default function VocabularyFlashcardPage() {
   if (completed) {
     return (
       <AppShell className="vocabulary-session-page" hideNavigation>
-        <PageHeader
-          onBack={() => navigate("/vocabulario/body")}
-          title="Partes do corpo"
-        />
-        <main className="flashcard-completion">
-          <span className="completion-icon" aria-hidden="true">
-            <AppIcon name="check" size={28} />
-          </span>
-          <span className="eyebrow">Sessão concluída</span>
-          <h2>Você concluiu Partes do corpo</h2>
-          <p className="completion-count">24 palavras estudadas</p>
-          <p className="completion-xp">
-            {completionXp
-              ? "+25 XP de conclusão"
-              : "Revele os 24 cards para ganhar o bônus de conclusão."}
-          </p>
-          <p>Agora revise as palavras sem olhar a tradução e tente usá-las em frases curtas.</p>
-          <div className="completion-actions">
-            <PrimaryButton
-              icon={<AppIcon name="grid" size={19} />}
-              onClick={() => navigate("/vocabulario")}
+        <div className="fc-page">
+          <header className="fc-topbar">
+            <button
+              aria-label="Voltar"
+              className="icon-btn-minimal"
+              onClick={() => navigate("/vocabulario/body")}
+              type="button"
             >
-              Estudar outro tema
-            </PrimaryButton>
-            <PrimaryButton
-              icon={<AppIcon name="refresh" size={19} />}
-              onClick={restart}
-              variant="secondary"
+              <AppIcon name="close" size={20} strokeWidth={1.8} />
+            </button>
+            <div
+              aria-label="Progresso: 100%"
+              aria-valuemax={BODY_PARTS.length}
+              aria-valuemin={1}
+              aria-valuenow={BODY_PARTS.length}
+              className="fc-topbar__progress"
+              role="progressbar"
             >
-              Rever os flashcards
-            </PrimaryButton>
-            <PrimaryButton
-              icon={<AppIcon name="home" size={19} />}
-              onClick={() => navigate("/")}
-              variant="quiet"
-            >
-              Voltar ao início
-            </PrimaryButton>
-          </div>
-        </main>
+              <span className="fc-topbar__fill" style={{ width: "100%" }} />
+            </div>
+            <HeartMasteryBadge count={revealedCount} />
+          </header>
+
+          <section className="activity-completion" role="status">
+            <span className="activity-completion__icon" aria-hidden="true">
+              <AppIcon name="check" size={30} />
+            </span>
+            <span className="activity-completion__kicker">Sessão concluída</span>
+            <h2>Você concluiu Partes do corpo</h2>
+            <p>
+              24 palavras estudadas ·{" "}
+              {completionXp
+                ? "+25 XP de conclusão"
+                : "Revele os 24 cards para ganhar o bônus de conclusão."}
+            </p>
+            <div className="activity-completion__actions">
+              <button
+                className="btn-3d-primary"
+                onClick={() => navigate("/vocabulario")}
+                type="button"
+              >
+                <AppIcon name="grid" size={18} />
+                <span>Estudar outro tema</span>
+              </button>
+              <button
+                className="btn-pill-outline"
+                onClick={restart}
+                type="button"
+              >
+                <AppIcon name="refresh" size={18} />
+                <span>Rever os flashcards</span>
+              </button>
+              <button
+                className="btn-soft"
+                onClick={() => navigate("/")}
+                type="button"
+              >
+                <AppIcon name="home" size={18} />
+                <span>Voltar ao início</span>
+              </button>
+            </div>
+          </section>
+        </div>
         <span aria-live="polite" className="sr-only">
           {announcement}
         </span>
@@ -224,104 +322,107 @@ export default function VocabularyFlashcardPage() {
     );
   }
 
-  const progress = ((currentIndex + 1) / BODY_PARTS.length) * 100;
+  const progress = Math.round(((currentIndex + 1) / BODY_PARTS.length) * 100);
 
   return (
     <AppShell className="vocabulary-session-page" hideNavigation>
-      <PageHeader
-        action={
+      <div className="fc-page">
+        <header className="fc-topbar">
           <button
-            aria-label={soundEnabled ? "Desativar som" : "Ativar som"}
-            aria-pressed={soundEnabled}
-            className="icon-button"
-            onClick={toggleSound}
-            title={soundEnabled ? "Desativar som" : "Ativar som"}
+            aria-label="Voltar para Partes do corpo"
+            className="icon-btn-minimal"
+            onClick={() => navigate("/vocabulario/body")}
+            type="button"
           >
-            <AppIcon name={soundEnabled ? "volume" : "volume-off"} />
+            <AppIcon name="close" size={20} strokeWidth={1.8} />
           </button>
-        }
-        onBack={() => navigate("/vocabulario/body")}
-        title="Partes do corpo"
-      />
 
-      <main className="flashcard-session">
-        <div className="flashcard-progress-copy">
-          <strong>
-            {currentIndex + 1} de {BODY_PARTS.length}
-          </strong>
-          <span>{Math.round(progress)}%</span>
-        </div>
-        <div
-          aria-label={`Progresso: ${currentIndex + 1} de ${BODY_PARTS.length}`}
-          aria-valuemax={BODY_PARTS.length}
-          aria-valuemin={1}
-          aria-valuenow={currentIndex + 1}
-          className="flashcard-progress"
-          role="progressbar"
-        >
-          <i style={{ width: `${progress}%` }} />
-        </div>
-
-        <motion.div
-          animate={{ opacity: 1, x: 0 }}
-          className="flashcard-drag-area"
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.12}
-          initial={reduceMotion ? false : { opacity: 0, x: 24 }}
-          key={entry.id}
-          onDrag={handleDrag}
-          onDragEnd={handleDragEnd}
-        >
-          <motion.div
-            animate={{ rotateY: reduceMotion ? 0 : flipped ? 180 : 0 }}
-            aria-label={`${entry.translation}. Toque para revelar o inglês.`}
-            aria-pressed={flipped}
-            className={`vocabulary-flashcard ${flipped ? "is-flipped" : ""} ${
-              reduceMotion ? "reduce-motion" : ""
-            }`}
-            onClick={(event) => {
-              if (
-                draggedRef.current ||
-                (event.target as HTMLElement).closest("button")
-              ) {
-                return;
-              }
-              revealCard();
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                revealCard();
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            initial={false}
-            transition={{ duration: reduceMotion ? 0 : 0.35 }}
+          <div
+            aria-label={`Progresso: ${currentIndex + 1} de ${BODY_PARTS.length}`}
+            aria-valuemax={BODY_PARTS.length}
+            aria-valuemin={1}
+            aria-valuenow={currentIndex + 1}
+            className="fc-topbar__progress"
+            role="progressbar"
           >
-            <section
-              aria-hidden={flipped}
-              className="flashcard-face flashcard-front"
+            <span className="fc-topbar__fill" style={{ width: `${progress}%` }} />
+          </div>
+
+          <div className="fc-topbar__right">
+            <button
+              aria-label={soundEnabled ? "Desativar som" : "Ativar som"}
+              aria-pressed={soundEnabled}
+              className="icon-btn-minimal"
+              onClick={toggleSound}
+              title={soundEnabled ? "Desativar som" : "Ativar som"}
+              type="button"
             >
-              <VisualAsset
-                className="flashcard-visual"
-                label={entry.translation}
-                visualKey={entry.visualKey ?? entry.id}
+              <AppIcon
+                name={soundEnabled ? "volume" : "volume-off"}
+                size={19}
+                strokeWidth={1.8}
               />
-              <div className="flashcard-word">
-                <h2>{entry.translation}</h2>
-                <span>Toque para revelar</span>
-              </div>
-            </section>
-            <section
-              aria-hidden={!flipped}
-              className="flashcard-face flashcard-back"
+            </button>
+            <HeartMasteryBadge count={revealedCount} />
+          </div>
+        </header>
+
+        <div className="fc-main">
+          <div className="fc-stage">
+            <div
+              aria-hidden="true"
+              className={`fc-peek fc-peek--prev${currentIndex === 0 ? " is-empty" : ""}`}
+            />
+
+            <motion.section
+              animate={{ opacity: 1, x: 0 }}
+              aria-label={
+                flipped
+                  ? `${entry.term} significa ${entry.translation}. Toque para ocultar.`
+                  : `${entry.term}. Toque para revelar a tradução.`
+              }
+              aria-pressed={flipped}
+              className={`fc-card${flipped ? " is-flipped" : ""}`}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.14}
+              initial={reduceMotion ? false : { opacity: 0, x: 20 }}
+              key={entry.id}
+              onClick={(event) => {
+                if (
+                  draggedRef.current ||
+                  (event.target as HTMLElement).closest("button")
+                ) {
+                  return;
+                }
+                revealCard();
+              }}
+              onDrag={handleDrag}
+              onDragEnd={handleDragEnd}
+              onKeyDown={(event) => {
+                if ((event.target as HTMLElement).closest("button")) return;
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  revealCard();
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              transition={{ duration: reduceMotion ? 0 : 0.22 }}
             >
-              <span className="eyebrow">Em inglês</span>
-              <h2>{entry.term}</h2>
+              <div className="fc-visual">
+                <VisualAsset
+                  className="flashcard-visual"
+                  label={entry.translation}
+                  visualKey={entry.visualKey ?? entry.id}
+                />
+              </div>
+              <h2 className="fc-word">{entry.term}</h2>
+              <span className="fc-pos">Substantivo</span>
+
               <button
-                className="listen-again-button"
+                aria-label={`Ouvir pronúncia de ${entry.term}`}
+                className={`btn-audio-circle fc-audio-btn${isSpeaking ? " is-playing" : ""}`}
                 disabled={!soundEnabled || !speechAvailable}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -329,39 +430,65 @@ export default function VocabularyFlashcardPage() {
                 }}
                 type="button"
               >
-                <AppIcon name="volume" size={20} />
-                <span>Ouvir novamente</span>
+                <SpeakerFilledIcon />
               </button>
-              {!speechAvailable && (
-                <p className="speech-fallback">
-                  Pronúncia indisponível neste navegador.
-                </p>
-              )}
-              {speechAvailable && !soundEnabled && (
-                <p className="speech-fallback">Ative o som para ouvir.</p>
-              )}
-            </section>
-          </motion.div>
-        </motion.div>
+            </motion.section>
 
-        <p className="swipe-hint">Deslize para navegar entre os cartões.</p>
-        <div className="flashcard-navigation">
-          <PrimaryButton
-            disabled={currentIndex === 0}
-            onClick={goPrevious}
-            variant="secondary"
-          >
-            Anterior
-          </PrimaryButton>
-          <PrimaryButton onClick={goNext}>
-            {currentIndex === BODY_PARTS.length - 1 ? "Concluir" : "Próximo"}
-          </PrimaryButton>
+            <div
+              aria-hidden="true"
+              className={`fc-peek fc-peek--next${
+                currentIndex >= BODY_PARTS.length - 1 ? " is-empty" : ""
+              }`}
+            />
+          </div>
+
+          <div className="fc-translation-slot" aria-live="polite">
+            {flipped ? (
+              <span className="fc-translation-text">{entry.translation}</span>
+            ) : (
+              <span className="fc-translation-hint">
+                Toque em Virar para revelar
+              </span>
+            )}
+          </div>
+
+          <div className="fc-actions">
+            <button
+              className="btn-pill-outline fc-nav-btn"
+              disabled={currentIndex === 0}
+              onClick={goPrevious}
+              type="button"
+            >
+              <span aria-hidden="true">&lsaquo;</span>
+              <span>Anterior</span>
+            </button>
+
+            <button
+              className="btn-3d-primary fc-flip-btn"
+              onClick={revealCard}
+              type="button"
+            >
+              Virar
+            </button>
+
+            <button
+              className="btn-pill-outline fc-nav-btn"
+              onClick={goNext}
+              type="button"
+            >
+              <span>
+                {currentIndex === BODY_PARTS.length - 1 ? "Concluir" : "Próximo"}
+              </span>
+              {currentIndex < BODY_PARTS.length - 1 && (
+                <span aria-hidden="true">&rsaquo;</span>
+              )}
+            </button>
+          </div>
         </div>
-      </main>
+      </div>
       <span aria-live="polite" className="sr-only">
         {announcement}
       </span>
     </AppShell>
   );
 }
-

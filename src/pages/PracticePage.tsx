@@ -1,22 +1,36 @@
-import { useParams } from "react-router-dom";
-import GlassCard from "../components/GlassCard";
+import { useNavigate, useParams } from "react-router-dom";
+import AppIcon from "../components/AppIcon";
+import { AppShell } from "../components/AppShell";
+import "../styles/activities.css";
 
 // TODO: implementar o catálogo planejado de jogos sem migrar mecânicas
 // promocionais antigas. Gate de 75%/roleta NÃO entra mais.
 export default function PracticePage() {
+  const navigate = useNavigate();
   const { topic } = useParams();
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-6 gap-4 text-center">
-      <GlassCard className="max-w-sm">
-        <h2 className="font-display font-semibold text-lg mb-2">
-          Prática {topic ? `— ${decodeURIComponent(topic)}` : ""}
-        </h2>
-        <p className="text-cream/70 text-sm">
-          Jogos ainda não migrados pra cá — esqueleto de rota pronto.
-        </p>
-      </GlassCard>
-    </div>
+    <AppShell activeNav="study" className="standard-page">
+      <div className="activity-page-container" style={{ maxWidth: 520, marginTop: 40 }}>
+        <section className="empty-state">
+          <span className="activity-completion__icon" aria-hidden="true">
+            <AppIcon name="sparkles" size={28} />
+          </span>
+          <h2 className="empty-state__title">
+            Prática {topic ? `— ${decodeURIComponent(topic)}` : ""}
+          </h2>
+          <p className="empty-state__body">
+            Esta rota de prática está pronta para receber novos modos interativos.
+          </p>
+          <button
+            className="btn-3d-primary btn-3d-primary--sm"
+            onClick={() => navigate("/estudar")}
+            type="button"
+          >
+            Ir para Estudar
+          </button>
+        </section>
+      </div>
+    </AppShell>
   );
 }
-

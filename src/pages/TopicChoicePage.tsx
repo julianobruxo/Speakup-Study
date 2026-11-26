@@ -1,32 +1,44 @@
-import { useParams, useNavigate } from "react-router-dom";
-import GlassCard from "../components/GlassCard";
-import GlowButton from "../components/GlowButton";
-import GradientText from "../components/GradientText";
+import { useNavigate, useParams } from "react-router-dom";
+import { AppShell, PageHeader } from "../components/AppShell";
+import { OpenBookBadgeIcon } from "../components/BookVisual";
+import "../styles/estudar.css";
 
-// Fork "Estudar tópico primeiro" x "Apenas praticar" dentro de um tópico
-// específico (combinado na conversa). TODO: telas de estudo interativas
-// com vídeo/áudio ainda não implementadas — placeholder.
 export default function TopicChoicePage() {
   const { topic } = useParams();
   const navigate = useNavigate();
+  const decodedTopic = decodeURIComponent(topic ?? "");
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-6 gap-6 text-center">
-      <GradientText as="h1" className="text-xl">
-        {decodeURIComponent(topic ?? "")}
-      </GradientText>
-      <GlassCard className="max-w-sm">
-        <p className="text-cream/80">Quer estudar esse tópico antes de praticar?</p>
-      </GlassCard>
-      <div className="flex flex-col gap-3 w-full max-w-sm">
-        <GlowButton onClick={() => navigate(`/estudar/${topic}/conteudo`)}>
-          Estudar tópico primeiro
-        </GlowButton>
-        <GlowButton onClick={() => navigate(`/praticar/${topic}`)}>
-          Apenas praticar
-        </GlowButton>
+    <AppShell activeNav="study" className="standard-page">
+      <div className="catalog-page">
+        <PageHeader backTo="/estudar" title={decodedTopic || "Tópico"} />
+
+        <section className="topic-choice-card">
+          <div className="category-badge category-badge--cyan">
+            <OpenBookBadgeIcon size={32} />
+          </div>
+          <h2 className="catalog-lead__title">{decodedTopic}</h2>
+          <p className="catalog-lead__desc">
+            Quer estudar a explicação desse tópico antes de praticar?
+          </p>
+          <div className="topic-choice-card__actions">
+            <button
+              className="btn-3d-primary"
+              onClick={() => navigate(`/estudar/${topic}/conteudo`)}
+              type="button"
+            >
+              Estudar tópico primeiro
+            </button>
+            <button
+              className="btn-pill-outline"
+              onClick={() => navigate(`/praticar/${topic}`)}
+              type="button"
+            >
+              Apenas praticar
+            </button>
+          </div>
+        </section>
       </div>
-    </div>
+    </AppShell>
   );
 }
-

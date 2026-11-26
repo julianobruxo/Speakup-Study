@@ -98,8 +98,6 @@ const appSource = read("src/App.tsx");
 assert(!/^\s*<Route path="\/jogos/m.test(appSource), "Game routes must remain disabled");
 const shellSource = read("src/components/AppShell.tsx");
 assert(!/^\s*\{ id: "games"/m.test(shellSource), "Games must not appear in global navigation");
-const pastPageSource = read("src/pages/PastStudioPage.tsx");
-assert(!/const activities = \[[^\]]*"memory"/.test(pastPageSource), "Memory game must not be reachable");
 
 const courseSource = ts.transpileModule(
   read("src/content/data/grammarCourses.ts"),

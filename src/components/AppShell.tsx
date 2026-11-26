@@ -2,21 +2,25 @@ import { useEffect, useRef, type PropsWithChildren, type ReactNode } from "react
 import { motion, type HTMLMotionProps } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  getAvatarEmoji,
   getLevelSummary,
-  getWeekKey,
   type EngagementSnapshot,
 } from "../services/progress/engagement";
 import { useEngagement } from "../services/progress/useEngagement";
 import { ensureAnonymousSession } from "../services/firebase/auth";
 import { enqueueLeaderboardSync } from "../services/firebase/leaderboardSync";
-import AppIcon from "./AppIcon";
+import AppIcon, {
+  BrandMegaphoneIcon,
+  MobileTabIcon,
+  SidebarNavIcon,
+  StreakFlameIcon,
+} from "./AppIcon";
 
 interface AppShellProps {
   activeNav?: "home" | "study" | "progress" | "profile" | "games";
   className?: string;
   hideNavigation?: boolean;
   dialogOpen?: boolean;
+  showMobileTabs?: boolean;
 }
 
 export function AppShell({
@@ -25,8 +29,21 @@ export function AppShell({
   className = "",
   hideNavigation = false,
   dialogOpen = false,
+  showMobileTabs,
 }: PropsWithChildren<AppShellProps>) {
+  const location = useLocation();
   const showGlobalNavigation = Boolean(activeNav) && !hideNavigation;
+  const isFlashcardRoute = location.pathname.includes("/flashcards");
+  const shouldRenderMobileTabs =
+    showMobileTabs ?? (showGlobalNavigation || isFlashcardRoute);
+  const isStudyRoute =
+    activeNav === "study" ||
+    location.pathname.startsWith("/estudar") ||
+    location.pathname.startsWith("/livro/") ||
+    location.pathname === "/livro" ||
+    location.pathname.startsWith("/gramatica") ||
+    location.pathname.startsWith("/vocabulario");
+
   const { snapshot } = useEngagement();
   const latestSnapshotRef = useRef<EngagementSnapshot | null>(null);
   const initialSyncTriggeredRef = useRef(false);
@@ -57,7 +74,7 @@ export function AppShell({
       <div
         className={`app-shell ${
           showGlobalNavigation ? "main-shell" : "focus-shell"
-        }`}
+        } ${shouldRenderMobileTabs ? "has-mobile-tabs" : ""}`}
       >
         {showGlobalNavigation && (
           <DesktopSidebar
@@ -67,13 +84,16 @@ export function AppShell({
           />
         )}
         <div className="shell-main">
-          {showGlobalNavigation && (
+          {showGlobalNavigation && !isStudyRoute && (
             <GlobalHeader active={activeNav} snapshot={snapshot} />
           )}
           <main className={`app-content ${className}`}>{children}</main>
         </div>
-        {showGlobalNavigation && (
-          <BottomNavigation active={activeNav} hidden={dialogOpen} />
+        {shouldRenderMobileTabs && (
+          <BottomNavigation
+            active={activeNav ?? (isFlashcardRoute ? "study" : undefined)}
+            hidden={dialogOpen}
+          />
         )}
       </div>
     </div>
@@ -82,26 +102,34 @@ export function AppShell({
 
 type NavId = "home" | "study" | "progress" | "profile" | "games";
 
-const NAV_ITEMS: {
+const DESKTOP_NAV_ITEMS: {
   id: NavId;
   label: string;
-  icon: "home" | "book" | "chart" | "user" | "game";
   to: string;
 }[] = [
-  { id: "home", label: "Início", icon: "home", to: "/" },
-  { id: "study", label: "Estudar", icon: "book", to: "/praticar" },
-  // Jogos ficam preservados no código, mas não aparecem na trilha atual.
-  // { id: "games", label: "Jogos", icon: "game", to: "/jogos" },
-  { id: "progress", label: "Progresso", icon: "chart", to: "/progresso" },
-  { id: "profile", label: "Perfil", icon: "user", to: "/perfil" },
+  { id: "home", label: "Início", to: "/" },
+  { id: "study", label: "Estudar", to: "/estudar" },
+  { id: "progress", label: "Progresso", to: "/progresso" },
+  { id: "profile", label: "Perfil", to: "/perfil" },
+];
+
+const MOBILE_TAB_ITEMS: {
+  id: "study" | "home" | "progress" | "profile";
+  label: string;
+  to: string;
+}[] = [
+  { id: "home", label: "Início", to: "/" },
+  { id: "study", label: "Estudar", to: "/estudar" },
+  { id: "progress", label: "Progresso", to: "/progresso" },
+  { id: "profile", label: "Perfil", to: "/perfil" },
 ];
 
 const PAGE_COPY: Record<NavId, { kicker: string; title: string }> = {
   home: { kicker: "Sua jornada", title: "Olá" },
-  study: { kicker: "Biblioteca", title: "O que você quer aprender?" },
-  progress: { kicker: "Seu desempenho", title: "Progresso e conquistas" },
-  profile: { kicker: "Seu perfil", title: "Perfil e preferências" },
-  games: { kicker: "Desafios", title: "Jogos rápidos" },
+  study: { kicker: "Estudar", title: "Livro Intro" },
+  progress: { kicker: "Seu desempenho", title: "Progresso" },
+  profile: { kicker: "Sua conta", title: "Perfil" },
+  games: { kicker: "Desafios", title: "Jogos" },
 };
 
 function isItemActive(
@@ -110,11 +138,39 @@ function isItemActive(
   active: NavId | undefined,
   pathname: string,
 ) {
+  if (active === itemId) return true;
+  if (
+    itemId === "study" &&
+    (pathname.startsWith("/estudar") ||
+      pathname.startsWith("/livro/") ||
+      pathname === "/livro" ||
+      pathname.startsWith("/gramatica") ||
+      pathname.startsWith("/vocabulario"))
+  ) {
+    return true;
+  }
   return (
-    active === itemId ||
-    (!active &&
-      (pathname === itemTo || (itemTo !== "/" && pathname.startsWith(itemTo))))
+    !active &&
+    (pathname === itemTo || (itemTo !== "/" && pathname.startsWith(itemTo)))
   );
+}
+
+function getToneClass(tone: string | undefined): string {
+  switch (tone) {
+    case "orange":
+    case "green":
+    case "cyan":
+    case "wine":
+    case "violet":
+    case "purple":
+    case "rose":
+    case "amber":
+    case "teal":
+    case "sky":
+      return `shell-avatar--${tone}`;
+    default:
+      return "shell-avatar--sky";
+  }
 }
 
 function GlobalHeader({
@@ -126,32 +182,40 @@ function GlobalHeader({
 }) {
   const navigate = useNavigate();
   const profile = snapshot?.profile ?? {
-    displayName: "Jogador",
-    avatarInitial: "J",
+    displayName: "Estudante",
+    avatarInitial: "E",
     avatarId: "fox" as const,
-    avatarTone: "cyan",
+    avatarTone: "sky",
   };
   const level = getLevelSummary(snapshot?.state.totalXp ?? 0);
-  const pathname = useLocation().pathname;
-  const copy = pathname.startsWith("/passado") ? { kicker: "Simple Past", title: "Seu laboratório do passado" } : PAGE_COPY[active];
+  const copy = PAGE_COPY[active];
   const title =
     active === "home" ? `${greeting()}, ${profile.displayName}` : copy.title;
+  const initial = (
+    profile.avatarInitial ||
+    profile.displayName.charAt(0) ||
+    "E"
+  ).toUpperCase();
 
   return (
-    <header className="global-header topbar">
-      <div>
-        <div className="page-kicker">{copy.kicker}</div>
-        <div className="page-title">{title}</div>
+    <header className="global-header">
+      <div className="global-header__copy">
+        <span className="global-header__kicker">{copy.kicker}</span>
+        <h1 className="global-header__title">{title}</h1>
       </div>
       <button
         aria-label="Abrir perfil"
-        className="profile-button"
+        className="global-header__profile"
         onClick={() => navigate("/perfil")}
+        type="button"
       >
-        <span className={`avatar avatar-${profile.avatarTone}`} aria-hidden="true">
-          {getAvatarEmoji(profile.avatarId)}
+        <span
+          className={`shell-avatar ${getToneClass(profile.avatarTone)}`}
+          aria-hidden="true"
+        >
+          {initial}
         </span>
-        <span className="profile-copy">
+        <span className="global-header__profile-copy">
           <strong>{profile.displayName}</strong>
           <span>
             Nível {level.level} · {level.title}
@@ -181,127 +245,71 @@ function DesktopSidebar({
   const navigate = useNavigate();
   const location = useLocation();
   const streak = snapshot?.state.currentStreak ?? 0;
-  const currentWeek = getWeekKey();
-  const activeDays = new Set(
-    (snapshot?.state.activeDates ?? []).filter(
-      (date) => getWeekKey(new Date(`${date}T12:00:00`)) === currentWeek,
-    ),
-  );
-  const monday = new Date(`${currentWeek}T12:00:00`);
-  const weekDates = Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(monday);
-    date.setDate(date.getDate() + index);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  });
 
   return (
     <aside
       aria-hidden={hidden || undefined}
       aria-label="Navegação principal"
-      className={`app-sidebar sidebar ${hidden ? "nav-hidden" : ""}`}
+      className={`desktop-sidebar ${hidden ? "nav-hidden" : ""}`}
     >
-      <button aria-label="Início · Speak Up Study" className="brand sidebar-brand" onClick={() => navigate("/")}>
-        <span className="brand-mark" aria-hidden="true" />
-        <span className="brand-copy">
-          <strong>Speak Up<br />Study</strong>
-          <small>Speak UP!</small>
+      <button
+        aria-label="Início · Speak UP Study"
+        className="sidebar-brand"
+        onClick={() => navigate("/")}
+        type="button"
+      >
+        <span className="sidebar-brand__icon" aria-hidden="true">
+          <BrandMegaphoneIcon size={38} />
+        </span>
+        <span className="sidebar-brand__title">
+          <span>Speak UP</span>
+          <span>Study</span>
         </span>
       </button>
 
-      <nav className="study-navigation" aria-label="Conteúdos de estudo">
-        <div className="nav-label">Principal</div>
-        <button aria-label="Início" className={`nav-button ${location.pathname === "/" ? "active" : ""}`} onClick={() => navigate("/")}><span className="nav-icon"><AppIcon name="home" /></span><span className="sidebar-nav-label">Início</span></button>
-        <button aria-label="Biblioteca" className={`nav-button ${location.pathname === "/praticar" ? "active" : ""}`} onClick={() => navigate("/praticar")}><span className="nav-icon"><AppIcon name="book" /></span><span className="sidebar-nav-label">Biblioteca</span></button>
-        <div className="nav-label">Livros</div>
-        {[
-          {
-            id: "intro",
-            label: "Livro Intro",
-            prefix: "/livro/intro",
-            links: [
-              ["/livro/intro/gramatica", "Gramática"],
-              ["/livro/intro/vocabulario", "Vocabulário"],
-            ],
-          },
-        ].map((book) => (
-          <details
-            className="past-menu"
-            key={book.id}
-            open={location.pathname.startsWith(book.prefix)}
-          >
-            <summary aria-label={book.label}>
-              <span className="nav-icon"><AppIcon name="book" /></span>
-              <span className="sidebar-nav-label">{book.label}</span>
-              <span className="past-chevron">⌄</span>
-            </summary>
-            <div className="past-menu-links">
-              {book.links.map(([path, label]) => (
-                <button
-                  className={location.pathname.startsWith(path) ? "active" : ""}
-                  key={path}
-                  onClick={() => navigate(path)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </details>
-        ))}
-        <div className="nav-label">O que estudar</div>
-        <details className="past-menu" open={location.pathname.startsWith("/gramatica")}>
-          <summary aria-label="Gramática"><span className="nav-icon"><AppIcon name="book" /></span><span className="sidebar-nav-label">Gramática</span><span className="past-chevron">⌄</span></summary>
-          <div className="past-menu-links">
-            {[
-              ["/gramatica", "Todos os tópicos"],
-              ["/gramatica/present_tobe", "TO BE · presente"],
-              ["/gramatica/simple_present", "Simple Present"],
-              ["/gramatica/present_continuous", "Present Continuous"],
-              ["/gramatica/be_going_to", "Be Going To"],
-              ["/gramatica/there_tobe", "There Is / Are"],
-            ].map(([path, label]) => <button key={path} className={location.pathname === path ? "active" : ""} onClick={() => navigate(path)}>{label}</button>)}
-          </div>
-        </details>
-        <button aria-label="Vocabulário" className={`nav-button ${location.pathname.startsWith("/vocabulario") ? "active" : ""}`} onClick={() => navigate("/vocabulario")}><span className="nav-icon"><AppIcon name="grid" /></span><span className="sidebar-nav-label">Vocabulário</span></button>
-        <button aria-label="Acervo da escola" className={`nav-button ${location.pathname.startsWith("/escola") ? "active" : ""}`} onClick={() => navigate("/escola/vocabulario")}><span className="nav-icon"><AppIcon name="sparkles" /></span><span className="sidebar-nav-label">Acervo da escola</span></button>
-        <details className="past-menu" open={location.pathname.startsWith("/passado")}>
-          <summary aria-label="Simple Past"><span className="nav-icon"><AppIcon name="clock" /></span><span className="sidebar-nav-label">Simple Past</span><span className="past-chevron">⌄</span></summary>
-          <div className="past-menu-links">
-            {[
-              ["home", "Visão geral"], ["flash", "Flashcards + áudio"],
-              ["gaps", "Fill in the gaps"], ["time", "Time expressions"], ["writing", "Sentence lab"], ["test", "Revisão final · 5 níveis"],
-            ].map(([section, label]) => <button key={section} className={location.pathname === `/passado/${section}` ? "active" : ""} onClick={() => navigate(`/passado/${section}`)}>{label}</button>)}
-          </div>
-        </details>
-        <div className="nav-label">Pratique e acompanhe</div>
-        {/* Jogos serão reativados quando houver uma nova decisão pedagógica.
-        <button aria-label="Jogos" className={`nav-button ${active === "games" ? "active" : ""}`} onClick={() => navigate("/jogos")}><span className="nav-icon"><AppIcon name="game" /></span><span className="sidebar-nav-label">Jogos</span><b className="nav-badge sidebar-nav-label">9</b></button>
-        */}
-        <button aria-label="Progresso" className={`nav-button ${active === "progress" ? "active" : ""}`} onClick={() => navigate("/progresso")}><span className="nav-icon"><AppIcon name="chart" /></span><span className="sidebar-nav-label">Progresso</span></button>
-        <button aria-label="Perfil e som" className={`nav-button ${active === "profile" ? "active" : ""}`} onClick={() => navigate("/perfil")}><span className="nav-icon"><AppIcon name="user" /></span><span className="sidebar-nav-label">Perfil e som</span></button>
+      <nav className="sidebar-nav" aria-label="Navegação principal">
+        {DESKTOP_NAV_ITEMS.map((item) => {
+          const isActive = isItemActive(
+            item.id,
+            item.to,
+            active,
+            location.pathname,
+          );
+          return (
+            <button
+              aria-current={isActive ? "page" : undefined}
+              aria-label={item.label}
+              className={`sidebar-nav__item ${isActive ? "is-active" : ""}`}
+              key={item.id}
+              onClick={() => navigate(item.to)}
+              type="button"
+            >
+              <span className="sidebar-nav__icon" aria-hidden="true">
+                <SidebarNavIcon active={isActive} id={item.id} size={24} />
+              </span>
+              <span className="sidebar-nav__label">{item.label}</span>
+            </button>
+          );
+        })}
       </nav>
 
       <div className="sidebar-footer">
-        <div className="streak-panel">
-          <div className="streak-top">
-            <span>🔥 Sequência</span>
-            <strong className="streak-value">{streak}</strong>
+        <div
+          aria-label={`Sequência atual: ${streak} ${streak === 1 ? "dia seguido" : "dias seguidos"}`}
+          className="sidebar-streak"
+        >
+          <div className="sidebar-streak__copy">
+            <span className="sidebar-streak__label">Dias seguidos</span>
+            <strong className="sidebar-streak__value">
+              {streak} {streak === 1 ? "dia" : "dias"}
+            </strong>
+            <span className="sidebar-streak__label">
+              {streak === 1 ? "seguido" : "seguidos"}
+            </span>
           </div>
-          <p>
-            {streak
-              ? `${streak} ${streak === 1 ? "dia ativo" : "dias ativos"} em sequência.`
-              : "Comece hoje. Sua primeira prática inicia a sequência."}
-          </p>
-          <div className="mini-days" aria-label="Dias ativos nesta semana">
-            {weekDates.map((date) => (
-              <i
-                className={`mini-day ${activeDays.has(date) ? "done" : ""}`}
-                key={date}
-              />
-            ))}
-          </div>
+          <span className="sidebar-streak__flame" aria-hidden="true">
+            <StreakFlameIcon size={32} />
+          </span>
         </div>
       </div>
     </aside>
@@ -328,6 +336,7 @@ export function PageHeader({
         aria-label="Voltar"
         className="icon-button"
         onClick={onBack ?? (() => (backTo ? navigate(backTo) : navigate(-1)))}
+        type="button"
       >
         <AppIcon name="arrow-left" />
       </button>
@@ -439,9 +448,9 @@ function BottomNavigation({
     <nav
       aria-hidden={hidden || undefined}
       aria-label="Navegação principal"
-      className={`bottom-navigation mobile-nav ${hidden ? "nav-hidden" : ""}`}
+      className={`mobile-bottom-nav ${hidden ? "nav-hidden" : ""}`}
     >
-      {NAV_ITEMS.map((item) => {
+      {MOBILE_TAB_ITEMS.map((item) => {
         const isActive = isItemActive(
           item.id,
           item.to,
@@ -451,12 +460,21 @@ function BottomNavigation({
         return (
           <button
             aria-current={isActive ? "page" : undefined}
-            className={isActive ? "active" : ""}
+            className={`mobile-bottom-nav__tab ${isActive ? "is-active" : ""}`}
             key={item.id}
             onClick={() => navigate(item.to)}
+            type="button"
           >
-            <span className="nav-icon">
-              <AppIcon name={item.icon} size={20} />
+            <span className="mobile-bottom-nav__icon" aria-hidden="true">
+              {item.id === "home" ? (
+                <AppIcon
+                  name="home"
+                  size={22}
+                  strokeWidth={isActive ? 2.1 : 1.75}
+                />
+              ) : (
+                <MobileTabIcon active={isActive} id={item.id} size={22} />
+              )}
             </span>
             <span>{item.label}</span>
           </button>
@@ -465,4 +483,3 @@ function BottomNavigation({
     </nav>
   );
 }
-

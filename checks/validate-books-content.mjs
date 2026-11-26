@@ -133,8 +133,8 @@ for (const set of INTRO_VOCABULARY_SETS) {
   assert(!setIds.has(set.id), `Duplicate vocabulary set id: ${set.id}`);
   setIds.add(set.id);
   assert(
-    set.items.length >= 6,
-    `Vocabulary set ${set.id} must have at least 6 items for Memory Match (found ${set.items.length})`,
+    set.items.length >= 20,
+    `Vocabulary set ${set.id} must have at least 20 items (found ${set.items.length})`,
   );
 
   for (const item of set.items) {
@@ -221,9 +221,19 @@ for (const topic of INTRO_GRAMMAR_TOPICS) {
   }
 }
 const bookGrammarPageSource = readFileSync("src/pages/BookGrammarTopicPage.tsx", "utf8");
+const runnerStart = bookGrammarPageSource.indexOf("function GrammarActivityRunner");
+assert(runnerStart > -1, "BookGrammarTopicPage must define GrammarActivityRunner");
+const explanationPart = bookGrammarPageSource.slice(0, runnerStart);
+const runnerPart = bookGrammarPageSource.slice(runnerStart);
 assert(
-  bookGrammarPageSource.includes("audioText = mcItem.audioText ?? \"\""),
-  "BookGrammarTopicPage must only speak explicit mcItem.audioText on multiple_choice",
+  explanationPart.includes("speakEnglish(") &&
+    (explanationPart.includes("speakEnglish(example.en)") ||
+      explanationPart.includes("handlePlayExample(example.en)")),
+  "BookGrammarTopicPage must keep en-US speech on explanation examples",
+);
+assert(
+  !runnerPart.includes("speakEnglish("),
+  "GrammarActivityRunner must not call speakEnglish( during exercises",
 );
 assert(
   bookGrammarPageSource.includes("orderQuestionOptions("),
@@ -239,12 +249,18 @@ assert(
   "BookVocabularyFlashcardsPage onKeyDown must ignore Enter/Space from nested buttons",
 );
 
-// F4: Verify mobile reachability to Livro Intro via /praticar (PracticeLandingPage)
-const practiceLandingSource = readFileSync("src/pages/PracticeLandingPage.tsx", "utf8");
+// F4: Verify mobile reachability to Livro Intro via /estudar (BookIntroPage) and HomePage
+const bookIntroSource = readFileSync("src/pages/BookIntroPage.tsx", "utf8");
+const homePageSource = readFileSync("src/pages/HomePage.tsx", "utf8");
 assert(
-  practiceLandingSource.includes("/livro/intro/gramatica") &&
-    practiceLandingSource.includes("/livro/intro/vocabulario"),
-  "PracticeLandingPage (/praticar) must link to Livro Intro grammar and vocabulary for mobile reachability",
+  bookIntroSource.includes("/livro/intro/gramatica") &&
+    bookIntroSource.includes("/livro/intro/vocabulario"),
+  "BookIntroPage (/estudar) must link to Livro Intro grammar and vocabulary for mobile reachability",
+);
+assert(
+  homePageSource.includes("/livro/intro/gramatica") &&
+    homePageSource.includes("/livro/intro/vocabulario"),
+  "HomePage must link to Livro Intro grammar and vocabulary for mobile reachability",
 );
 
 // F5: Verify intro-house-table and intro-house-chair use distinct visuals

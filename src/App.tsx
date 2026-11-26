@@ -1,10 +1,8 @@
 import { Navigate, Route, Routes, useParams } from "react-router-dom";
-import PastStudioPage from "./pages/PastStudioPage";
 import AudioNotice from "./components/AudioNotice";
 import GrammarTopicsPage from "./pages/GrammarTopicsPage";
 import GrammarCoursePage from "./pages/GrammarCoursePage";
 import HomePage from "./pages/HomePage";
-import PracticeLandingPage from "./pages/PracticeLandingPage";
 import PracticeSessionPage from "./pages/PracticeSessionPage";
 import PracticeSetupPage from "./pages/PracticeSetupPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -13,7 +11,7 @@ import BookGrammarTopicPage from "./pages/BookGrammarTopicPage";
 import BookIntroPage from "./pages/BookIntroPage";
 import BookVocabularyFlashcardsPage from "./pages/BookVocabularyFlashcardsPage";
 import BookVocabularyMemoryPage from "./pages/BookVocabularyMemoryPage";
-import SchoolStudyPage from "./pages/SchoolStudyPage";
+import BookVocabularyQuizPage from "./pages/BookVocabularyQuizPage";
 import VocabularyCategoryPage from "./pages/VocabularyCategoryPage";
 import VocabularyFlashcardPage from "./pages/VocabularyFlashcardPage";
 import VocabularyPage from "./pages/VocabularyPage";
@@ -25,8 +23,8 @@ export default function App() {
     <AudioNotice />
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/passado/:activity?" element={<PastStudioPage />} />
-      <Route path="/praticar" element={<PracticeLandingPage />} />
+      <Route path="/estudar" element={<BookIntroPage section="gramatica" />} />
+      <Route path="/praticar" element={<Navigate to="/estudar" replace />} />
       <Route path="/gramatica" element={<GrammarTopicsPage />} />
       <Route
         path="/gramatica/present_tobe"
@@ -57,14 +55,16 @@ export default function App() {
         path="/livro/intro/vocabulario/:setId/memoria"
         element={<BookVocabularyMemoryPage />}
       />
-      <Route path="/escola/:section?" element={<SchoolStudyPage />} />
+      <Route
+        path="/livro/intro/vocabulario/:setId/quiz"
+        element={<BookVocabularyQuizPage />}
+      />
       <Route path="/progresso" element={<ProgressPage />} />
       <Route path="/perfil" element={<ProfilePage />} />
 
       <Route path="/bem-vindo" element={<Navigate to="/" replace />} />
       <Route path="/tutorial" element={<Navigate to="/" replace />} />
       <Route path="/hub" element={<Navigate to="/" replace />} />
-      <Route path="/estudar" element={<Navigate to="/praticar" replace />} />
       <Route
         path="/estudar/:topic"
         element={<LegacyTopicRedirect />}
@@ -86,7 +86,7 @@ export default function App() {
 function LegacyTopicRedirect() {
   const { topic } = useParams();
   if (topic === "present_tobe") return <Navigate to="/gramatica/present_tobe" replace />;
-  if (topic === "simple_past") return <Navigate to="/passado/home" replace />;
+  if (topic === "simple_past") return <Navigate to="/livro/intro/gramatica/simple-past" replace />;
   if (getGrammarCourse(topic)) return <Navigate to={`/gramatica/${topic}`} replace />;
   return <Navigate to="/gramatica" replace />;
 }

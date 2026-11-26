@@ -5,15 +5,16 @@ type GlowButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
 export default function GlowButton({
   children,
   className = "",
+  type = "button",
   ...rest
 }: PropsWithChildren<GlowButtonProps>) {
   return (
     <button
-      className={`glow-btn px-8 py-3 text-base ${className}`}
+      className={`btn-3d-primary ${className}`}
+      type={type}
       {...rest}
     >
       {children}
     </button>
   );
 }
-

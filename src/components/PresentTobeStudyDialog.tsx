@@ -2,7 +2,7 @@ import type { ReactNode, RefObject } from "react";
 import type { GrammarPracticeQuestion } from "../content/model/content";
 import { getPresentTobeStudyContext } from "../services/sessions/presentTobeStudy";
 import AppDialog from "./AppDialog";
-import { PrimaryButton } from "./AppShell";
+import "../styles/activities.css";
 
 interface PresentTobeStudyDialogProps {
   onClose: () => void;
@@ -29,9 +29,13 @@ export default function PresentTobeStudyDialog({
   return (
     <AppDialog
       actions={
-        <PrimaryButton onClick={closeAndRestoreFocus}>
+        <button
+          className="btn-3d-primary btn-3d-primary--sm"
+          onClick={closeAndRestoreFocus}
+          type="button"
+        >
           Voltar à prática
-        </PrimaryButton>
+        </button>
       }
       className="study-dialog"
       description="Revise a regra relacionada ao erro e consulte o guia completo."
@@ -41,7 +45,9 @@ export default function PresentTobeStudyDialog({
     >
       <div className="study-guide-content">
         <section className="study-context" aria-labelledby="study-context-title">
-          <span>{context.categoryLabel}</span>
+          <span className="pill-tag pill-tag--blue" style={{ width: "fit-content" }}>
+            {context.categoryLabel}
+          </span>
           <h3 id="study-context-title">Entenda esta questão</h3>
           {context.subject && (
             <p>
@@ -62,15 +68,23 @@ export default function PresentTobeStudyDialog({
 
         <section className="study-guide" aria-labelledby="study-guide-title">
           <div className="study-guide-heading">
-            <span>Guia completo</span>
+            <span className="pill-tag" style={{ width: "fit-content", marginBottom: 6 }}>
+              Guia completo
+            </span>
             <h3 id="study-guide-title">Como usar o Present TO BE</h3>
           </div>
 
           <StudySection title="Am, is e are">
             <ul>
-              <li><b>I</b> → am</li>
-              <li><b>he / she / it</b> → is</li>
-              <li><b>you / we / they</b> → are</li>
+              <li>
+                <b>I</b> → am
+              </li>
+              <li>
+                <b>he / she / it</b> → is
+              </li>
+              <li>
+                <b>you / we / they</b> → are
+              </li>
             </ul>
             <p>
               Um substantivo singular normalmente usa <b>is</b>; um plural usa{" "}
@@ -91,7 +105,9 @@ export default function PresentTobeStudyDialog({
           </StudySection>
 
           <StudySection title="Frases negativas">
-            <p>Coloque <b>not</b> depois de am, is ou are.</p>
+            <p>
+              Coloque <b>not</b> depois de am, is ou are.
+            </p>
             <ExampleList
               examples={[
                 "I am not tired.",
@@ -122,6 +138,7 @@ export default function PresentTobeStudyDialog({
               ]}
             />
           </StudySection>
+
           <a
             className="cambridge-link"
             href="https://dictionary.cambridge.org/us/dictionary/english/be"
@@ -133,8 +150,9 @@ export default function PresentTobeStudyDialog({
 
           <StudySection title="Contrações">
             <p>
-              Formas padrão: <b>I'm, you're, he's, she's, it's, we're, they're,
-              isn't</b> e <b>aren't</b>.
+              Formas padrão:{" "}
+              <b>I'm, you're, he's, she's, it's, we're, they're, isn't</b> e{" "}
+              <b>aren't</b>.
             </p>
           </StudySection>
 
@@ -192,10 +210,13 @@ function ExampleList({ examples }: { examples: string[] }) {
 
 function ErrorPair({ correct, wrong }: { correct: string; wrong: string }) {
   return (
-    <div>
-      <span><b aria-hidden="true">×</b> {wrong}</span>
-      <span><b aria-hidden="true">✓</b> {correct}</span>
+    <div className="common-error-row">
+      <span className="common-error-row__wrong">
+        <b aria-hidden="true">×</b> {wrong}
+      </span>
+      <span className="common-error-row__correct">
+        <b aria-hidden="true">✓</b> {correct}
+      </span>
     </div>
   );
 }
-

@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import GlassCard from "../components/GlassCard";
-import GradientText from "../components/GradientText";
+import AppIcon from "../components/AppIcon";
+import { AppShell, PageHeader } from "../components/AppShell";
+import "../styles/estudar.css";
 
-// TODO: puxar de data/topics.ts (migração do topics_bank.json do HTML antigo)
+const BADGE_TONES = ["orange", "green", "cyan", "purple"] as const;
+
 const TOPICS = [
   "Verbo TO BE (presente)",
   "Verbo TO BE (passado)",
@@ -20,21 +22,49 @@ export default function TopicsPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-dvh flex flex-col items-center px-6 py-10 gap-6">
-      <GradientText as="h1" className="text-2xl">
-        Escolha um tópico
-      </GradientText>
-      <div className="w-full max-w-sm flex flex-col gap-3">
-        {TOPICS.map((topic) => (
-          <GlassCard
-            key={topic}
-            onClick={() => navigate(`/estudar/${encodeURIComponent(topic)}`)}
-          >
-            <h3 className="font-display font-medium">{topic}</h3>
-          </GlassCard>
-        ))}
+    <AppShell activeNav="study" className="standard-page">
+      <div className="catalog-page">
+        <PageHeader backTo="/estudar" title="Tópicos" />
+
+        <section className="catalog-lead">
+          <span className="catalog-lead__kicker">Trilha de estudo</span>
+          <h2 className="catalog-lead__title">Escolha um tópico</h2>
+          <p className="catalog-lead__desc">
+            Selecione um tema para revisar a explicação ou ir direto para a
+            prática.
+          </p>
+        </section>
+
+        <div className="catalog-grid">
+          {TOPICS.map((topic, idx) => {
+            const tone = BADGE_TONES[idx % 4];
+            return (
+              <button
+                className="catalog-card"
+                key={topic}
+                onClick={() =>
+                  navigate(`/estudar/${encodeURIComponent(topic)}`)
+                }
+                type="button"
+              >
+                <span
+                  className={`category-badge category-badge--sm category-badge--${tone}`}
+                >
+                  <span className="category-badge__order">
+                    {String(idx + 1).padStart(2, "0")}
+                  </span>
+                </span>
+                <span className="catalog-card__body">
+                  <strong className="catalog-card__title">{topic}</strong>
+                </span>
+                <span className="catalog-card__trailing">
+                  <AppIcon name="chevron-right" size={18} />
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
-
