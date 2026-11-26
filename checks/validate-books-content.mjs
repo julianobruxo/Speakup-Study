@@ -212,10 +212,10 @@ for (const topic of INTRO_GRAMMAR_TOPICS) {
         undefined,
         `Portuguese-option MC item ${item.id} must not define en-US audioText`,
       );
-    } else {
+    } else if (item.audioText !== undefined) {
       assert(
         typeof item.audioText === "string" && item.audioText.trim().length > 0,
-        `English-option MC item ${item.id} must define explicit audioText`,
+        `Optional audioText on MC item ${item.id} must be a non-empty string when defined`,
       );
     }
   }

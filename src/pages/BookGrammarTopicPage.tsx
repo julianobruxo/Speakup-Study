@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import AppIcon from "../components/AppIcon";
 import { AppShell, PageHeader } from "../components/AppShell";
@@ -53,11 +53,18 @@ const MODE_META: {
   },
 ];
 
+const MODAL_FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 function deterministicShuffleTokens(
   words: readonly string[],
   seedKey: string,
 ): IndexedToken[] {
-  const tokens: IndexedToken[] = words.map((word, idx) => ({ idx, word }));
+  const base: IndexedToken[] = words.map((word, idx) => ({ idx, word }));
+  if (words.length <= 1 || new Set(words).size <= 1) {
+    return base;
+  }
+
   let hash = 2166136261;
   for (let i = 0; i < seedKey.length; i += 1) {
     hash = Math.imul(hash ^ seedKey.charCodeAt(i), 16777619);
@@ -69,15 +76,57 @@ function deterministicShuffleTokens(
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  for (let i = tokens.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(nextRand() * (i + 1));
-    [tokens[i], tokens[j]] = [tokens[j], tokens[i]];
+
+  const countFixed = (arr: readonly IndexedToken[]) =>
+    arr.filter((t, i) => t.word === words[i]).length;
+  const isIdentical = (arr: readonly IndexedToken[]) =>
+    arr.every((t, i) => t.word === words[i]);
+
+  const shuffleOnce = (): IndexedToken[] => {
+    const arr: IndexedToken[] = words.map((word, idx) => ({ idx, word }));
+    for (let i = arr.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(nextRand() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  };
+
+  let best: IndexedToken[] | null = null;
+  let bestFixed = Number.POSITIVE_INFINITY;
+
+  const consider = (candidate: IndexedToken[]) => {
+    if (isIdentical(candidate)) return false;
+    const fixed = countFixed(candidate);
+    if (best === null || fixed < bestFixed) {
+      best = candidate;
+      bestFixed = fixed;
+    }
+    return words.length < 4 || fixed <= 1;
+  };
+
+  for (let attempt = 0; attempt < 32; attempt += 1) {
+    if (consider(shuffleOnce())) {
+      break;
+    }
   }
-  const sameOrder = tokens.every((t, i) => t.word === words[i]);
-  if (sameOrder && tokens.length > 1) {
-    [tokens[0], tokens[tokens.length - 1]] = [tokens[tokens.length - 1], tokens[0]];
+
+  if (best === null || (words.length >= 4 && bestFixed > 1)) {
+    const reversedBase = [...base].reverse();
+    for (let shift = 1; shift < words.length; shift += 1) {
+      const rotated = [...base.slice(shift), ...base.slice(0, shift)];
+      if (consider(rotated) && bestFixed === 0) break;
+      const revRotated = [
+        ...reversedBase.slice(shift),
+        ...reversedBase.slice(0, shift),
+      ];
+      if (consider(revRotated) && bestFixed === 0) break;
+    }
+    if (best === null) {
+      consider(reversedBase);
+    }
   }
-  return tokens;
+
+  return best ?? base;
 }
 
 function resolveInitialMode(queryMode: string | null): BookGrammarMode | null {
@@ -89,7 +138,7 @@ function resolveInitialMode(queryMode: string | null): BookGrammarMode | null {
 export default function BookGrammarTopicPage() {
   const navigate = useNavigate();
   const { topicId } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryMode = searchParams.get("mode");
   const topic = getIntroGrammarTopic(topicId);
   const [activeMode, setActiveMode] = useState<BookGrammarMode | null>(() =>
@@ -97,6 +146,18 @@ export default function BookGrammarTopicPage() {
   );
   const [playingExample, setPlayingExample] = useState<string | null>(null);
   const playTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const modalDialogRef = useRef<HTMLDivElement | null>(null);
+  const triggerElementRef = useRef<HTMLElement | null>(null);
+  const isModalOpen = activeMode !== null;
+
+  const handleCloseModal = useCallback(() => {
+    setActiveMode(null);
+    if (searchParams.has("mode")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("mode");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     setActiveMode(resolveInitialMode(queryMode));
@@ -116,6 +177,79 @@ export default function BookGrammarTopicPage() {
   }, [topicId, queryMode]);
 
   useEffect(() => cancelPronunciation, [activeMode]);
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const active = document.activeElement;
+    if (
+      active instanceof HTMLElement &&
+      !modalDialogRef.current?.contains(active)
+    ) {
+      triggerElementRef.current = active;
+    }
+
+    const dialog = modalDialogRef.current;
+    const firstFocusable = dialog?.querySelector<HTMLElement>(
+      MODAL_FOCUSABLE_SELECTOR,
+    );
+    (firstFocusable ?? dialog)?.focus();
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      if (triggerElementRef.current?.isConnected) {
+        triggerElementRef.current.focus();
+      }
+      triggerElementRef.current = null;
+    };
+  }, [isModalOpen]);
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        handleCloseModal();
+        return;
+      }
+      if (event.key === "Tab" && modalDialogRef.current) {
+        const focusables = Array.from(
+          modalDialogRef.current.querySelectorAll<HTMLElement>(
+            MODAL_FOCUSABLE_SELECTOR,
+          ),
+        );
+        if (focusables.length === 0) {
+          event.preventDefault();
+          modalDialogRef.current.focus();
+          return;
+        }
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const current = document.activeElement as HTMLElement | null;
+        if (event.shiftKey) {
+          if (
+            !current ||
+            current === first ||
+            !modalDialogRef.current.contains(current)
+          ) {
+            event.preventDefault();
+            last.focus();
+          }
+        } else if (
+          !current ||
+          current === last ||
+          !modalDialogRef.current.contains(current)
+        ) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isModalOpen, handleCloseModal]);
 
   function handlePlayExample(text: string) {
     speakEnglish(text);
@@ -152,8 +286,17 @@ export default function BookGrammarTopicPage() {
     );
   }
 
+  const activeModeLabel =
+    queryMode === "sprint" && activeMode === "multiple_choice"
+      ? "Sprint rápido"
+      : MODE_META.find((m) => m.id === activeMode)?.label ?? "";
+
   return (
-    <AppShell activeNav="study" className="standard-page">
+    <AppShell
+      activeNav="study"
+      className="standard-page"
+      dialogOpen={activeMode !== null}
+    >
       <PageHeader
         backTo="/livro/intro/gramatica"
         title={`${String(topic.order).padStart(2, "0")}. ${topic.title}`}
@@ -236,19 +379,45 @@ export default function BookGrammarTopicPage() {
               </button>
             ))}
           </div>
-
-          {activeMode && (
-            <GrammarActivityRunner
-              isSprint={queryMode === "sprint" && activeMode === "multiple_choice"}
-              key={`${topic.id}:${activeMode}:${queryMode ?? "default"}`}
-              mode={activeMode}
-              onBackToGrammar={() => navigate("/livro/intro/gramatica")}
-              onBackToPractice={() => navigate("/estudar")}
-              topic={topic}
-            />
-          )}
         </section>
       </div>
+
+      {activeMode && (
+        <div className="grammar-modal-backdrop" role="presentation">
+          <div
+            aria-labelledby="grammar-modal-title"
+            aria-modal="true"
+            className="grammar-modal-dialog"
+            ref={modalDialogRef}
+            role="dialog"
+            tabIndex={-1}
+          >
+            <div className="grammar-modal-head">
+              <h2 id="grammar-modal-title">
+                {topic.title} · {activeModeLabel}
+              </h2>
+              <button
+                aria-label="Fechar atividade"
+                className="grammar-modal-close"
+                onClick={handleCloseModal}
+                type="button"
+              >
+                <AppIcon name="close" size={18} />
+              </button>
+            </div>
+            <div className="grammar-modal-body">
+              <GrammarActivityRunner
+                isSprint={queryMode === "sprint" && activeMode === "multiple_choice"}
+                key={`${topic.id}:${activeMode}:${queryMode ?? "default"}`}
+                mode={activeMode}
+                onBackToGrammar={() => navigate("/livro/intro/gramatica")}
+                onBackToPractice={() => navigate("/estudar")}
+                topic={topic}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
